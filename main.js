@@ -37,6 +37,18 @@ function playBeep() {
   oscillator.stop(audioCtx.currentTime + duration);
 }
 
+function playEndBeep() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = 'square';
+  oscillator.frequency.value = 600;
+  oscillator.connect(gain);
+  gain.connect(ctx.destination);
+  oscillator.start();
+  oscillator.stop(ctx.currentTime + 0.4);
+}
+
 async function startTest() {
   document.getElementById("result").textContent = "";
   document.getElementById("command").textContent = "";
@@ -249,6 +261,8 @@ function endKickTest() {
   clearInterval(kickTestInterval);
   if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
   if (kickMediaStream) kickMediaStream.getTracks().forEach(track => track.stop());
+
+   playEndBeep(); // 
 
   document.getElementById("kickStatus").textContent = `Test slutfört! ${kickCount} sparkar på ${kickTestDuration} sekunder`;
   document.getElementById("kickTimer").textContent = "0 sekunder";
