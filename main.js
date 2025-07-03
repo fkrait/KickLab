@@ -324,3 +324,56 @@ function loadKickStats() {
     document.getElementById("kickHighscore").innerHTML = `<h3>Bästa resultat</h3><div class="best-time">${bestKickCount} sparkar</div>`;
   }
 }
+
+function startSparringTraining() {
+  const duration = parseInt(document.getElementById("sparringDuration").value);
+  const statusEl = document.getElementById("sparringStatus");
+  const commandEl = document.getElementById("sparringCommand");
+  const commands = [
+    "Tornado", "Huvudspark", "Jopp höger", "Jopp vänster", "Slag",
+    "Sax", "Clash", "Pitchagi höger", "Pitchagi vänster",
+    "Bakspark", "Spark främre", "Spark bakre"
+  ];
+
+  let remainingTime = duration;
+  let intervalId, commandIntervalId;
+
+  statusEl.textContent = `Tid kvar: ${remainingTime} sekunder`;
+
+  commandEl.textContent = "Startar...";
+  commandEl.style.fontSize = "2rem";
+  commandEl.style.fontWeight = "bold";
+
+  if ('speechSynthesis' in window) {
+    const sayCommand = (text) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'sv-SE';
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      speechSynthesis.speak(utterance);
+    };
+
+    // Starta kommandon varannan sekund
+    commandIntervalId = setInterval(() => {
+      const command = commands[Math.floor(Math.random() * commands.length)];
+      commandEl.textContent = command;
+      sayCommand(command);
+    }, 2000);
+
+    // Starta nedräkning
+    intervalId = setInterval(() => {
+      remainingTime--;
+      statusEl.textContent = `Tid kvar: ${remainingTime} sekunder`;
+      if (remainingTime <= 0) {
+        clearInterval(intervalId);
+        clearInterval(commandIntervalId);
+        statusEl.textContent = "Träning klar!";
+        commandEl.textContent = "Bra jobbat!";
+        sayCommand("Bra jobbat! Sparringträningen är slut");
+      }
+    }, 1000);
+  } else {
+    statusEl.textContent = "Din webbläsare stöder inte talsyntes.";
+  }
+}
