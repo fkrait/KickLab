@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reaktionstest - Taekwondo</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-512.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="startPage" class="start-page">
+      <h1>🥋 Reaktionstest</h1>
+      <p class="subtitle">Träna din reaktionsförmåga med ljud till spark</p>
+      <div class="hero-image">
+        <img src="attached_assets/ChatGPT Image 2 juli 2025 16_41_02_1751467280541.png" alt="Kvinnlig taekwondo-utövare" />
+      </div>
+      <div class="features">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Snabb Reaktion</h3>
+          <p>Träna din reaktionstid med ljudsignaler</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏆</div>
+          <h3>Rekord Spårning</h3>
+          <p>Håll koll på dina bästa resultat</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Statistik</h3>
+          <p>Se dina senaste tider och genomsnitt</p>
+        </div>
+      </div>
+      <div class="button-group">
+        <button onclick="showTestPage()">Reaktionstest</button>
+        <button onclick="showKickCounterPage()">Sparkräknare</button>
+      </div>
+    </div>
+
+    <div id="testPage" style="display: none;">
+      <button onclick="showStartPage()">← Tillbaka</button>
+      <h2>Reaktionstest</h2>
+      <div id="status"></div>
+      <div id="command"></div>
+      <div id="result"></div>
+      <button onclick="startTest()">Starta Test</button>
+      <button onclick="resetStats()">Rensa Resultat</button>
+      <div id="history"></div>
+      <div id="highscore"></div>
+    </div>
+
+    <div id="kickCounterPage" style="display: none;">
+      <button onclick="showStartPage()">← Tillbaka</button>
+      <h2>Sparkräknare</h2>
+      <label for="testDuration">Välj testtid:</label>
+      <select id="testDuration" onchange="updateTestDuration()">
+        <option value="15">15 sekunder</option>
+        <option value="20">20 sekunder</option>
+        <option value="30">30 sekunder</option>
+      </select>
+      <div id="kickStatus">Klicka 'Starta Test' för att börja</div>
+      <div id="kickCount">0 sparkar</div>
+      <div id="kickTimer">15 sekunder</div>
+      <button onclick="startKickTest()">Starta Test</button>
+      <button onclick="resetKickStats()">Rensa Resultat</button>
+      <div id="kickHistory"></div>
+      <div id="kickHighscore"></div>
+    </div>
+  </div>
+
+  <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
+
+  <script src="main.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('serviceWorker.js')
+          .then(reg => console.log('ServiceWorker registrerad:', reg))
+          .catch(err => console.error('ServiceWorker fel:', err));
+      });
+    }
+  </script>
+</body>
+</html>
