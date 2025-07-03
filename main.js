@@ -13,6 +13,15 @@ function showStartPage() {
   document.getElementById("sparringCommand").textContent = "";
   document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
 
+  // Stoppa kommandon och timers
+  if (sparringInterval) {
+    clearInterval(sparringInterval);
+    sparringInterval = null;
+  }
+  if (sparringTimeout) {
+    clearTimeout(sparringTimeout);
+    sparringTimeout = null;
+  }
   stopListening();
 }
 
