@@ -390,6 +390,7 @@ function startSparringTraining() {
       if (remainingTime <= 0) {
         clearInterval(intervalId);
         clearInterval(commandIntervalId);
+        playEndBeep();
         statusEl.textContent = "Träning klar!";
         commandEl.textContent = "Bra jobbat!";
         sayCommand("Bra jobbat! Sparringträningen är slut");
