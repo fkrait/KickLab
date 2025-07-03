@@ -7,6 +7,12 @@ function showStartPage() {
   document.getElementById("startPage").style.display = "block";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
+  document.getElementById("sparringPage").style.display = "none";
+
+  // Rensa sparringträningens innehåll
+  document.getElementById("sparringCommand").textContent = "";
+  document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
+
   stopListening();
 }
 
