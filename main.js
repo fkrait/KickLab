@@ -17,6 +17,13 @@ function showTestPage() {
   loadStats();
 }
 
+function showSparringPage() {
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("testPage").style.display = "none";
+  document.getElementById("kickCounterPage").style.display = "none";
+  document.getElementById("sparringPage").style.display = "block";
+}
+
 function showKickCounterPage() {
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
