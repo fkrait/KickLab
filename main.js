@@ -2,6 +2,7 @@ let audioCtx, mediaStream, mediaStreamSource, analyser, dataArray, animationId, 
 let recentResults = JSON.parse(localStorage.getItem("recentResults")) || [];
 let bestTime = parseFloat(localStorage.getItem("bestTime")) || null;
 const commands = ["Vänster spark", "Höger spark", "Bakåt", "Blockera"];
+let testActive = false;
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
@@ -9,11 +10,14 @@ function showStartPage() {
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
 
-  // Rensa sparringträningens innehåll
   document.getElementById("sparringCommand").textContent = "";
   document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
 
-  // Stoppa kommandon och timers
+  stopSparringTraining();
+  stopListening();
+}
+
+function stopSparringTraining() {
   if (sparringInterval) {
     clearInterval(sparringInterval);
     sparringInterval = null;
@@ -22,7 +26,15 @@ function showStartPage() {
     clearTimeout(sparringTimeout);
     sparringTimeout = null;
   }
+  if (speechSynthesis && speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+  }
+}
+
+function stopTest() {
+  testActive = false;
   stopListening();
+  document.getElementById("status").textContent = "Test stoppat.";
 }
 
 function showTestPage() {
@@ -72,6 +84,7 @@ function playEndBeep() {
 }
 
 async function startTest() {
+  testActive = true;
   document.getElementById("result").textContent = "";
   document.getElementById("command").textContent = "";
   document.getElementById("status").textContent = "Vänta på signal...";
@@ -87,6 +100,7 @@ async function startTest() {
 
     const randomDelay = Math.random() * 3000 + 2000;
     setTimeout(() => {
+      if (!testActive) return;
       const selectedCommand = commands[Math.floor(Math.random() * commands.length)];
       document.getElementById("command").textContent = selectedCommand;
       playBeep();
@@ -101,6 +115,7 @@ async function startTest() {
 
 function listenForImpact() {
   function checkVolume() {
+    if (!testActive) return;
     analyser.getByteTimeDomainData(dataArray);
     let max = 0;
     for (let i = 0; i < dataArray.length; i++) {
@@ -120,6 +135,7 @@ function listenForImpact() {
 }
 
 function stopListening() {
+  testActive = false;
   if (animationId) cancelAnimationFrame(animationId);
   if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
 }
