@@ -3,57 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reaktionstest - Taekwondo</title>
+  <title>KickLab</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-512.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <div id="startPage" class="start-page">
-      <h1>🥋 Reaktionstest</h1>
-      <p class="subtitle">Träna din reaktionsförmåga med ljud till spark</p>
+    <div id="startPage" class="start-page centered">
+      <h1 class="kicklab-title">KickLab</h1>
+      <p class="subtitle">Träna din reaktionsförmåga och teknik med stil</p>
       <div class="hero-image">
-        <img src="attached_assets/taekwondo_startbild.png" alt="Kvinnlig taekwondo-utövare i taekwondodräkt gör högspark">
+        <img src="attached_assets/taekwondo_startbild.png" alt="Taekwondo-utövare" style="max-width: 100%; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
       </div>
       <div class="features">
-        <div class="feature-card">
-          <div class="feature-icon">⚡</div>
-          <h3>Snabb Reaktion</h3>
-          <p>Träna din reaktionstid med ljudsignaler</p>
+        <div class="card">
+          <div class="menu-icon">⚡</div>
+          <div>
+            <h3>Snabb Reaktion</h3>
+            <p>Träna din reaktionstid med ljudsignaler</p>
+          </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🏆</div>
-          <h3>Rekord Spårning</h3>
-          <p>Håll koll på dina bästa resultat</p>
+        <div class="card">
+          <div class="menu-icon">🏆</div>
+          <div>
+            <h3>Rekord Spårning</h3>
+            <p>Håll koll på dina bästa resultat</p>
+          </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>Statistik</h3>
-          <p>Se dina senaste tider och genomsnitt</p>
+        <div class="card">
+          <div class="menu-icon">📊</div>
+          <div>
+            <h3>Statistik</h3>
+            <p>Se dina senaste tider och genomsnitt</p>
+          </div>
         </div>
       </div>
-      <div class="button-group">
-        <button onclick="showTestPage()">Reaktionstest</button>
-        <button onclick="showKickCounterPage()">Sparkräknare</button>
-        <button onclick="showSparringPage()">Sparring träning</button>
+      <div class="button-group centered">
+        <button class="button" onclick="showTestPage()">Reaktionstest</button>
+        <button class="button" onclick="showKickCounterPage()">Sparkräknare</button>
+        <button class="button" onclick="showSparringPage()">Sparring träning</button>
       </div>
     </div>
 
-    <div id="testPage" style="display: none;">
-      <button onclick="showStartPage()">← Tillbaka</button>
+    <div id="testPage" style="display: none;" class="centered">
+      <button class="button-back" onclick="showStartPage()">← Tillbaka</button>
       <h2>Reaktionstest</h2>
       <div id="status"></div>
       <div id="command"></div>
       <div id="result"></div>
-      <button onclick="startTest()">Starta Test</button>
-      <button onclick="resetStats()">Rensa Resultat</button>
+      <button class="button" onclick="startTest()">Starta Test</button>
+      <button class="button" onclick="resetStats()">Rensa Resultat</button>
       <div id="history"></div>
       <div id="highscore"></div>
     </div>
 
-    <div id="kickCounterPage" style="display: none;">
-      <button onclick="showStartPage()">← Tillbaka</button>
+    <div id="kickCounterPage" style="display: none;" class="centered">
+      <button class="button-back" onclick="showStartPage()">← Tillbaka</button>
       <h2>Sparkräknare</h2>
       <label for="testDuration">Välj testtid:</label>
       <select id="testDuration" onchange="updateTestDuration()">
@@ -64,14 +70,14 @@
       <div id="kickStatus">Klicka 'Starta Test' för att börja</div>
       <div id="kickCount">0 sparkar</div>
       <div id="kickTimer">15 sekunder</div>
-      <button onclick="startKickTest()">Starta Test</button>
-      <button onclick="resetKickStats()">Rensa Resultat</button>
+      <button class="button" onclick="startKickTest()">Starta Test</button>
+      <button class="button" onclick="resetKickStats()">Rensa Resultat</button>
       <div id="kickHistory"></div>
       <div id="kickHighscore"></div>
     </div>
 
-    <div id="sparringPage" style="display: none;">
-      <button onclick="showStartPage()">← Tillbaka</button>
+    <div id="sparringPage" style="display: none;" class="centered">
+      <button class="button-back" onclick="showStartPage()">← Tillbaka</button>
       <h2>Sparring träning</h2>
       <label for="sparringDuration">Välj träningslängd:</label>
       <select id="sparringDuration">
@@ -81,15 +87,13 @@
         <option value="120">120 sekunder</option>
       </select>
       <div id="sparringStatus">Klicka 'Starta' för att börja träningen</div>
-      <div id="sparringCommand" class="command-display"></div>
-      <button onclick="startSparringTraining()">Starta</button>
+      <div id="sparringCommand" class="command-display text-accent" style="font-size: 2rem; margin: 1rem 0;"></div>
+      <button class="button" onclick="startSparringTraining()">Starta</button>
     </div>
   </div>
 
   <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
-
   <script src="main.js"></script>
-
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
