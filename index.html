@@ -6,7 +6,8 @@
   <title>KickLab</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-512.png" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- Google Fonts för snyggare text -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     html, body {
       margin: 0;
@@ -16,74 +17,89 @@
       background: black;
       color: white;
     }
-
-    .container {
-      width: 100vw;
-      height: 100vh;
+    body {
+      min-height: 100vh;
       background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
       background-size: cover;
+      animation: fadein 1s;
+    }
+    @keyframes fadein {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .container {
+      background: rgba(0,0,0,0.60);
+      border-radius: 20px;
+      padding: 2.5rem 2rem 2rem 2rem;
+      max-width: 420px;
+      margin: 7vh auto;
+      box-shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
+      color: #fff;
+      text-align: center;
+      backdrop-filter: blur(7px);
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      padding: 1rem;
     }
-
-    .kicklab-title {
-      font-size: 6rem;
-      color: transparent;
-      background: linear-gradient(45deg, #ff6600, #ffa500);
-      -webkit-background-clip: text;
-      background-clip: text;
-      text-shadow: 0 0 20px rgba(255, 102, 0, 0.7);
-    }
-
     .subtitle {
-      font-size: 1rem;
+      font-size: 1.1rem;
       color: #ffffffcc;
       margin-bottom: 2rem;
+      text-shadow: 0 2px 8px #000a;
     }
-
     .hero-image img {
       max-width: 100%;
       border-radius: 16px;
       box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
       margin-bottom: 2rem;
     }
-
     .button-group {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.2rem;
       width: 100%;
       max-width: 400px;
     }
-
     .button {
-      background-color: #ff6600;
+      background: linear-gradient(90deg, #ff8008, #ffc837 70%);
+      color: #222;
       border: none;
-      padding: 1.5rem;
-      border-radius: 999px;
-      font-size: 2rem;
+      border-radius: 30px;
+      padding: 1.2rem 2.5rem;
+      font-size: 1.2rem;
       font-weight: bold;
-      color: white;
+      transition: transform 0.12s, box-shadow 0.22s, background 0.2s;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(255, 102, 0, 0.8);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
       width: 100%;
+      outline: none;
     }
-
     .button:hover {
-      background-color: #ff8533;
-      box-shadow: 0 0 25px #ff6600;
+      transform: scale(1.03);
+      background: linear-gradient(90deg, #ffc837, #ff8008 70%);
+      box-shadow: 0 0 24px #ff8008a0;
+    }
+    .button:active {
+      transform: scale(0.98);
+      background: linear-gradient(90deg, #ff8008, #ffc837 70%);
+      box-shadow: 0 0 18px #ff8008a0;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 1.1rem 0.3rem;
+        max-width: 99vw;
+      }
+      .button-group {
+        max-width: 96vw;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container" id="startPage">
-    
     <p class="subtitle">Träna din reaktionsförmåga och teknik med stil</p>
     <div class="hero-image">
-     
+      <!-- Lägg till en bild här om du vill, t.ex. <img src="attached_assets/logo.png" alt="KickLab logotyp"> -->
     </div>
     <div class="button-group">
       <button class="button" onclick="showTestPage()">Reaktionstest</button>
