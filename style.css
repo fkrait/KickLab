@@ -1,18 +1,15 @@
 :root {
-  /* Färgpalett */
-  --color-bg: #181B1E;
-  --color-bg-alt: #000000;
-  --color-accent: #FF9100;
-  --color-text-main: #F3ECE6;
-  --color-info: #2ED9FC;
+  --color-bg: #121212;
+  --color-bg-alt: #1E1E1E;
+  --color-accent: #FF6D00;
+  --color-accent-alt: #FFA040;
+  --color-text-main: #F5F5F5;
+  --color-info: #00B8D4;
   --color-white: #FFFFFF;
-
-  /* Extra */
   --color-button-text: #FFFFFF;
-  --color-card-bg: #23262B;
+  --color-card-bg: #1F1F1F;
 }
 
-/* Grundläggande bakgrund och text */
 body {
   background: var(--color-bg);
   color: var(--color-text-main);
@@ -21,7 +18,6 @@ body {
   padding: 0;
 }
 
-/* Rubriker */
 h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-main);
   font-weight: bold;
@@ -29,9 +25,8 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
 }
 
-/* Huvudtitel (exempel: KickLab) */
 .kicklab-title {
-  color: var(--color-text-main);
+  color: var(--color-accent);
   font-size: 3rem;
   font-weight: bold;
   letter-spacing: 4px;
@@ -39,7 +34,6 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 1.5rem;
 }
 
-/* Knappar */
 .button,
 .btn,
 .button-accent {
@@ -51,7 +45,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.3s ease;
   margin-bottom: 1rem;
   display: inline-block;
 }
@@ -59,10 +53,9 @@ h1, h2, h3, h4, h5, h6 {
 .button:hover,
 .btn:hover,
 .button-accent:hover {
-  background: #ffab3d;
+  background: var(--color-accent-alt);
 }
 
-/* Kort/meny */
 .card,
 .menu-item {
   background: var(--color-card-bg);
@@ -75,17 +68,15 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 4px 24px 0 #0002;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
 }
 
-/* Ikoner i meny */
 .menu-icon {
   color: var(--color-accent);
-  font-size: 1.5em;
+  font-size: 1.8em;
   margin-right: 0.7em;
 }
 
-/* Sekundär information (ex: siffror) */
 .info-number {
   color: var(--color-info);
   font-size: 3.5rem;
@@ -93,7 +84,6 @@ h1, h2, h3, h4, h5, h6 {
   text-align: center;
 }
 
-/* Statistikrubrik */
 .statistics-title {
   color: var(--color-text-main);
   font-size: 1.5rem;
@@ -101,19 +91,16 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0.5em;
 }
 
-/* Orange text/highlights */
 .text-accent {
   color: var(--color-accent);
   font-weight: 700;
 }
 
-/* Ljusblå text */
 .text-info {
   color: var(--color-info);
   font-weight: 700;
 }
 
-/* Exempel på layout för centrerat innehåll */
 .centered {
   display: flex;
   flex-direction: column;
@@ -121,7 +108,6 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
 }
 
-/* Anpassad knapp för "Back" */
 .button-back {
   background: var(--color-accent);
   color: var(--color-button-text);
@@ -132,9 +118,9 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 1em;
   border: none;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.3s ease;
 }
 
 .button-back:hover {
-  background: #ffab3d;
+  background: var(--color-accent-alt);
 }
