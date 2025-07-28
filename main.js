@@ -1,3 +1,12 @@
+/*
+ * Uppdaterad version av KickLabs huvudskript. Den här filen innehåller
+ * fixar för att kunna avbryta alla tester via stop‑knappar och dämpa
+ * ljud när sparringträningen stoppas. Funktionen stopKickTest() är
+ * ny, och stopSparringTraining() uppdaterar nu användargränssnittet när
+ * träningen avbryts.
+ */
+
+// Variabler för reaktionstestet
 let audioCtx, mediaStream, mediaStreamSource, analyser, dataArray, animationId, startTime;
 let recentResults = JSON.parse(localStorage.getItem("recentResults")) || [];
 let bestTime = parseFloat(localStorage.getItem("bestTime")) || null;
@@ -18,17 +27,22 @@ function showStartPage() {
 }
 
 function stopSparringTraining() {
-  if (sparringInterval) {
+  if (typeof sparringInterval !== 'undefined' && sparringInterval) {
     clearInterval(sparringInterval);
     sparringInterval = null;
   }
-  if (sparringTimeout) {
+  if (typeof sparringTimeout !== 'undefined' && sparringTimeout) {
     clearTimeout(sparringTimeout);
     sparringTimeout = null;
   }
   if (speechSynthesis && speechSynthesis.speaking) {
     speechSynthesis.cancel();
   }
+  // Uppdatera UI när träningen stoppas
+  const statusEl = document.getElementById("sparringStatus");
+  const commandEl = document.getElementById("sparringCommand");
+  if (statusEl) statusEl.textContent = "Träning stoppad.";
+  if (commandEl) commandEl.textContent = "";
 }
 
 function stopTest() {
@@ -137,7 +151,7 @@ function listenForImpact() {
 function stopListening() {
   testActive = false;
   if (animationId) cancelAnimationFrame(animationId);
-  if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+  if (mediaStream) mediaStream.getTracks().forEach((track) => track.stop());
 }
 
 function saveResult(time) {
@@ -145,23 +159,23 @@ function saveResult(time) {
   if (recentResults.length > 3) recentResults.pop();
   localStorage.setItem("recentResults", JSON.stringify(recentResults));
 
-  let historyText = "<h3>Senaste resultat</h3><ul>";
+  let historyText = " Senaste resultat ";
   for (let t of recentResults) {
-    historyText += `<li>${t.toFixed(0)} ms</li>`;
+    historyText += ` ${t.toFixed(0)} ms `;
   }
-  historyText += "</ul>";
+  historyText += " ";
 
   const avg = recentResults.reduce((a, b) => a + b, 0) / recentResults.length;
-  historyText += `<p class="average">Snitt: ${avg.toFixed(0)} ms</p>`;
+  historyText += ` Snitt: ${avg.toFixed(0)} ms `;
   document.getElementById("history").innerHTML = historyText;
 
   if (bestTime === null || time < bestTime) {
     bestTime = time;
     localStorage.setItem("bestTime", bestTime);
-    document.getElementById("highscore").innerHTML = `<div class='celebrate pulse'>🎉 Nytt rekord! ${bestTime.toFixed(0)} ms 🎉</div>`;
+    document.getElementById("highscore").innerHTML = ` 🎉 Nytt rekord! ${bestTime.toFixed(0)} ms 🎉 `;
     document.getElementById("cheerSound").play();
   } else {
-    document.getElementById("highscore").innerHTML = `<h3>Bästa tid</h3><div class="best-time">${bestTime.toFixed(0)} ms</div>`;
+    document.getElementById("highscore").innerHTML = ` Bästa tid ${bestTime.toFixed(0)} ms `;
   }
 }
 
@@ -179,22 +193,32 @@ function resetStats() {
 
 function loadStats() {
   if (recentResults.length > 0) {
-    let historyText = "<h3>Senaste resultat</h3><ul>";
+    let historyText = " Senaste resultat ";
     for (let t of recentResults) {
-      historyText += `<li>${t.toFixed(0)} ms</li>`;
+      historyText += ` ${t.toFixed(0)} ms `;
     }
-    historyText += "</ul>";
+    historyText += " ";
     const avg = recentResults.reduce((a, b) => a + b, 0) / recentResults.length;
-    historyText += `<p class="average">Snitt: ${avg.toFixed(0)} ms</p>`;
+    historyText += ` Snitt: ${avg.toFixed(0)} ms `;
     document.getElementById("history").innerHTML = historyText;
   }
   if (bestTime !== null) {
-    document.getElementById("highscore").innerHTML = `<h3>Bästa tid</h3><div class="best-time">${bestTime.toFixed(0)} ms</div>`;
+    document.getElementById("highscore").innerHTML = ` Bästa tid ${bestTime.toFixed(0)} ms `;
   }
 }
-// ----- Sparkräknare -----
-let kickAudioCtx, kickMediaStream, kickMediaStreamSource, kickAnalyser, kickDataArray, kickAnimationId;
-let kickCount = 0, kickTimeRemaining = 15, kickTestDuration = 15, kickTestActive = false, kickTestInterval;
+
+// ----- Kick counter -----
+let kickAudioCtx,
+  kickMediaStream,
+  kickMediaStreamSource,
+  kickAnalyser,
+  kickDataArray,
+  kickAnimationId;
+let kickCount = 0,
+  kickTimeRemaining = 15,
+  kickTestDuration = 15,
+  kickTestActive = false,
+  kickTestInterval;
 let kickRecentResults = JSON.parse(localStorage.getItem("kickRecentResults")) || [];
 let bestKickCount = parseInt(localStorage.getItem("bestKickCount")) || 0;
 let lastKickTime = 0;
@@ -207,9 +231,9 @@ function updateTestDuration() {
 
 function speakText(text) {
   return new Promise((resolve) => {
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'sv-SE';
+      utterance.lang = "sv-SE";
       utterance.rate = 0.8;
       utterance.pitch = 1;
       utterance.volume = 0.8;
@@ -240,14 +264,17 @@ async function startKickTest() {
     kickDataArray = new Uint8Array(kickAnalyser.fftSize);
     kickMediaStreamSource.connect(kickAnalyser);
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-    document.getElementById("kickStatus").textContent = "3"; await speakText("3");
-    document.getElementById("kickStatus").textContent = "2"; await speakText("2");
-    document.getElementById("kickStatus").textContent = "1"; await speakText("1");
-    document.getElementById("kickStatus").textContent = "STARTA!"; await speakText("Starta");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    document.getElementById("kickStatus").textContent = "3";
+    await speakText("3");
+    document.getElementById("kickStatus").textContent = "2";
+    await speakText("2");
+    document.getElementById("kickStatus").textContent = "1";
+    await speakText("1");
+    document.getElementById("kickStatus").textContent = "STARTA!";
+    await speakText("Starta");
 
     startKickListening();
-
   } catch (error) {
     document.getElementById("kickStatus").textContent = "Mikrofon krävs för att använda appen";
   }
@@ -279,14 +306,12 @@ function listenForKicks() {
       const value = Math.abs(kickDataArray[i] - 128);
       if (value > max) max = value;
     }
-
     const currentTime = performance.now();
-    if (max > 40 && (currentTime - lastKickTime) > kickCooldown) {
+    if (max > 40 && currentTime - lastKickTime > kickCooldown) {
       kickCount++;
       lastKickTime = currentTime;
       document.getElementById("kickCount").textContent = `${kickCount} sparkar`;
     }
-
     if (kickTestActive) {
       kickAnimationId = requestAnimationFrame(checkKickVolume);
     }
@@ -298,9 +323,9 @@ function endKickTest() {
   kickTestActive = false;
   clearInterval(kickTestInterval);
   if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
-  if (kickMediaStream) kickMediaStream.getTracks().forEach(track => track.stop());
+  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
 
-   playEndBeep(); // 
+  playEndBeep();
 
   document.getElementById("kickStatus").textContent = `Test slutfört! ${kickCount} sparkar på ${kickTestDuration} sekunder`;
   document.getElementById("kickTimer").textContent = "0 sekunder";
@@ -308,30 +333,40 @@ function endKickTest() {
   saveKickResult(kickCount);
 }
 
+// Ny funktion: stoppa kicktestet utan slutsignal.
+function stopKickTest() {
+  if (!kickTestActive) return;
+  kickTestActive = false;
+  clearInterval(kickTestInterval);
+  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
+  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
+  // Avbryt mikrofon och uppdatera status utan att spela slutsignalen
+  document.getElementById("kickStatus").textContent = `Test stoppat! ${kickCount} sparkar på ${kickTestDuration - kickTimeRemaining} sekunder`;
+  document.getElementById("kickTimer").textContent = "0 sekunder";
+  saveKickResult(kickCount);
+}
+
 function saveKickResult(count) {
   kickRecentResults.unshift(count);
   if (kickRecentResults.length > 5) kickRecentResults.pop();
   localStorage.setItem("kickRecentResults", JSON.stringify(kickRecentResults));
-
-  let historyText = "<h3>Senaste resultat</h3><ul>";
+  let historyText = " Senaste resultat ";
   for (let c of kickRecentResults) {
-    historyText += `<li>${c} sparkar</li>`;
+    historyText += ` ${c} sparkar `;
   }
-  historyText += "</ul>";
-
+  historyText += " ";
   if (kickRecentResults.length > 0) {
     const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
-    historyText += `<p class="average">Snitt: ${avg.toFixed(1)} sparkar</p>`;
+    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
   }
   document.getElementById("kickHistory").innerHTML = historyText;
-
   if (count > bestKickCount) {
     bestKickCount = count;
     localStorage.setItem("bestKickCount", bestKickCount);
-    document.getElementById("kickHighscore").innerHTML = `<div class='celebrate pulse'>🎉 Nytt rekord! ${bestKickCount} sparkar! 🎉</div>`;
+    document.getElementById("kickHighscore").innerHTML = ` 🎉 Nytt rekord! ${bestKickCount} sparkar! 🎉 `;
     document.getElementById("cheerSound").play();
   } else {
-    document.getElementById("kickHighscore").innerHTML = `<h3>Bästa resultat</h3><div class="best-time">${bestKickCount} sparkar</div>`;
+    document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
   }
 }
 
@@ -349,17 +384,17 @@ function resetKickStats() {
 
 function loadKickStats() {
   if (kickRecentResults.length > 0) {
-    let historyText = "<h3>Senaste resultat</h3><ul>";
+    let historyText = " Senaste resultat ";
     for (let c of kickRecentResults) {
-      historyText += `<li>${c} sparkar</li>`;
+      historyText += ` ${c} sparkar `;
     }
-    historyText += "</ul>";
+    historyText += " ";
     const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
-    historyText += `<p class="average">Snitt: ${avg.toFixed(1)} sparkar</p>`;
+    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
     document.getElementById("kickHistory").innerHTML = historyText;
   }
   if (bestKickCount > 0) {
-    document.getElementById("kickHighscore").innerHTML = `<h3>Bästa resultat</h3><div class="best-time">${bestKickCount} sparkar</div>`;
+    document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
   }
 }
 
@@ -368,38 +403,41 @@ function startSparringTraining() {
   const statusEl = document.getElementById("sparringStatus");
   const commandEl = document.getElementById("sparringCommand");
   const commands = [
-    "Tornado", "Huvudspark", "Jopp höger", "Jopp vänster", "Slag",
-    "Sax", "Clash", "Pitchagi höger", "Pitchagi vänster",
-    "Bakspark", "Spark främre", "Spark bakre"
+    "Tornado",
+    "Huvudspark",
+    "Jopp höger",
+    "Jopp vänster",
+    "Slag",
+    "Sax",
+    "Clash",
+    "Pitchagi höger",
+    "Pitchagi vänster",
+    "Bakspark",
+    "Spark främre",
+    "Spark bakre",
   ];
-
   let remainingTime = duration;
   let intervalId, commandIntervalId;
-
   statusEl.textContent = `Tid kvar: ${remainingTime} sekunder`;
-
   commandEl.textContent = "Startar...";
   commandEl.style.fontSize = "2rem";
   commandEl.style.fontWeight = "bold";
-
-  if ('speechSynthesis' in window) {
+  if ("speechSynthesis" in window) {
     const sayCommand = (text) => {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'sv-SE';
+      utterance.lang = "sv-SE";
       utterance.rate = 0.8;
       utterance.pitch = 1;
       utterance.volume = 1;
       speechSynthesis.speak(utterance);
     };
-
-    // Starta kommandon varannan sekund
+    // start commands every two seconds
     commandIntervalId = setInterval(() => {
       const command = commands[Math.floor(Math.random() * commands.length)];
       commandEl.textContent = command;
       sayCommand(command);
     }, 2000);
-
-    // Starta nedräkning
+    // Start countdown
     intervalId = setInterval(() => {
       remainingTime--;
       statusEl.textContent = `Tid kvar: ${remainingTime} sekunder`;
@@ -412,6 +450,9 @@ function startSparringTraining() {
         sayCommand("Bra jobbat! Sparringträningen är slut");
       }
     }, 1000);
+    // Save interval IDs globally so that we can clear them later
+    sparringInterval = intervalId;
+    sparringTimeout = commandIntervalId;
   } else {
     statusEl.textContent = "Din webbläsare stöder inte talsyntes.";
   }
