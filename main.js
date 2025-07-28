@@ -633,7 +633,7 @@ async function beginCompetitionRound() {
   overlay.textContent = "1";
   await speakText("1");
   overlay.textContent = "KÖR!";
-  await speakText("Starta");
+  
   // Pip-ljud
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
