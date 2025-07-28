@@ -605,6 +605,26 @@ function showNextRoundStartPage() {
   if (overlay) overlay.style.display = "none";
 }
 
+// Förbered mikrofonen och analysen i tävlingsläget så att lyssningen
+// kan starta direkt när signalen ges. Detta anropas i början av
+// varje runda innan nedräkningen.
+async function prepareCompetitionMicrophone() {
+  try {
+    competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
+    competitionAnalyser = competitionAudioCtx.createAnalyser();
+    competitionAnalyser.fftSize = 2048;
+    competitionDataArray = new Uint8Array(competitionAnalyser.fftSize);
+    competitionMediaStreamSource.connect(competitionAnalyser);
+  } catch (e) {
+    const statusEl = document.getElementById("competitionStatus");
+    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
+    competitionActive = false;
+    throw e;
+  }
+}
+
 // Starta nedräkning och sedan själva sparken när startknappen klickas
 async function beginCompetitionRound() {
   /*
@@ -625,6 +645,16 @@ async function beginCompetitionRound() {
   overlay.style.fontSize = "8rem";
   overlay.style.textAlign = "center";
   overlay.style.flexDirection = "column";
+  // Förbered mikrofonen tidigt så att den är redo direkt efter signalen.
+  try {
+    await prepareCompetitionMicrophone();
+  } catch (e) {
+    // Om mikrofonen inte kan förberedas, avbryt nedräkning och tävling
+    const overlay = document.getElementById("countdownOverlay");
+    if (overlay) overlay.style.display = "none";
+    return;
+  }
+
   // Nedräkning
   overlay.textContent = "3";
   await speakText("3");
@@ -633,7 +663,7 @@ async function beginCompetitionRound() {
   overlay.textContent = "1";
   await speakText("1");
   overlay.textContent = "KÖR!";
-  
+  await speakText("Starta");
   // Pip-ljud
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -697,15 +727,15 @@ async function startCompetitionTest() {
     finishCompetition();
     return;
   }
+  // Om mikrofonen redan är förberedd från nedräkningen används den direkt
+  if (competitionMediaStream) {
+    competitionStartTime = performance.now();
+    listenForImpactCompetition();
+    return;
+  }
+  // Annars förbered mikrofonen nu (extra fallback)
   try {
-    competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
-    competitionAnalyser = competitionAudioCtx.createAnalyser();
-    competitionAnalyser.fftSize = 2048;
-    competitionDataArray = new Uint8Array(competitionAnalyser.fftSize);
-    competitionMediaStreamSource.connect(competitionAnalyser);
-    // Starta tidtagning och börja lyssna efter smällen
+    await prepareCompetitionMicrophone();
     competitionStartTime = performance.now();
     listenForImpactCompetition();
   } catch (error) {
@@ -804,4 +834,15 @@ function finishCompetition() {
   if (resultsEl) resultsEl.innerHTML = resultHtml;
   const statusEl = document.getElementById("competitionStatus");
   if (statusEl) statusEl.textContent = "Tävlingen är avslutad!";
+
+  // När tävlingen är klar ska vi se till att rätt sida visas.
+  // Döljer inställningssidan och rundsidan och visar resultatsidan
+  const setupPage = document.getElementById("competitionSetupPage");
+  const runPage = document.getElementById("competitionRunPage");
+  const roundPage = document.getElementById("competitionRoundPage");
+  const overlay = document.getElementById("countdownOverlay");
+  if (setupPage) setupPage.style.display = "none";
+  if (roundPage) roundPage.style.display = "none";
+  if (overlay) overlay.style.display = "none";
+  if (runPage) runPage.style.display = "block";
 }
