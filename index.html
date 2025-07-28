@@ -124,6 +124,8 @@
             <button class="button" onclick="showTestPage()">Reaktionstest</button>
             <button class="button" onclick="showKickCounterPage()">Sparkräknare</button>
             <button class="button" onclick="showSparringPage()">Sparring träning</button>
+            <!-- Ny knapp som leder till tävlingsläget -->
+            <button class="button" onclick="showCompetitionPage()">Tävlingsläge</button>
         </div>
     </div>
 
@@ -175,6 +177,21 @@
             <button class="button" onclick="stopSparringTraining()">Stoppa</button>
             <button class="button" onclick="showStartPage()">Tillbaka</button>
         </div>
+    </div>
+
+    <!-- Competition mode page -->
+    <div id="competitionPage" class="page-container" style="display: none;">
+        <h2>Tävlingsläge</h2>
+        <p>Här kan du ställa in antal deltagare och deras namn. Varje deltagare får tre sparkar, och snabbaste spark samt bästa genomsnittstid utses som vinnare.</p>
+        <label for="competitionCount">Antal deltagare:</label><br />
+        <input id="competitionCount" type="number" min="1" value="2" onchange="updateCompetitionNameInputs()" />
+        <div id="competitionNames" style="margin-top: 1rem;"></div>
+        <div class="button-group">
+            <button class="button" onclick="startCompetition()">Starta tävling</button>
+            <button class="button" onclick="showStartPage()">Tillbaka</button>
+        </div>
+        <p id="competitionStatus"></p>
+        <div id="competitionResults"></div>
     </div>
 
     <!-- Audio cue for celebration -->

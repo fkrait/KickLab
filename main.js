@@ -13,11 +13,24 @@ let bestTime = parseFloat(localStorage.getItem("bestTime")) || null;
 const commands = ["Vänster spark", "Höger spark", "Bakåt", "Blockera"];
 let testActive = false;
 
+// Variabler för tävlingsläget
+let competitionActive = false;
+let competitionParticipants = [];
+let currentParticipantIndex = 0;
+let currentKickIndex = 0;
+let competitionStartTime;
+let competitionAudioCtx, competitionMediaStream, competitionMediaStreamSource,
+  competitionAnalyser, competitionDataArray;
+
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
+
+  // Dölj även tävlingssidan om den är aktiv
+  const compPage = document.getElementById("competitionPage");
+  if (compPage) compPage.style.display = "none";
 
   document.getElementById("sparringCommand").textContent = "";
   document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
@@ -456,4 +469,205 @@ function startSparringTraining() {
   } else {
     statusEl.textContent = "Din webbläsare stöder inte talsyntes.";
   }
+}
+
+/* ===== Tävlingsläge (competition mode) ===== */
+
+// Visa tävlingssidan och initiera namninmatning
+function showCompetitionPage() {
+  // Visa tävlingssidan och döljer andra sidor
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("testPage").style.display = "none";
+  document.getElementById("kickCounterPage").style.display = "none";
+  document.getElementById("sparringPage").style.display = "none";
+  const compPage = document.getElementById("competitionPage");
+  if (compPage) {
+    compPage.style.display = "block";
+  }
+  // Stäng alla pågående tester eller träning
+  stopTest();
+  stopSparringTraining();
+  stopListening();
+  // Initiera namninputfält
+  updateCompetitionNameInputs();
+  // Rensa status/resultat
+  const statusEl = document.getElementById("competitionStatus");
+  const resultsEl = document.getElementById("competitionResults");
+  if (statusEl) statusEl.textContent = "";
+  if (resultsEl) resultsEl.innerHTML = "";
+}
+
+// Uppdatera antalet namnfält baserat på vald antal deltagare
+function updateCompetitionNameInputs() {
+  const countInput = document.getElementById("competitionCount");
+  if (!countInput) return;
+  const count = parseInt(countInput.value) || 0;
+  const container = document.getElementById("competitionNames");
+  if (!container) return;
+  container.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = `competitionName${i}`;
+    input.placeholder = `Deltagare ${i + 1} namn`;
+    input.style.marginBottom = "0.5rem";
+    input.style.width = "80%";
+    container.appendChild(input);
+    container.appendChild(document.createElement("br"));
+  }
+}
+
+// Starta tävlingen genom att läsa in alla deltagare och starta första testet
+function startCompetition() {
+  const countInput = document.getElementById("competitionCount");
+  if (!countInput) return;
+  const count = parseInt(countInput.value) || 0;
+  competitionParticipants = [];
+  for (let i = 0; i < count; i++) {
+    const nameInput = document.getElementById(`competitionName${i}`);
+    const name = nameInput && nameInput.value ? nameInput.value : `Deltagare ${i + 1}`;
+    competitionParticipants.push({ name: name, times: [], best: null, avg: null });
+  }
+  if (competitionParticipants.length === 0) {
+    alert("Ange minst en deltagare");
+    return;
+  }
+  currentParticipantIndex = 0;
+  currentKickIndex = 0;
+  competitionActive = true;
+  // Rensa resultat och status
+  const resultsEl = document.getElementById("competitionResults");
+  if (resultsEl) resultsEl.innerHTML = "";
+  const statusEl = document.getElementById("competitionStatus");
+  if (statusEl) statusEl.textContent = "";
+  startCompetitionTest();
+}
+
+// Starta en enskild spark för aktuell deltagare
+async function startCompetitionTest() {
+  // Om tävlingen avbrutits eller alla deltagare klara, avsluta
+  if (!competitionActive) return;
+  if (currentParticipantIndex >= competitionParticipants.length) {
+    finishCompetition();
+    return;
+  }
+  const statusEl = document.getElementById("competitionStatus");
+  const participant = competitionParticipants[currentParticipantIndex];
+  if (statusEl) {
+    statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - vänta på signal...`;
+  }
+  try {
+    competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
+    competitionAnalyser = competitionAudioCtx.createAnalyser();
+    competitionAnalyser.fftSize = 2048;
+    competitionDataArray = new Uint8Array(competitionAnalyser.fftSize);
+    competitionMediaStreamSource.connect(competitionAnalyser);
+    const randomDelay = Math.random() * 3000 + 2000;
+    setTimeout(() => {
+      if (!competitionActive) return;
+      // Spela upp pip-ljud när signalen kommer
+      playBeep();
+      competitionStartTime = performance.now();
+      listenForImpactCompetition();
+      if (statusEl) {
+        statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - vänta på smäll...`;
+      }
+    }, randomDelay);
+  } catch (error) {
+    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläge.";
+    competitionActive = false;
+    return;
+  }
+}
+
+// Lyssna på ljudnivå och registrera reaktionstid när smällen kommer
+function listenForImpactCompetition() {
+  function checkVolume() {
+    if (!competitionActive) return;
+    competitionAnalyser.getByteTimeDomainData(competitionDataArray);
+    let max = 0;
+    for (let i = 0; i < competitionDataArray.length; i++) {
+      const value = Math.abs(competitionDataArray[i] - 128);
+      if (value > max) max = value;
+    }
+    if (max > 40) {
+      const reactionTime = performance.now() - competitionStartTime;
+      saveCompetitionResult(reactionTime);
+    } else {
+      requestAnimationFrame(checkVolume);
+    }
+  }
+  checkVolume();
+}
+
+// Spara reaktionstiden för aktuell deltagare och hantera nästa spark/deltagare
+function saveCompetitionResult(time) {
+  // Stoppa mikrofonen
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+    competitionMediaStream = null;
+  }
+  const participant = competitionParticipants[currentParticipantIndex];
+  participant.times.push(time);
+  if (participant.times.length === 3) {
+    // Beräkna bästa och snitt
+    participant.best = Math.min(...participant.times);
+    participant.avg = participant.times.reduce((a, b) => a + b, 0) / participant.times.length;
+    // Gå vidare till nästa deltagare
+    currentParticipantIndex++;
+    currentKickIndex = 0;
+  } else {
+    // Fler sparkar kvar för samma deltagare
+    currentKickIndex++;
+  }
+  // Vänta kort innan nästa runda startar för att ge användaren feedback
+  setTimeout(() => {
+    if (currentParticipantIndex < competitionParticipants.length) {
+      startCompetitionTest();
+    } else {
+      competitionActive = false;
+      finishCompetition();
+    }
+  }, 800);
+}
+
+// Avsluta tävlingen och visa vinnare samt resultat
+function finishCompetition() {
+  // Avbryt pågående lyssning
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+    competitionMediaStream = null;
+  }
+  competitionActive = false;
+  if (competitionParticipants.length === 0) return;
+  let bestKickTime = Infinity;
+  let bestKickWinner = null;
+  let bestAvgTime = Infinity;
+  let bestAvgWinner = null;
+  // Beräkna vinnare
+  competitionParticipants.forEach((p) => {
+    if (p.best < bestKickTime) {
+      bestKickTime = p.best;
+      bestKickWinner = p.name;
+    }
+    if (p.avg < bestAvgTime) {
+      bestAvgTime = p.avg;
+      bestAvgWinner = p.name;
+    }
+  });
+  let resultHtml = "";
+  resultHtml += `<p>Vinnare snabbaste spark: ${bestKickWinner} (${bestKickTime.toFixed(0)} ms)</p>`;
+  resultHtml += `<p>Vinnare bästa snitt: ${bestAvgWinner} (${bestAvgTime.toFixed(0)} ms)</p>`;
+  resultHtml += "<h3>Resultat:</h3><ul>";
+  competitionParticipants.forEach((p) => {
+    const timesStr = p.times.map((t) => t.toFixed(0)).join(", ");
+    resultHtml += `<li>${p.name}: tider = ${timesStr} ms, bästa = ${p.best.toFixed(0)} ms, snitt = ${p.avg.toFixed(0)} ms</li>`;
+  });
+  resultHtml += "</ul>";
+  const resultsEl = document.getElementById("competitionResults");
+  if (resultsEl) resultsEl.innerHTML = resultHtml;
+  const statusEl = document.getElementById("competitionStatus");
+  if (statusEl) statusEl.textContent = "Tävlingen är avslutad!";
 }
