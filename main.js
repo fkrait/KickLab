@@ -28,9 +28,11 @@ function showStartPage() {
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
 
-  // Dölj även tävlingssidan om den är aktiv
-  const compPage = document.getElementById("competitionPage");
-  if (compPage) compPage.style.display = "none";
+  // Dölj även tävlingssidorna om de är aktiva (både setup och run)
+  const compSetup = document.getElementById("competitionSetupPage");
+  const compRun = document.getElementById("competitionRunPage");
+  if (compSetup) compSetup.style.display = "none";
+  if (compRun) compRun.style.display = "none";
 
   document.getElementById("sparringCommand").textContent = "";
   document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
@@ -474,27 +476,22 @@ function startSparringTraining() {
 /* ===== Tävlingsläge (competition mode) ===== */
 
 // Visa tävlingssidan och initiera namninmatning
-function showCompetitionPage() {
-  // Visa tävlingssidan och döljer andra sidor
+function showCompetitionSetupPage() {
+  // Visa inställningssidan för tävling och döljer andra sidor
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
-  const compPage = document.getElementById("competitionPage");
-  if (compPage) {
-    compPage.style.display = "block";
-  }
-  // Stäng alla pågående tester eller träning
+  const setupPage = document.getElementById("competitionSetupPage");
+  const runPage = document.getElementById("competitionRunPage");
+  if (setupPage) setupPage.style.display = "block";
+  if (runPage) runPage.style.display = "none";
+  // Avbryt alla pågående tester
   stopTest();
   stopSparringTraining();
   stopListening();
-  // Initiera namninputfält
+  // Förbered namninputfält
   updateCompetitionNameInputs();
-  // Rensa status/resultat
-  const statusEl = document.getElementById("competitionStatus");
-  const resultsEl = document.getElementById("competitionResults");
-  if (statusEl) statusEl.textContent = "";
-  if (resultsEl) resultsEl.innerHTML = "";
 }
 
 // Uppdatera antalet namnfält baserat på vald antal deltagare
@@ -517,8 +514,8 @@ function updateCompetitionNameInputs() {
   }
 }
 
-// Starta tävlingen genom att läsa in alla deltagare och starta första testet
-function startCompetition() {
+// Bekräfta deltagare och gå vidare till tävlingssidan
+function confirmCompetitionParticipants() {
   const countInput = document.getElementById("competitionCount");
   if (!countInput) return;
   const count = parseInt(countInput.value) || 0;
@@ -528,7 +525,55 @@ function startCompetition() {
     const name = nameInput && nameInput.value ? nameInput.value : `Deltagare ${i + 1}`;
     competitionParticipants.push({ name: name, times: [], best: null, avg: null });
   }
+  // Om inga deltagare angivits, visa ett meddelande
   if (competitionParticipants.length === 0) {
+    alert("Ange minst en deltagare");
+    return;
+  }
+  showCompetitionRunPage();
+}
+
+// Visa tävlingssidan där namnen visas och tävlingen kan startas
+function showCompetitionRunPage() {
+  // Visa endast run-sidan
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("testPage").style.display = "none";
+  document.getElementById("kickCounterPage").style.display = "none";
+  document.getElementById("sparringPage").style.display = "none";
+  const setupPage = document.getElementById("competitionSetupPage");
+  const runPage = document.getElementById("competitionRunPage");
+  if (setupPage) setupPage.style.display = "none";
+  if (runPage) runPage.style.display = "block";
+  // Fyll listan med deltagarnamn
+  const listEl = document.getElementById("competitionNamesList");
+  if (listEl) {
+    listEl.innerHTML = "";
+    competitionParticipants.forEach((p) => {
+      const li = document.createElement("li");
+      li.textContent = p.name;
+      li.style.marginBottom = "0.3rem";
+      listEl.appendChild(li);
+    });
+  }
+  // Rensa status och resultat
+  const statusEl = document.getElementById("competitionStatus");
+  if (statusEl) statusEl.textContent = "";
+  const resultsEl = document.getElementById("competitionResults");
+  if (resultsEl) resultsEl.innerHTML = "";
+  // Avbryt eventuella tidigare tävlingar
+  competitionActive = false;
+}
+
+// Starta tävlingen genom att läsa in alla deltagare och starta första testet
+function startCompetition() {
+  /*
+   * Starta själva tävlingen. Den här funktionen förutsätter att
+   * deltagarnamnen redan har samlats in via confirmCompetitionParticipants()
+   * och competitionParticipants-arrayen är ifylld. Vi kontrollerar att
+   * minst en deltagare finns och initierar indexvariabler. Sedan rensar
+   * vi status/resultat och startar första sparkförsöket.
+   */
+  if (!competitionParticipants || competitionParticipants.length === 0) {
     alert("Ange minst en deltagare");
     return;
   }
@@ -540,11 +585,17 @@ function startCompetition() {
   if (resultsEl) resultsEl.innerHTML = "";
   const statusEl = document.getElementById("competitionStatus");
   if (statusEl) statusEl.textContent = "";
+  // Starta första sparkförsöket
   startCompetitionTest();
 }
 
 // Starta en enskild spark för aktuell deltagare
 async function startCompetitionTest() {
+  /*
+   * Denna funktion hanterar varje spark i tävlingsläget. Den är
+   * asynkron eftersom vi använder talsyntes för nedräkningen och
+   * behöver vänta på att varje siffra talas klart innan vi fortsätter.
+   */
   // Om tävlingen avbrutits eller alla deltagare klara, avsluta
   if (!competitionActive) return;
   if (currentParticipantIndex >= competitionParticipants.length) {
@@ -553,10 +604,21 @@ async function startCompetitionTest() {
   }
   const statusEl = document.getElementById("competitionStatus");
   const participant = competitionParticipants[currentParticipantIndex];
+  // Visa förberedande status
   if (statusEl) {
-    statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - vänta på signal...`;
+    statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - gör dig redo...`;
   }
   try {
+    // Nedräkning 3, 2, 1 med talsyntes
+    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - 3`;
+    await speakText("3");
+    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - 2`;
+    await speakText("2");
+    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - 1`;
+    await speakText("1");
+    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - SPARKA!`;
+    await speakText("Sparka");
+    // Initiera mikrofon och analyserare
     competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
@@ -564,19 +626,23 @@ async function startCompetitionTest() {
     competitionAnalyser.fftSize = 2048;
     competitionDataArray = new Uint8Array(competitionAnalyser.fftSize);
     competitionMediaStreamSource.connect(competitionAnalyser);
-    const randomDelay = Math.random() * 3000 + 2000;
-    setTimeout(() => {
-      if (!competitionActive) return;
-      // Spela upp pip-ljud när signalen kommer
-      playBeep();
-      competitionStartTime = performance.now();
-      listenForImpactCompetition();
-      if (statusEl) {
-        statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - vänta på smäll...`;
-      }
-    }, randomDelay);
+    // Spela ett pip-ljud via tävlingslägets audioCtx för att signalera start
+    const osc = competitionAudioCtx.createOscillator();
+    const gain = competitionAudioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 1000;
+    osc.connect(gain);
+    gain.connect(competitionAudioCtx.destination);
+    osc.start();
+    osc.stop(competitionAudioCtx.currentTime + 0.1);
+    // Starta tidtagning och börja lyssna efter smäll
+    competitionStartTime = performance.now();
+    listenForImpactCompetition();
+    if (statusEl) {
+      statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - vänta på smällen...`;
+    }
   } catch (error) {
-    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläge.";
+    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
     competitionActive = false;
     return;
   }
