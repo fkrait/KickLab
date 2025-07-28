@@ -31,8 +31,12 @@ function showStartPage() {
   // Dölj även tävlingssidorna om de är aktiva (både setup och run)
   const compSetup = document.getElementById("competitionSetupPage");
   const compRun = document.getElementById("competitionRunPage");
+  const compRound = document.getElementById("competitionRoundPage");
+  const overlay = document.getElementById("countdownOverlay");
   if (compSetup) compSetup.style.display = "none";
   if (compRun) compRun.style.display = "none";
+  if (compRound) compRound.style.display = "none";
+  if (overlay) overlay.style.display = "none";
 
   document.getElementById("sparringCommand").textContent = "";
   document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
@@ -484,8 +488,12 @@ function showCompetitionSetupPage() {
   document.getElementById("sparringPage").style.display = "none";
   const setupPage = document.getElementById("competitionSetupPage");
   const runPage = document.getElementById("competitionRunPage");
+  const roundPage = document.getElementById("competitionRoundPage");
+  const overlay = document.getElementById("countdownOverlay");
   if (setupPage) setupPage.style.display = "block";
   if (runPage) runPage.style.display = "none";
+  if (roundPage) roundPage.style.display = "none";
+  if (overlay) overlay.style.display = "none";
   // Avbryt alla pågående tester
   stopTest();
   stopSparringTraining();
@@ -542,8 +550,12 @@ function showCompetitionRunPage() {
   document.getElementById("sparringPage").style.display = "none";
   const setupPage = document.getElementById("competitionSetupPage");
   const runPage = document.getElementById("competitionRunPage");
+  const roundPage = document.getElementById("competitionRoundPage");
+  const overlay = document.getElementById("countdownOverlay");
   if (setupPage) setupPage.style.display = "none";
   if (runPage) runPage.style.display = "block";
+  if (roundPage) roundPage.style.display = "none";
+  if (overlay) overlay.style.display = "none";
   // Fyll listan med deltagarnamn
   const listEl = document.getElementById("competitionNamesList");
   if (listEl) {
@@ -562,6 +574,90 @@ function showCompetitionRunPage() {
   if (resultsEl) resultsEl.innerHTML = "";
   // Avbryt eventuella tidigare tävlingar
   competitionActive = false;
+}
+
+// Visa sidan för nästkommande runda där användaren kan starta nedräkningen.
+function showNextRoundStartPage() {
+  /*
+   * Denna funktion visar en separat sida med stort namn och en stor
+   * startknapp för aktuell deltagares spark. Den döljer tävlingsrun-sidan
+   * och visar round-sidan. Om tävlingen är avslutad startas finishCompetition().
+   */
+  if (!competitionActive) return;
+  // Om alla deltagare är klara, avsluta
+  if (currentParticipantIndex >= competitionParticipants.length) {
+    finishCompetition();
+    return;
+  }
+  // Döljer run-sidan och visar runda-sidan
+  const runPage = document.getElementById("competitionRunPage");
+  const roundPage = document.getElementById("competitionRoundPage");
+  if (runPage) runPage.style.display = "none";
+  if (roundPage) roundPage.style.display = "block";
+  // Uppdatera deltagarnamn och sparknummer
+  const nameEl = document.getElementById("roundParticipantName");
+  const participant = competitionParticipants[currentParticipantIndex];
+  if (nameEl) {
+    nameEl.textContent = `${participant.name} – spark ${currentKickIndex + 1}/3`;
+  }
+  // Säkerställ att overlay är gömd
+  const overlay = document.getElementById("countdownOverlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+// Starta nedräkning och sedan själva sparken när startknappen klickas
+async function beginCompetitionRound() {
+  /*
+   * Denna funktion körs när användaren trycker på startknappen för en
+   * specifik runda. Den visar ett svart overlay med orange siffror och
+   * använder speakText för nedräkning. Efter nedräkning och signal
+   * initieras mätningen via startCompetitionTest().
+   */
+  if (!competitionActive) return;
+  // Göm runda-sidan och visa overlay
+  const roundPage = document.getElementById("competitionRoundPage");
+  if (roundPage) roundPage.style.display = "none";
+  const overlay = document.getElementById("countdownOverlay");
+  if (!overlay) return;
+  overlay.style.display = "flex";
+  overlay.style.background = "black";
+  overlay.style.color = "orange";
+  overlay.style.fontSize = "8rem";
+  overlay.style.textAlign = "center";
+  overlay.style.flexDirection = "column";
+  // Nedräkning
+  overlay.textContent = "3";
+  await speakText("3");
+  overlay.textContent = "2";
+  await speakText("2");
+  overlay.textContent = "1";
+  await speakText("1");
+  overlay.textContent = "KÖR!";
+  await speakText("Starta");
+  // Pip-ljud
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 1000;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch (e) {
+    // Om pip-ljud inte kan spelas behövs ingen åtgärd
+  }
+  // Dölj overlay och starta mätningen
+  overlay.style.display = "none";
+  // Uppdatera status för aktuell spark
+  const statusEl = document.getElementById("competitionStatus");
+  const participant = competitionParticipants[currentParticipantIndex];
+  if (statusEl) {
+    statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 – vänta på smällen...`;
+  }
+  // Starta mätning
+  await startCompetitionTest();
 }
 
 // Starta tävlingen genom att läsa in alla deltagare och starta första testet
@@ -585,40 +681,23 @@ function startCompetition() {
   if (resultsEl) resultsEl.innerHTML = "";
   const statusEl = document.getElementById("competitionStatus");
   if (statusEl) statusEl.textContent = "";
-  // Starta första sparkförsöket
-  startCompetitionTest();
+  // Visa nästa runda‑startssida för första deltagaren
+  showNextRoundStartPage();
 }
 
-// Starta en enskild spark för aktuell deltagare
+// Starta själva mätningen för aktuell deltagare
 async function startCompetitionTest() {
   /*
-   * Denna funktion hanterar varje spark i tävlingsläget. Den är
-   * asynkron eftersom vi använder talsyntes för nedräkningen och
-   * behöver vänta på att varje siffra talas klart innan vi fortsätter.
+   * Denna funktion initierar mikrofonen och börjar lyssna efter smällen. Den
+   * förutsätter att nedräkning och signalering redan har gjorts i
+   * beginCompetitionRound().
    */
-  // Om tävlingen avbrutits eller alla deltagare klara, avsluta
   if (!competitionActive) return;
   if (currentParticipantIndex >= competitionParticipants.length) {
     finishCompetition();
     return;
   }
-  const statusEl = document.getElementById("competitionStatus");
-  const participant = competitionParticipants[currentParticipantIndex];
-  // Visa förberedande status
-  if (statusEl) {
-    statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - gör dig redo...`;
-  }
   try {
-    // Nedräkning 3, 2, 1 med talsyntes
-    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - 3`;
-    await speakText("3");
-    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - 2`;
-    await speakText("2");
-    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - 1`;
-    await speakText("1");
-    if (statusEl) statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - SPARKA!`;
-    await speakText("Sparka");
-    // Initiera mikrofon och analyserare
     competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
@@ -626,22 +705,11 @@ async function startCompetitionTest() {
     competitionAnalyser.fftSize = 2048;
     competitionDataArray = new Uint8Array(competitionAnalyser.fftSize);
     competitionMediaStreamSource.connect(competitionAnalyser);
-    // Spela ett pip-ljud via tävlingslägets audioCtx för att signalera start
-    const osc = competitionAudioCtx.createOscillator();
-    const gain = competitionAudioCtx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 1000;
-    osc.connect(gain);
-    gain.connect(competitionAudioCtx.destination);
-    osc.start();
-    osc.stop(competitionAudioCtx.currentTime + 0.1);
-    // Starta tidtagning och börja lyssna efter smäll
+    // Starta tidtagning och börja lyssna efter smällen
     competitionStartTime = performance.now();
     listenForImpactCompetition();
-    if (statusEl) {
-      statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 - vänta på smällen...`;
-    }
   } catch (error) {
+    const statusEl = document.getElementById("competitionStatus");
     if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
     competitionActive = false;
     return;
@@ -691,7 +759,7 @@ function saveCompetitionResult(time) {
   // Vänta kort innan nästa runda startar för att ge användaren feedback
   setTimeout(() => {
     if (currentParticipantIndex < competitionParticipants.length) {
-      startCompetitionTest();
+      showNextRoundStartPage();
     } else {
       competitionActive = false;
       finishCompetition();

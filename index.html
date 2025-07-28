@@ -207,6 +207,18 @@
         <div id="competitionResults"></div>
     </div>
 
+    <!-- Competition round page: visar aktuellt namn och startknapp -->
+    <div id="competitionRoundPage" class="page-container" style="display: none;">
+        <h2 id="roundParticipantName" style="font-size: 2rem; margin-bottom: 2rem;"></h2>
+        <div class="button-group">
+            <button class="button" style="font-size: 1.5rem; padding: 1.2rem 2rem;" onclick="beginCompetitionRound()">Starta</button>
+            <button class="button" onclick="showCompetitionRunPage()">Tillbaka</button>
+        </div>
+    </div>
+
+    <!-- Nedräknings‑overlay som täcker hela skärmen -->
+    <div id="countdownOverlay" style="display:none; position: fixed; top:0; left:0; width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; z-index:1000; background:black; color:orange; font-size:8rem; font-weight:bold;"></div>
+
     <!-- Audio cue for celebration -->
     <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
 
