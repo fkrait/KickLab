@@ -5,42 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KickLab</title>
 
-    <!-- App manifest och ikon -->
+    <!-- App manifest and icon for PWA support -->
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon-512.png" />
-    <!-- Google‑font för snyggare text -->
+
+    <!-- Google font for crisp typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
 
     <style>
-       /* Bakgrund och basstil */
-html,
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    height: 100%;
-    /* Använd bakgrundsbilden även på html så att svart fält försvinner */
-    background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
-    background-size: cover;
-    color: white;
-}
-
-body {
-    min-height: 100vh;
-    animation: fadein 1s;
-}
-
-/* Startmenyn: flytta ned den och tona in efter längre paus */
-#startPage {
-    margin-top: 35vh;
-    opacity: 0;
-    animation: fadein 0.6s forwards;
-    animation-delay: 2s; /* justera tiden efter behov */
-}
-        @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Gemensam låda för varje sida */
+        /* Base styles */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            height: 100%;
+            /* Visa bakgrundsbilden över hela sidan – även ovanför startmenyn. */
+            background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+        }
+        body {
+            min-height: 100vh;
+            /* Animera in hela sidan vid laddning */
+            animation: fadein 1s;
+        }
+        @keyframes fadein {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* Shared container styling for each page */
         .page-container {
+            /* Standard container styling used on all pages */
             margin: 7vh auto;
             background: rgba(0, 0, 0, 0.6);
             border-radius: 20px;
@@ -50,9 +50,19 @@ body {
             backdrop-filter: blur(7px);
             text-align: center;
         }
-      
 
-        /* Knappar och layout */
+        /* Position the start page lower on the screen so that it doesn't cover
+           the KickLab‑titel i bakgrundsbilden. VH‑enheter gör att avståndet
+           justeras proportionellt mot fönstrets höjd. */
+        #startPage {
+            /* Flytta ned startmenyn så att den inte täcker titeln */
+            margin-top: 25vh;
+            /* Göm rutan initialt och låt den tona in efter en kort fördröjning.
+               "forwards" säkerställer att opaciteten stannar på 1 efter animationen. */
+            opacity: 0;
+            animation: fadein 0.6s forwards;
+            animation-delay: 2s;
+        }
         .button-group {
             display: flex;
             flex-direction: column;
@@ -94,15 +104,20 @@ body {
             text-align: center;
             font-size: 1rem;
         }
-        /* Responsiv justering */
+        /* Responsive adjustments */
         @media (max-width: 600px) {
-            .page-container { max-width: 95vw; padding: 1rem; }
-            .button-group { max-width: 95vw; }
+            .page-container {
+                max-width: 95vw;
+                padding: 1rem;
+            }
+            .button-group {
+                max-width: 95vw;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Start‑meny -->
+    <!-- Start page -->
     <div id="startPage" class="page-container">
         <p class="subtitle">Träna din reaktionsförmåga och teknik med stil</p>
         <div class="button-group">
@@ -112,7 +127,7 @@ body {
         </div>
     </div>
 
-    <!-- Reaktionstest‑sida -->
+    <!-- Reaction test page -->
     <div id="testPage" class="page-container" style="display: none;">
         <h2>Reaktionstest</h2>
         <p id="command"></p>
@@ -128,10 +143,10 @@ body {
         </div>
     </div>
 
-    <!-- Sparkräknare‑sida -->
+    <!-- Kick counter page -->
     <div id="kickCounterPage" class="page-container" style="display: none;">
         <h2>Sparkräknare</h2>
-        <label for="testDuration">Varaktighet (sekunder):</label><br>
+        <label for="testDuration">Varaktighet (sekunder):</label><br />
         <input id="testDuration" type="number" value="15" min="1" onchange="updateTestDuration()" />
         <p id="kickCount">0 sparkar</p>
         <p id="kickTimer">15 sekunder</p>
@@ -140,35 +155,41 @@ body {
         <div id="kickHighscore"></div>
         <div class="button-group">
             <button class="button" onclick="startKickTest()">Starta test</button>
+            <!-- Ny knapp för att stoppa sparkräkning utan slutsignal -->
+            <button class="button" onclick="stopKickTest()">Stoppa test</button>
             <button class="button" onclick="resetKickStats()">Nollställ statistik</button>
             <button class="button" onclick="showStartPage()">Tillbaka</button>
         </div>
     </div>
 
-    <!-- Sparring‑tränings‑sida -->
+    <!-- Sparring training page -->
     <div id="sparringPage" class="page-container" style="display: none;">
         <h2>Sparring träning</h2>
-        <label for="sparringDuration">Varaktighet (sekunder):</label><br>
+        <label for="sparringDuration">Varaktighet (sekunder):</label><br />
         <input id="sparringDuration" type="number" value="60" min="5" />
         <p id="sparringStatus">Klicka 'Starta' för att börja träningen</p>
         <p id="sparringCommand"></p>
         <div class="button-group">
             <button class="button" onclick="startSparringTraining()">Starta</button>
+            <!-- Ny knapp för att stoppa sparringträning -->
+            <button class="button" onclick="stopSparringTraining()">Stoppa</button>
             <button class="button" onclick="showStartPage()">Tillbaka</button>
         </div>
     </div>
 
-    <!-- Ljudklipp för applåder -->
+    <!-- Audio cue for celebration -->
     <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
 
-    <!-- Appens javascript -->
+    <!-- Main application script -->
     <script src="main.js"></script>
     <script>
+        // Register the service worker if the browser supports it
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('serviceWorker.js')
-                    .then(reg => console.log('ServiceWorker registrerad:', reg))
-                    .catch(err => console.error('ServiceWorker fel:', err));
+                navigator.serviceWorker
+                    .register('serviceWorker.js')
+                    .then((reg) => console.log('ServiceWorker registrerad:', reg))
+                    .catch((err) => console.error('ServiceWorker fel:', err));
             });
         }
     </script>
