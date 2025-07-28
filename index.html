@@ -56,7 +56,7 @@
            justeras proportionellt mot fönstrets höjd. */
         #startPage {
             /* Flytta ned startmenyn så att den inte täcker titeln */
-            margin-top: 35vh;
+            margin-top: 25vh;
             /* Göm rutan initialt och låt den tona in efter en kort fördröjning.
                "forwards" säkerställer att opaciteten stannar på 1 efter animationen. */
             opacity: 0;
@@ -125,7 +125,7 @@
             <button class="button" onclick="showKickCounterPage()">Sparkräknare</button>
             <button class="button" onclick="showSparringPage()">Sparring träning</button>
             <!-- Ny knapp som leder till tävlingsläget -->
-            <button class="button" onclick="showCompetitionPage()">Tävlingsläge</button>
+            <button class="button" onclick="showCompetitionSetupPage()">Tävlingsläge</button>
         </div>
     </div>
 
@@ -179,16 +179,29 @@
         </div>
     </div>
 
-    <!-- Competition mode page -->
-    <div id="competitionPage" class="page-container" style="display: none;">
-        <h2>Tävlingsläge</h2>
-        <p>Här kan du ställa in antal deltagare och deras namn. Varje deltagare får tre sparkar, och snabbaste spark samt bästa genomsnittstid utses som vinnare.</p>
+    <!-- Competition setup page -->
+    <div id="competitionSetupPage" class="page-container" style="display: none;">
+        <h2>Tävlingsläge – inställningar</h2>
+        <p>Ställ in antal deltagare och deras namn. När du klickar "Nästa" går du vidare till själva tävlingssidan.</p>
         <label for="competitionCount">Antal deltagare:</label><br />
         <input id="competitionCount" type="number" min="1" value="2" onchange="updateCompetitionNameInputs()" />
         <div id="competitionNames" style="margin-top: 1rem;"></div>
         <div class="button-group">
-            <button class="button" onclick="startCompetition()">Starta tävling</button>
+            <!-- Nästa-knapp som sparar namnen och går vidare till tävlingssidan -->
+            <button class="button" onclick="confirmCompetitionParticipants()">Nästa</button>
             <button class="button" onclick="showStartPage()">Tillbaka</button>
+        </div>
+    </div>
+
+    <!-- Competition run page -->
+    <div id="competitionRunPage" class="page-container" style="display: none;">
+        <h2>Tävlingsläge</h2>
+        <!-- Lista över deltagare -->
+        <ul id="competitionNamesList" style="list-style: none; padding-left: 0; margin-bottom: 1rem;"></ul>
+        <div class="button-group">
+            <!-- Knapp för att starta tävlingen efter att namnen är visade -->
+            <button class="button" onclick="startCompetition()">Starta tävlingen</button>
+            <button class="button" onclick="showCompetitionSetupPage()">Tillbaka</button>
         </div>
         <p id="competitionStatus"></p>
         <div id="competitionResults"></div>
