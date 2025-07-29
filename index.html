@@ -248,7 +248,7 @@
   <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
 
   <script src="main.js"></script>
-  <script>
+<script>
   // Klickljud
   document.addEventListener('DOMContentLoaded', () => {
     const clickSound = document.getElementById('clickSound');
@@ -265,14 +265,14 @@
     setTimeout(() => {
       document.getElementById('loaderOverlay').style.display = 'none';
     }, 2000);
-
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('serviceWorker.js')
-        .then(reg => console.log('ServiceWorker registrerad:', reg))
-        .catch(err => console.error('ServiceWorker fel:', err));
-    }
   });
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('serviceWorker.js')
+      .then(reg => console.log('ServiceWorker registrerad:', reg))
+      .catch(err => console.error('ServiceWorker fel:', err));
+  }
 </script>
 
 </body>
