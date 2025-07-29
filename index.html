@@ -5,64 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KickLab</title>
 
-    <!-- App manifest and icon for PWA support -->
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon-512.png" />
-
-    <!-- Google font for crisp typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
 
     <style>
-        /* Base styles */
-        html,
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
             height: 100%;
-            /* Visa bakgrundsbilden över hela sidan – även ovanför startmenyn. */
             background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
             background-size: cover;
             color: white;
         }
+
         body {
             min-height: 100vh;
-            /* Animera in hela sidan vid laddning */
             animation: fadein 1s;
         }
+
         @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeup {
             from {
+                transform: translateY(20px);
                 opacity: 0;
             }
             to {
+                transform: translateY(0);
                 opacity: 1;
             }
         }
-        /* Shared container styling for each page */
+
+        .fade-in-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeup 1.2s ease-out 0.8s forwards;
+        }
+
         .page-container {
-            /* Standard container styling used on all pages */
             margin: 7vh auto;
             background: rgba(0, 0, 0, 0.6);
             border-radius: 20px;
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             max-width: 420px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
             backdrop-filter: blur(7px);
             text-align: center;
         }
 
-        /* Position the start page lower on the screen so that it doesn't cover
-           the KickLab‑titel i bakgrundsbilden. VH‑enheter gör att avståndet
-           justeras proportionellt mot fönstrets höjd. */
         #startPage {
-            /* Flytta ned startmenyn så att den inte täcker titeln */
             margin-top: 35vh;
-            /* Göm rutan initialt och låt den tona in efter en kort fördröjning.
-               "forwards" säkerställer att opaciteten stannar på 1 efter animationen. */
             opacity: 0;
             animation: fadein 0.6s forwards;
             animation-delay: 1s;
         }
+
         .button-group {
             display: flex;
             flex-direction: column;
@@ -71,6 +76,7 @@
             max-width: 400px;
             margin: 1.5rem auto;
         }
+
         .button {
             background: linear-gradient(90deg, #ff8008, #ffc837 70%);
             color: #222;
@@ -85,16 +91,19 @@
             width: 100%;
             outline: none;
         }
+
         .button:hover {
             transform: scale(1.03);
             background: linear-gradient(90deg, #ffc837, #ff8008 70%);
             box-shadow: 0 0 24px #ff8008a0;
         }
+
         .button:active {
             transform: scale(0.98);
             background: linear-gradient(90deg, #ff8008, #ffc837 70%);
             box-shadow: 0 0 18px #ff8008a0;
         }
+
         input[type='number'] {
             width: 60%;
             padding: 0.5rem;
@@ -104,7 +113,7 @@
             text-align: center;
             font-size: 1rem;
         }
-        /* Responsive adjustments */
+
         @media (max-width: 600px) {
             .page-container {
                 max-width: 95vw;
@@ -119,21 +128,11 @@
 <body>
     <!-- Start page -->
     <div id="startPage" class="page-container">
-       <p class="subtitle" style="
-  font-size: 1.4rem;
-  font-weight: 600;
-  line-height: 1.6;
-  margin-bottom: 2rem;
-  animation: fadeup 1.2s ease-out forwards;
-  opacity: 0;
-">
-  Träna din reaktionsförmåga och teknik med stil
-</p>
+        <p class="subtitle fade-in-title">Träna din reaktionsförmåga och teknik med stil</p>
         <div class="button-group">
             <button class="button" onclick="showTestPage()">Reaktionstest</button>
             <button class="button" onclick="showKickCounterPage()">Sparkräknare</button>
             <button class="button" onclick="showSparringPage()">Sparring träning</button>
-            <!-- Ny knapp som leder till tävlingsläget -->
             <button class="button" onclick="showCompetitionSetupPage()">Tävlingsläge</button>
         </div>
     </div>
@@ -234,13 +233,12 @@
     <!-- Main application script -->
     <script src="main.js"></script>
     <script>
-        // Register the service worker if the browser supports it
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker
                     .register('serviceWorker.js')
-                    .then((reg) => console.log('ServiceWorker registrerad:', reg))
-                    .catch((err) => console.error('ServiceWorker fel:', err));
+                    .then(reg => console.log('ServiceWorker registrerad:', reg))
+                    .catch(err => console.error('ServiceWorker fel:', err));
             });
         }
     </script>
