@@ -8,60 +8,126 @@
   <link rel="icon" href="icon-512.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
-    html, body { margin: 0; padding: 0; font-family: 'Inter', sans-serif;
-      height: 100%; background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
-      background-size: cover; color: white; }
-    body { min-height: 100vh; animation: fadein 1s; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: 'Inter', sans-serif;
+      height: 100%;
+      background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+    }
+    body {
+      min-height: 100vh;
+      animation: fadein 1s;
+    }
     @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
     @keyframes fadeup { from { transform: translateY(20px); opacity: 0; }
                        to { transform: translateY(0); opacity: 1; } }
+
+    /* Loader animation */
+    #loaderOverlay {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: black;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2000;
+    }
+    .spinner {
+      border: 8px solid #fff3;
+      border-top: 8px solid orange;
+      border-radius: 50%;
+      width: 80px; height: 80px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .fade-in-title {
-      font-size: 1.6rem; font-weight: 600; line-height: 1.6;
-      margin-bottom: 2rem; opacity: 0;
+      font-size: 1.6rem;
+      font-weight: 600;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      opacity: 0;
       animation: fadeup 1.2s ease-out 0.8s forwards;
     }
     .page-container {
-      margin: 7vh auto; background: rgba(0,0,0,0.6);
-      border-radius: 20px; padding: 2.5rem 2rem; max-width: 420px;
-      box-shadow: 0 8px 32px rgba(31,38,135,0.37); backdrop-filter: blur(7px);
+      margin: 7vh auto;
+      background: rgba(0,0,0,0.6);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(31,38,135,0.37);
+      backdrop-filter: blur(7px);
       text-align: center;
     }
-    #startPage { margin-top: 35vh; opacity: 0;
-      animation: fadein 0.6s forwards; animation-delay: 1s; }
+    #startPage {
+      margin-top: 35vh;
+      opacity: 0;
+      animation: fadein 0.6s forwards;
+      animation-delay: 1.5s;
+    }
     .button-group {
-      display: flex; flex-direction: column; gap: 1rem;
-      width: 100%; max-width: 400px; margin: 1.5rem auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+      max-width: 400px;
+      margin: 1.5rem auto;
     }
     .button {
-      display: flex; align-items: center; justify-content: center;
-      gap: 0.6rem; background: linear-gradient(90deg,#ff8008,#ffc837 70%);
-      color: #222; border: none; border-radius: 30px;
-      padding: 1rem 1.6rem; font-size: 1.1rem; font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background: linear-gradient(90deg, #ff8008, #ffc837 70%);
+      color: #222;
+      border: none;
+      border-radius: 30px;
+      padding: 1rem 1.6rem;
+      font-size: 1.1rem;
+      font-weight: bold;
       transition: transform .12s, box-shadow .22s, background .2s;
-      cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-      width: 100%; outline: none;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      width: 100%;
+      outline: none;
     }
     .button:hover {
       transform: scale(1.03);
-      background: linear-gradient(90deg,#ffc837,#ff8008 70%);
+      background: linear-gradient(90deg, #ffc837, #ff8008 70%);
       box-shadow: 0 0 24px #ff8008a0;
     }
     .button:active {
       transform: scale(0.98);
-      background: linear-gradient(90deg,#ff8008,#ffc837 70%);
+      background: linear-gradient(90deg, #ff8008, #ffc837 70%);
       box-shadow: 0 0 18px #ff8008a0;
     }
-    .button .icon { font-size: 1.3rem; line-height:1; }
-    input[type='number'] { width:60%; padding:.5rem; border-radius:8px;
-      border:none; margin-bottom:1rem; text-align:center; font-size:1rem; }
-    @media (max-width:600px) {
-      .page-container { max-width:95vw; padding:1rem; }
-      .button-group { max-width:95vw; }
+    .button .icon { font-size: 1.3rem; line-height: 1; }
+    input[type='number'] {
+      width: 60%;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 1rem;
+      text-align: center;
+      font-size: 1rem;
+    }
+    @media (max-width: 600px) {
+      .page-container { max-width: 95vw; padding: 1rem; }
+      .button-group { max-width: 95vw; }
     }
   </style>
 </head>
 <body>
-  <!-- Start page -->
+
+  <!-- 🔄 Loading animation -->
+  <div id="loaderOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- 🔥 Start page -->
   <div id="startPage" class="page-container">
     <p class="subtitle fade-in-title">Träna din reaktionsförmåga och teknik med stil</p>
     <div class="button-group">
@@ -71,6 +137,29 @@
       <button class="button" onclick="showCompetitionSetupPage()"><span class="icon">🏆</span> Tävlingsläge</button>
     </div>
   </div>
+
+  <!-- 🔊 Klickljud -->
+  <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
+
+  <!-- 🧠 JS -->
+  <script src="main.js"></script>
+  <script>
+    // Klickljud
+    document.addEventListener('DOMContentLoaded', () => {
+      const clickSound = document.getElementById('clickSound');
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          clickSound.currentTime = 0;
+          clickSound.play().catch(() => {});
+        });
+      });
+    });
+
+    // Loader: Dölj efter 2 sekunder
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('loaderOverlay').style.display = 'none';
+      }, 2000);
 
   <!-- Reaction test page -->
   <div id="testPage" class="page-container" style="display:none;">
@@ -169,14 +258,15 @@
         });
       });
     });
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load',()=> {
+     // Service Worker
+      if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('serviceWorker.js')
-         .then(reg=>console.log('ServiceWorker registrerad:',reg))
-         .catch(err=>console.error('ServiceWorker fel:',err));
-      });
-    }
+          .then(reg => console.log('ServiceWorker registrerad:', reg))
+          .catch(err => console.error('ServiceWorker fel:', err));
+      }
+    });
   </script>
+
 </body>
 </html>
 
