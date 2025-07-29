@@ -161,6 +161,16 @@
         document.getElementById('loaderOverlay').style.display = 'none';
       }, 2000);
 
+       });
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('serviceWorker.js')
+      .then(reg => console.log('ServiceWorker registrerad:', reg))
+      .catch(err => console.error('ServiceWorker fel:', err));
+  }
+</script>
+
   <!-- Reaction test page -->
   <div id="testPage" class="page-container" style="display:none;">
     <h2>Reaktionstest</h2>
