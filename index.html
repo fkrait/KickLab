@@ -1,246 +1,182 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KickLab</title>
-
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" href="icon-512.png" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
-
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            height: 100%;
-            background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-        }
-
-        body {
-            min-height: 100vh;
-            animation: fadein 1s;
-        }
-
-        @keyframes fadein {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes fadeup {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .fade-in-title {
-            font-size: 1.6rem;
-            font-weight: 600;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-            opacity: 0;
-            animation: fadeup 1.2s ease-out 0.8s forwards;
-        }
-
-        .page-container {
-            margin: 7vh auto;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 20px;
-            padding: 2.5rem 2rem;
-            max-width: 420px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            backdrop-filter: blur(7px);
-            text-align: center;
-        }
-
-        #startPage {
-            margin-top: 35vh;
-            opacity: 0;
-            animation: fadein 0.6s forwards;
-            animation-delay: 1s;
-        }
-
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            width: 100%;
-            max-width: 400px;
-            margin: 1.5rem auto;
-        }
-
-        .button {
-            background: linear-gradient(90deg, #ff8008, #ffc837 70%);
-            color: #222;
-            border: none;
-            border-radius: 30px;
-            padding: 0.9rem 1.8rem;
-            font-size: 1rem;
-            font-weight: bold;
-            transition: transform 0.12s, box-shadow 0.22s, background 0.2s;
-            cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-            width: 100%;
-            outline: none;
-        }
-
-        .button:hover {
-            transform: scale(1.03);
-            background: linear-gradient(90deg, #ffc837, #ff8008 70%);
-            box-shadow: 0 0 24px #ff8008a0;
-        }
-
-        .button:active {
-            transform: scale(0.98);
-            background: linear-gradient(90deg, #ff8008, #ffc837 70%);
-            box-shadow: 0 0 18px #ff8008a0;
-        }
-
-        input[type='number'] {
-            width: 60%;
-            padding: 0.5rem;
-            border-radius: 8px;
-            border: none;
-            margin-bottom: 1rem;
-            text-align: center;
-            font-size: 1rem;
-        }
-
-        @media (max-width: 600px) {
-            .page-container {
-                max-width: 95vw;
-                padding: 1rem;
-            }
-            .button-group {
-                max-width: 95vw;
-            }
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KickLab</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icon-512.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    html, body { margin: 0; padding: 0; font-family: 'Inter', sans-serif;
+      height: 100%; background: url('attached_assets/gradient_background.PNG') no-repeat center center fixed;
+      background-size: cover; color: white; }
+    body { min-height: 100vh; animation: fadein 1s; }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeup { from { transform: translateY(20px); opacity: 0; }
+                       to { transform: translateY(0); opacity: 1; } }
+    .fade-in-title {
+      font-size: 1.6rem; font-weight: 600; line-height: 1.6;
+      margin-bottom: 2rem; opacity: 0;
+      animation: fadeup 1.2s ease-out 0.8s forwards;
+    }
+    .page-container {
+      margin: 7vh auto; background: rgba(0,0,0,0.6);
+      border-radius: 20px; padding: 2.5rem 2rem; max-width: 420px;
+      box-shadow: 0 8px 32px rgba(31,38,135,0.37); backdrop-filter: blur(7px);
+      text-align: center;
+    }
+    #startPage { margin-top: 35vh; opacity: 0;
+      animation: fadein 0.6s forwards; animation-delay: 1s; }
+    .button-group {
+      display: flex; flex-direction: column; gap: 1rem;
+      width: 100%; max-width: 400px; margin: 1.5rem auto;
+    }
+    .button {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.6rem; background: linear-gradient(90deg,#ff8008,#ffc837 70%);
+      color: #222; border: none; border-radius: 30px;
+      padding: 1rem 1.6rem; font-size: 1.1rem; font-weight: bold;
+      transition: transform .12s, box-shadow .22s, background .2s;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      width: 100%; outline: none;
+    }
+    .button:hover {
+      transform: scale(1.03);
+      background: linear-gradient(90deg,#ffc837,#ff8008 70%);
+      box-shadow: 0 0 24px #ff8008a0;
+    }
+    .button:active {
+      transform: scale(0.98);
+      background: linear-gradient(90deg,#ff8008,#ffc837 70%);
+      box-shadow: 0 0 18px #ff8008a0;
+    }
+    .button .icon { font-size: 1.3rem; line-height:1; }
+    input[type='number'] { width:60%; padding:.5rem; border-radius:8px;
+      border:none; margin-bottom:1rem; text-align:center; font-size:1rem; }
+    @media (max-width:600px) {
+      .page-container { max-width:95vw; padding:1rem; }
+      .button-group { max-width:95vw; }
+    }
+  </style>
 </head>
 <body>
-    <!-- Start page -->
-    <div id="startPage" class="page-container">
-        <p class="subtitle fade-in-title">Träna din reaktionsförmåga och teknik med stil</p>
-        <div class="button-group">
-            <button class="button" onclick="showTestPage()">Reaktionstest</button>
-            <button class="button" onclick="showKickCounterPage()">Sparkräknare</button>
-            <button class="button" onclick="showSparringPage()">Sparring träning</button>
-            <button class="button" onclick="showCompetitionSetupPage()">Tävlingsläge</button>
-        </div>
+  <!-- Start page -->
+  <div id="startPage" class="page-container">
+    <p class="subtitle fade-in-title">Träna din reaktionsförmåga och teknik med stil</p>
+    <div class="button-group">
+      <button class="button" onclick="showTestPage()"><span class="icon">⚡</span> Reaktionstest</button>
+      <button class="button" onclick="showKickCounterPage()"><span class="icon">🦵</span> Sparkräknare</button>
+      <button class="button" onclick="showSparringPage()"><span class="icon">🥋</span> Sparring träning</button>
+      <button class="button" onclick="showCompetitionSetupPage()"><span class="icon">🏆</span> Tävlingsläge</button>
     </div>
+  </div>
 
-    <!-- Reaction test page -->
-    <div id="testPage" class="page-container" style="display: none;">
-        <h2>Reaktionstest</h2>
-        <p id="command"></p>
-        <p id="status"></p>
-        <p id="result"></p>
-        <div id="history"></div>
-        <div id="highscore"></div>
-        <div class="button-group">
-            <button class="button" onclick="startTest()">Starta test</button>
-            <button class="button" onclick="stopTest()">Stoppa test</button>
-            <button class="button" onclick="resetStats()">Nollställ statistik</button>
-            <button class="button" onclick="showStartPage()">Tillbaka</button>
-        </div>
+  <!-- Reaction test page -->
+  <div id="testPage" class="page-container" style="display:none;">
+    <h2>Reaktionstest</h2>
+    <p id="command"></p><p id="status"></p><p id="result"></p>
+    <div id="history"></div><div id="highscore"></div>
+    <div class="button-group">
+      <button class="button" onclick="startTest()">Starta test</button>
+      <button class="button" onclick="stopTest()">Stoppa test</button>
+      <button class="button" onclick="resetStats()">Nollställ statistik</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
     </div>
+  </div>
 
-    <!-- Kick counter page -->
-    <div id="kickCounterPage" class="page-container" style="display: none;">
-        <h2>Sparkräknare</h2>
-        <label for="testDuration">Varaktighet (sekunder):</label><br />
-        <input id="testDuration" type="number" value="15" min="1" onchange="updateTestDuration()" />
-        <p id="kickCount">0 sparkar</p>
-        <p id="kickTimer">15 sekunder</p>
-        <p id="kickStatus">Klicka 'Starta test' för att börja</p>
-        <div id="kickHistory"></div>
-        <div id="kickHighscore"></div>
-        <div class="button-group">
-            <button class="button" onclick="startKickTest()">Starta test</button>
-            <!-- Ny knapp för att stoppa sparkräkning utan slutsignal -->
-            <button class="button" onclick="stopKickTest()">Stoppa test</button>
-            <button class="button" onclick="resetKickStats()">Nollställ statistik</button>
-            <button class="button" onclick="showStartPage()">Tillbaka</button>
-        </div>
+  <!-- Kick Counter page -->
+  <div id="kickCounterPage" class="page-container" style="display:none;">
+    <h2>Sparkräknare</h2>
+    <label for="testDuration">Varaktighet (sek):</label><br/>
+    <input id="testDuration" type="number" value="15" min="1" onchange="updateTestDuration()"/>
+    <p id="kickCount">0 sparkar</p><p id="kickTimer">15 sekunder</p>
+    <p id="kickStatus">Klicka 'Starta test' för att börja</p>
+    <div id="kickHistory"></div><div id="kickHighscore"></div>
+    <div class="button-group">
+      <button class="button" onclick="startKickTest()">Starta test</button>
+      <button class="button" onclick="stopKickTest()">Stoppa test</button>
+      <button class="button" onclick="resetKickStats()">Nollställ statistik</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
     </div>
+  </div>
 
-    <!-- Sparring training page -->
-    <div id="sparringPage" class="page-container" style="display: none;">
-        <h2>Sparring träning</h2>
-        <label for="sparringDuration">Varaktighet (sekunder):</label><br />
-        <input id="sparringDuration" type="number" value="60" min="5" />
-        <p id="sparringStatus">Klicka 'Starta' för att börja träningen</p>
-        <p id="sparringCommand"></p>
-        <div class="button-group">
-            <button class="button" onclick="startSparringTraining()">Starta</button>
-            <!-- Ny knapp för att stoppa sparringträning -->
-            <button class="button" onclick="stopSparringTraining()">Stoppa</button>
-            <button class="button" onclick="showStartPage()">Tillbaka</button>
-        </div>
+  <!-- Sparring page -->
+  <div id="sparringPage" class="page-container" style="display:none;">
+    <h2>Sparring träning</h2>
+    <label for="sparringDuration">Varaktighet (sek):</label><br/>
+    <input id="sparringDuration" type="number" value="60" min="5"/>
+    <p id="sparringStatus">Klicka 'Starta' för att börja</p>
+    <p id="sparringCommand"></p>
+    <div class="button-group">
+      <button class="button" onclick="startSparringTraining()">Starta</button>
+      <button class="button" onclick="stopSparringTraining()">Stoppa</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
     </div>
+  </div>
 
-    <!-- Competition setup page -->
-    <div id="competitionSetupPage" class="page-container" style="display: none;">
-        <h2>Tävlingsläge – inställningar</h2>
-        <p>Ställ in antal deltagare och deras namn. När du klickar "Nästa" går du vidare till själva tävlingssidan.</p>
-        <label for="competitionCount">Antal deltagare:</label><br />
-        <input id="competitionCount" type="number" min="1" value="2" onchange="updateCompetitionNameInputs()" />
-        <div id="competitionNames" style="margin-top: 1rem;"></div>
-        <div class="button-group">
-            <!-- Nästa-knapp som sparar namnen och går vidare till tävlingssidan -->
-            <button class="button" onclick="confirmCompetitionParticipants()">Nästa</button>
-            <button class="button" onclick="showStartPage()">Tillbaka</button>
-        </div>
+  <!-- Competition setup -->
+  <div id="competitionSetupPage" class="page-container" style="display:none;">
+    <h2>Tävlingsläge – inställningar</h2>
+    <p>Ställ in antal deltagare och deras namn.</p>
+    <label for="competitionCount">Antal deltagare:</label><br/>
+    <input id="competitionCount" type="number" min="1" value="2" onchange="updateCompetitionNameInputs()"/>
+    <div id="competitionNames" style="margin-top:1rem;"></div>
+    <div class="button-group">
+      <button class="button" onclick="confirmCompetitionParticipants()">Nästa</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
     </div>
+  </div>
 
-    <!-- Competition run page -->
-    <div id="competitionRunPage" class="page-container" style="display: none;">
-        <h2>Tävlingsläge</h2>
-        <!-- Lista över deltagare -->
-        <ul id="competitionNamesList" style="list-style: none; padding-left: 0; margin-bottom: 1rem;"></ul>
-        <div class="button-group">
-            <!-- Knapp för att starta tävlingen efter att namnen är visade -->
-            <button class="button" onclick="startCompetition()">Starta tävlingen</button>
-            <button class="button" onclick="showCompetitionSetupPage()">Tillbaka</button>
-        </div>
-        <p id="competitionStatus"></p>
-        <div id="competitionResults"></div>
+  <!-- Competition run -->
+  <div id="competitionRunPage" class="page-container" style="display:none;">
+    <h2>Tävlingsläge</h2>
+    <ul id="competitionNamesList" style="list-style:none; padding-left:0; margin-bottom:1rem;"></ul>
+    <div class="button-group">
+      <button class="button" onclick="startCompetition()">Starta tävlingen</button>
+      <button class="button" onclick="showCompetitionSetupPage()">Tillbaka</button>
     </div>
+    <p id="competitionStatus"></p>
+    <div id="competitionResults"></div>
+  </div>
 
-    <!-- Competition round page: visar aktuellt namn och startknapp -->
-    <div id="competitionRoundPage" class="page-container" style="display: none;">
-        <h2 id="roundParticipantName" style="font-size: 2rem; margin-bottom: 2rem;"></h2>
-        <div class="button-group">
-            <button class="button" style="font-size: 1.5rem; padding: 1.2rem 2rem;" onclick="beginCompetitionRound()">Starta</button>
-            <button class="button" onclick="showCompetitionRunPage()">Tillbaka</button>
-        </div>
+  <!-- Competition round -->
+  <div id="competitionRoundPage" class="page-container" style="display:none;">
+    <h2 id="roundParticipantName" style="font-size:2rem; margin-bottom:2rem;"></h2>
+    <div class="button-group">
+      <button class="button" style="font-size:1.5rem; padding:1.2rem 2rem;" onclick="beginCompetitionRound()">Starta</button>
+      <button class="button" onclick="showCompetitionRunPage()">Tillbaka</button>
     </div>
+  </div>
 
-    <!-- Nedräknings‑overlay som täcker hela skärmen -->
-    <div id="countdownOverlay" style="display:none; position: fixed; top:0; left:0; width:100vw; height:100vh; align-items:center; justify-content:center; z-index:1000; background:black; color:orange; font-size:8rem; font-weight:bold;"></div>
+  <!-- Countdown overlay -->
+  <div id="countdownOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;z-index:1000;background:black;color:orange;font-size:8rem;font-weight:bold;"></div>
 
-    <!-- Audio cue for celebration -->
-    <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
+  <!-- Klickljud -->
+  <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
 
-    <!-- Main application script -->
-    <script src="main.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker
-                    .register('serviceWorker.js')
-                    .then(reg => console.log('ServiceWorker registrerad:', reg))
-                    .catch(err => console.error('ServiceWorker fel:', err));
-            });
-        }
-    </script>
+  <!-- Cheering sound -->
+  <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
+
+  <script src="main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const clickSound = document.getElementById('clickSound');
+      document.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          clickSound.currentTime = 0;
+          clickSound.play().catch(()=>{});
+        });
+      });
+    });
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load',()=> {
+        navigator.serviceWorker.register('serviceWorker.js')
+         .then(reg=>console.log('ServiceWorker registrerad:',reg))
+         .catch(err=>console.error('ServiceWorker fel:',err));
+      });
+    }
+  </script>
 </body>
 </html>
+
