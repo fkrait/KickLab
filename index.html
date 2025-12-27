@@ -101,11 +101,20 @@
     .audience-meta { background: #0b0b0f; border-radius: 14px; padding: 1rem; color: #ffe600; text-align: center; display: grid; gap: 0.6rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
     .audience-timer { font-size: 3.4rem; font-weight: 800; letter-spacing: 1px; }
     .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; }
+    .audience-rest { font-size: 1.4rem; color: #ffe600; }
+    .audience-hits { font-size: 1rem; color: #e0e0e0; }
     .close-audience {
       position: absolute; top: 1rem; right: 1rem; background: #ff8008; color: #222;
       border: none; border-radius: 12px; padding: 0.6rem 1rem; font-weight: 700; cursor: pointer;
       box-shadow: 0 6px 18px rgba(0,0,0,0.3);
     }
+    .audience-winner {
+      margin-top: 0.6rem;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .round-score { font-weight: 700; color: #e0e0e0; }
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
@@ -242,6 +251,8 @@
           <div class="meta-box">Rond <span id="liveRoundNumber">1</span>/<span id="liveTotalRounds">3</span></div>
         </div>
         <div class="timer-display" id="liveTimer">02:00</div>
+        <div class="round-score" id="roundScore">Ronder: Röd 0 – 0 Blå</div>
+        <p id="restStatus" style="margin:0;color:#e0e0e0;"></p>
         <div class="button-group" style="margin:0;">
           <button class="button" onclick="startLiveTimer()">Start</button>
           <button class="button" onclick="pauseLiveTimer()">Paus</button>
@@ -357,10 +368,16 @@
           <span>Rond <span id="audienceRound">1</span></span>
           <span id="audienceInfo"></span>
         </div>
+        <div class="audience-row">
+          <span id="audienceRoundScore">Ronder: 0 – 0</span>
+        </div>
+        <div class="audience-rest" id="audienceRest">Rest: --</div>
+        <div class="audience-winner" id="audienceWinner"></div>
       </div>
       <div class="audience-panel red">
         <div id="audienceRedName">Röd</div>
         <div class="audience-score" id="audienceRedScore">0</div>
+        <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
         <div>Gam-jeom: <span id="audienceRedPenalty">0</span></div>
       </div>
     </div>

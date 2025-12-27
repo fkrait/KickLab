@@ -34,6 +34,12 @@ let currentRound = 1;
 let lastAction = null; // { type: 'score'|'penalty', side, value }
 let audienceMode = false;
 let broadcastChannel = null;
+let roundWins = { red: 0, blue: 0 };
+let matchEnded = false;
+let restTimeLeft = 0;
+let restTimerId = null;
+let currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+let lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
@@ -134,6 +140,8 @@ function showLiveScorePage() {
   stopTest();
   stopKickTest();
   stopSparringTraining();
+  matchEnded = false;
+  restTimeLeft = 0;
   setMatchDuration();
   updateLiveMeta();
   updateLiveScoreDisplay();
@@ -162,6 +170,14 @@ function updateLiveScoreDisplay() {
   if (status) {
     status.textContent = `${liveScoreNames.red}: ${liveScore.red} – ${liveScoreNames.blue}: ${liveScore.blue}`;
   }
+  const roundScore = document.getElementById("roundScore");
+  if (roundScore) {
+    roundScore.textContent = `Ronder: ${liveScoreNames.red} ${roundWins.red} – ${roundWins.blue} ${liveScoreNames.blue}`;
+  }
+  const restStatus = document.getElementById("restStatus");
+  if (restStatus) {
+    restStatus.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "";
+  }
   const totalRoundsEl = document.getElementById("liveTotalRounds");
   if (totalRoundsEl) totalRoundsEl.textContent = totalRounds;
   // Publikvy
@@ -175,6 +191,11 @@ function updateLiveScoreDisplay() {
   const audMatchTitle = document.getElementById("audienceMatchTitle");
   const audRedPen = document.getElementById("audienceRedPenalty");
   const audBluePen = document.getElementById("audienceBluePenalty");
+  const audRoundScore = document.getElementById("audienceRoundScore");
+  const audWinner = document.getElementById("audienceWinner");
+  const audRest = document.getElementById("audienceRest");
+  const audRedHits = document.getElementById("audienceRedHits");
+  const audBlueHits = document.getElementById("audienceBlueHits");
   if (audRedName) audRedName.textContent = liveScoreNames.red;
   if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
   if (audRedScore) audRedScore.textContent = liveScore.red;
@@ -185,6 +206,17 @@ function updateLiveScoreDisplay() {
   if (audInfo) audInfo.textContent = `Rond ${currentRound}`;
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
+  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.blue} - ${roundWins.red}`;
+  if (audWinner) audWinner.textContent = matchEnded ? `WINNER: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
+  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Rest: ${formatLiveTime(restTimeLeft)}` : "";
+  if (audRedHits) {
+    const lr = lastRoundHits.red;
+    audRedHits.textContent = `Huvud ${lr.head} | Väst ${lr.body} | Slag ${lr.punch}`;
+  }
+  if (audBlueHits) {
+    const lb = lastRoundHits.blue;
+    audBlueHits.textContent = `Huvud ${lb.head} | Väst ${lb.body} | Slag ${lb.punch}`;
+  }
   broadcastState();
 }
 
@@ -211,6 +243,11 @@ function adjustLiveScore(side, delta) {
 function awardScore(side, value) {
   if (!(side in liveScore)) return;
   liveScore[side] += value;
+  // Statistikkategorier: 1 -> punch, 2/4 -> body, 3/5 -> head
+  const hitStats = currentHits[side];
+  if (value === 1) hitStats.punch += 1;
+  else if (value === 2 || value === 4) hitStats.body += 1;
+  else if (value === 3 || value === 5) hitStats.head += 1;
   lastAction = { type: "score", side, value };
   const status = document.getElementById("liveScoreStatus");
   if (status) status.textContent = `${liveScoreNames[side]} +${value}`;
@@ -234,6 +271,7 @@ function resetLiveScore() {
   liveScore.blue = 0;
   livePenalties.red = 0;
   livePenalties.blue = 0;
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
   updateLiveScoreDisplay();
 }
 
@@ -325,8 +363,12 @@ function pauseLiveTimer() {
 
 function resetLiveMatch() {
   pauseLiveTimer();
+  stopRestTimer();
   liveTimeLeft = matchDurationSeconds;
   currentRound = 1;
+  roundWins = { red: 0, blue: 0 };
+  matchEnded = false;
+  lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
   const roundInput = document.getElementById("roundNumberInput");
   if (roundInput) roundInput.value = currentRound;
   const roundDisplay = document.getElementById("liveRoundNumber");
@@ -338,29 +380,75 @@ function resetLiveMatch() {
 }
 
 function endCurrentRound() {
+  if (matchEnded) return;
   pauseLiveTimer();
   liveTimeLeft = 0;
+  if (liveScore.red === liveScore.blue) {
+    const tieStatus = document.getElementById("liveScoreStatus");
+    if (tieStatus) tieStatus.textContent = "Oavgjort – ge utslags-poäng innan du går vidare.";
+    return;
+  }
+  const winner = liveScore.red > liveScore.blue ? "red" : "blue";
+  roundWins[winner] += 1;
+  lastRoundHits = JSON.parse(JSON.stringify(currentHits));
   const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Rond ${currentRound} slut. Starta nästa rond manuellt.`;
-  updateLiveScoreDisplay();
+  if (status) status.textContent = `${liveScoreNames[winner]} vinner rond ${currentRound}.`;
+  // Avgör om matchen är klar (bäst av totalRounds, standard 3)
+  const needed = Math.floor(totalRounds / 2) + 1;
+  if (roundWins[winner] >= needed) {
+    matchEnded = true;
+    showMatchWinner(winner);
+    return;
+  }
+  startRestTimer();
 }
 
 function startNextRound() {
-  if (currentRound >= totalRounds) {
+  if (matchEnded) {
     const status = document.getElementById("liveScoreStatus");
-    if (status) status.textContent = "Matchen är redan i sista ronden.";
+    if (status) status.textContent = "Matchen är redan avgjord.";
     return;
   }
-  currentRound += 1;
+  stopRestTimer();
+  prepareNextRound();
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `Rond ${currentRound} förberedd. Starta klockan.`;
+  updateLiveScoreDisplay();
+}
+
+function prepareNextRound() {
+  currentRound = Math.min(currentRound + 1, totalRounds);
   const roundInput = document.getElementById("roundNumberInput");
   if (roundInput) roundInput.value = currentRound;
   const roundDisplay = document.getElementById("liveRoundNumber");
   if (roundDisplay) roundDisplay.textContent = currentRound;
+  resetLiveScore();
   liveTimeLeft = matchDurationSeconds;
-  pauseLiveTimer();
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Rond ${currentRound} förberedd. Starta klockan.`;
   updateLiveScoreDisplay();
+}
+
+function startRestTimer() {
+  stopRestTimer();
+  restTimeLeft = 60;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `Paus ${formatLiveTime(restTimeLeft)} – starta nästa rond när du är redo.`;
+  restTimerId = setInterval(() => {
+    restTimeLeft -= 1;
+    if (restTimeLeft <= 0) {
+      restTimeLeft = 0;
+      stopRestTimer();
+      const st = document.getElementById("liveScoreStatus");
+      if (st) st.textContent = "Paus klar – tryck Nästa rond och starta klockan.";
+    }
+    updateLiveScoreDisplay();
+  }, 1000);
+  updateLiveScoreDisplay();
+}
+
+function stopRestTimer() {
+  if (restTimerId) clearInterval(restTimerId);
+  restTimerId = null;
+  restTimeLeft = 0;
 }
 
 function toggleAudienceView(show) {
@@ -382,6 +470,10 @@ function broadcastState() {
     matchDurationSeconds,
     matchNumber: document.getElementById("matchNumberInput")?.value || "1",
     timerRunning: liveTimerRunning,
+    roundWins,
+    matchEnded,
+    lastRoundHits,
+    restTimeLeft,
   };
   broadcastChannel.postMessage(payload);
 }
@@ -401,6 +493,11 @@ function applyIncomingState(state) {
   const audMatchTitle = document.getElementById("audienceMatchTitle");
   const audRedPen = document.getElementById("audienceRedPenalty");
   const audBluePen = document.getElementById("audienceBluePenalty");
+  const audRoundScore = document.getElementById("audienceRoundScore");
+  const audWinner = document.getElementById("audienceWinner");
+  const audRest = document.getElementById("audienceRest");
+  const audRedHits = document.getElementById("audienceRedHits");
+  const audBlueHits = document.getElementById("audienceBlueHits");
   if (audRedName) audRedName.textContent = redName;
   if (audBlueName) audBlueName.textContent = blueName;
   if (audRedScore) audRedScore.textContent = state.liveScore?.red ?? 0;
@@ -411,6 +508,28 @@ function applyIncomingState(state) {
   if (audMatchTitle) audMatchTitle.textContent = `Match ${state.matchNumber ?? "1"}`;
   if (audRedPen) audRedPen.textContent = state.livePenalties?.red ?? 0;
   if (audBluePen) audBluePen.textContent = state.livePenalties?.blue ?? 0;
+  if (audRoundScore) {
+    const rw = state.roundWins || { red: 0, blue: 0 };
+    audRoundScore.textContent = `Ronder: ${rw.blue} - ${rw.red}`;
+  }
+  if (audWinner) {
+    if (state.matchEnded) {
+      const rw = state.roundWins || { red: 0, blue: 0 };
+      const winnerSide = (rw.red || 0) > (rw.blue || 0) ? redName : blueName;
+      audWinner.textContent = `WINNER: ${winnerSide}`;
+    } else {
+      audWinner.textContent = "";
+    }
+  }
+  if (audRest) audRest.textContent = state.restTimeLeft > 0 ? `Rest: ${formatLiveTime(state.restTimeLeft)}` : "";
+  if (audRedHits) {
+    const lr = state.lastRoundHits?.red || { head: 0, body: 0, punch: 0 };
+    audRedHits.textContent = `Huvud ${lr.head} | Väst ${lr.body} | Slag ${lr.punch}`;
+  }
+  if (audBlueHits) {
+    const lb = state.lastRoundHits?.blue || { head: 0, body: 0, punch: 0 };
+    audBlueHits.textContent = `Huvud ${lb.head} | Väst ${lb.body} | Slag ${lb.punch}`;
+  }
 }
 
 // Säkerställ att vi startar på startmenyn även om någon vy sparats i cache
@@ -428,6 +547,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get("audience") === "1") {
     audienceMode = true;
+    matchEnded = false;
+    restTimeLeft = 0;
     const loader = document.getElementById("loaderOverlay");
     if (loader) loader.style.display = "none";
     document.querySelectorAll(".page-container").forEach((el) => (el.style.display = "none"));
