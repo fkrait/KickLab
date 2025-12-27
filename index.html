@@ -16,104 +16,107 @@
       background-size: cover;
       color: white;
     }
-    body {
-      min-height: 100vh;
-      animation: fadein 1s;
-    }
+    body { min-height: 100vh; animation: fadein 1s; }
     @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes fadeup { from { transform: translateY(20px); opacity: 0; }
-                       to { transform: translateY(0); opacity: 1; } }
+    @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
 
-    /* Loader animation */
     #loaderOverlay {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 2000;
+      position: fixed; inset: 0; background: black;
+      display: flex; align-items: center; justify-content: center; z-index: 2000;
     }
     .spinner {
-      border: 8px solid #fff3;
-      border-top: 8px solid orange;
-      border-radius: 50%;
-      width: 80px; height: 80px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      border: 8px solid #fff3; border-top: 8px solid orange;
+      border-radius: 50%; width: 80px; height: 80px; animation: spin 1s linear infinite;
     }
 
-    .fade-in-title {
-      font-size: 1.6rem;
-      font-weight: 600;
-      line-height: 1.6;
-      margin-bottom: 2rem;
-      opacity: 0;
-      animation: fadeup 1.2s ease-out 0.8s forwards;
-    }
     .page-container {
       margin: 7vh auto;
       background: rgba(0,0,0,0.6);
       border-radius: 20px;
       padding: 2.5rem 2rem;
-      max-width: 420px;
+      max-width: 480px;
       box-shadow: 0 8px 32px rgba(31,38,135,0.37);
       backdrop-filter: blur(7px);
       text-align: center;
     }
-    #startPage {
-      margin-top: 35vh;
-      opacity: 0;
-      animation: fadein 0.6s forwards;
-      animation-delay: 1.5s;
-    }
+    #startPage { margin-top: 35vh; opacity: 0; animation: fadein 0.6s forwards; animation-delay: 1.5s; }
     .button-group {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
-      max-width: 400px;
-      margin: 1.5rem auto;
+      display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 440px; margin: 1.5rem auto;
     }
     .button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
       background: linear-gradient(90deg, #ff8008, #ffc837 70%);
-      color: #222;
-      border: none;
-      border-radius: 30px;
-      padding: 1rem 1.6rem;
-      font-size: 1.1rem;
-      font-weight: bold;
+      color: #222; border: none; border-radius: 30px;
+      padding: 1rem 1.6rem; font-size: 1.05rem; font-weight: bold;
       transition: transform .12s, box-shadow .22s, background .2s;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-      width: 100%;
-      outline: none;
+      cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.18); width: 100%; outline: none;
     }
-    .button:hover {
-      transform: scale(1.03);
-      background: linear-gradient(90deg, #ffc837, #ff8008 70%);
-      box-shadow: 0 0 24px #ff8008a0;
-    }
-    .button:active {
-      transform: scale(0.98);
-      background: linear-gradient(90deg, #ff8008, #ffc837 70%);
-      box-shadow: 0 0 18px #ff8008a0;
-    }
+    .button:hover { transform: scale(1.03); background: linear-gradient(90deg, #ffc837, #ff8008 70%); box-shadow: 0 0 24px #ff8008a0; }
+    .button:active { transform: scale(0.98); background: linear-gradient(90deg, #ff8008, #ffc837 70%); box-shadow: 0 0 18px #ff8008a0; }
     .button .icon { font-size: 1.3rem; line-height: 1; }
-    input[type='number'] {
-      width: 60%;
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: none;
-      margin-bottom: 1rem;
-      text-align: center;
-      font-size: 1rem;
+    input[type='number'], input[type='text'] {
+      width: 100%; padding: 0.6rem; border-radius: 10px; border: none; margin-bottom: 0.8rem; text-align: center; font-size: 1rem;
     }
+    label { font-weight: 600; display: block; margin-bottom: 0.35rem; }
+
+    .live-scoreboard {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; align-items: stretch;
+      /* Daedo-liknande layout: tydlig mittpanel och stora sidopoäng */
+    }
+    .side-panel {
+      border-radius: 18px; padding: 1.2rem; color: white;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.25);
+      display: flex; flex-direction: column; justify-content: space-between; min-height: 260px;
+    }
+    .side-panel.blue { background: linear-gradient(180deg, #163d9b, #0b214f); }
+    .side-panel.red { background: linear-gradient(180deg, #b22626, #5c1111); }
+    .side-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; letter-spacing: 0.4px; }
+    .side-score { font-size: 4.4rem; font-weight: 800; margin: 0.8rem 0; text-align: center; }
+    .panel-label { font-size: 0.95rem; opacity: 0.85; }
+    .center-panel {
+      background: #0b0b0f; border-radius: 18px; padding: 1rem; color: #ffe600; text-align: center;
+      display: grid; gap: 0.6rem; box-shadow: 0 10px 26px rgba(0,0,0,0.3); min-height: 260px;
+    }
+    .timer-display {
+      background: #111; border-radius: 12px; padding: 0.8rem 0.6rem; font-size: 3.2rem; font-weight: 800; letter-spacing: 1px;
+      color: #ffe600; border: 2px solid #444; box-shadow: inset 0 0 0 1px #222;
+    }
+    .meta-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; color: #e0e0e0; }
+    .meta-box { background: #1a1a1f; border-radius: 10px; padding: 0.6rem 0.7rem; border: 1px solid #2a2a34; font-weight: 700; }
+    .score-actions {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; margin: 1.2rem 0;
+    }
+    .score-actions .button { flex-direction: column; gap: 0.25rem; padding: 0.9rem; font-size: 1rem; }
+    .button-label { font-size: 0.85rem; color: #222; }
+    .audience-view {
+      position: fixed; inset: 0; background: #050505; color: white; display: none; z-index: 3000; padding: 1.2rem;
+    }
+    .audience-board {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: stretch; height: 100%;
+    }
+    .audience-panel { border-radius: 18px; padding: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+    .audience-panel.red { background: linear-gradient(180deg, #a61212, #5c0a0a); }
+    .audience-panel.blue { background: linear-gradient(180deg, #0d2ca8, #081b5d); }
+    .audience-badge { background:#000; border:2px solid #ffe600; color:#fff; padding:0.35rem 0.75rem; border-radius:10px; font-weight:800; font-size:1rem; margin-bottom:0.5rem; }
+    .audience-name { font-size: 2.4rem; font-weight: 800; margin: 0.2rem 0 0.6rem; text-align:left; }
+    .audience-score { font-size: 7.5rem; font-weight: 800; margin: 0.2rem 0; width: 100%; text-align: center; }
+    .audience-meta { background: #0b0b0f; border-radius: 14px; padding: 1rem; color: #ffe600; text-align: center; display: grid; gap: 0.6rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
+    .audience-timer { font-size: 3.4rem; font-weight: 800; letter-spacing: 1px; }
+    .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; }
+    .audience-rest { font-size: 1.4rem; color: #ffe600; }
+    .audience-hits { font-size: 1rem; color: #e0e0e0; }
+    .close-audience {
+      position: absolute; top: 1rem; right: 1rem; background: #ff8008; color: #222;
+      border: none; border-radius: 12px; padding: 0.6rem 1rem; font-weight: 700; cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    }
+    .audience-winner {
+      margin-top: 0.6rem;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .round-score { font-weight: 700; color: #e0e0e0; }
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
@@ -122,12 +125,10 @@
 </head>
 <body>
 
-  <!-- 🔄 Loading animation -->
   <div id="loaderOverlay">
     <div class="spinner"></div>
   </div>
 
-  <!-- 🔥 Start page -->
   <div id="startPage" class="page-container">
     <p class="subtitle fade-in-title">Träna din reaktionsförmåga och teknik med stil</p>
     <div class="button-group">
@@ -135,16 +136,14 @@
       <button class="button" onclick="showKickCounterPage()"><span class="icon">🦵</span> Sparkräknare</button>
       <button class="button" onclick="showSparringPage()"><span class="icon">🥋</span> Sparring träning</button>
       <button class="button" onclick="showCompetitionSetupPage()"><span class="icon">🏆</span> Tävlingsläge</button>
+      <button class="button" onclick="showLiveScorePage()"><span class="icon">📊</span> Live sparring score</button>
     </div>
   </div>
 
-  <!-- 🔊 Klickljud -->
   <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
 
-  <!-- 🧠 JS -->
   <script src="main.js"></script>
   <script>
-    // Klickljud
     document.addEventListener('DOMContentLoaded', () => {
       const clickSound = document.getElementById('clickSound');
       document.querySelectorAll('button').forEach(btn => {
@@ -154,22 +153,15 @@
         });
       });
     });
-
-    // Loader: Dölj efter 2 sekunder
     window.addEventListener('load', () => {
-      setTimeout(() => {
-        document.getElementById('loaderOverlay').style.display = 'none';
-      }, 2000);
-
-       });
-
-  // Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('serviceWorker.js')
-      .then(reg => console.log('ServiceWorker registrerad:', reg))
-      .catch(err => console.error('ServiceWorker fel:', err));
-  }
-</script>
+      setTimeout(() => { document.getElementById('loaderOverlay').style.display = 'none'; }, 2000);
+    });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('serviceWorker.js')
+        .then(reg => console.log('ServiceWorker registrerad:', reg))
+        .catch(err => console.error('ServiceWorker fel:', err));
+    }
+  </script>
 
   <!-- Reaction test page -->
   <div id="testPage" class="page-container" style="display:none;">
@@ -187,7 +179,7 @@
   <!-- Kick Counter page -->
   <div id="kickCounterPage" class="page-container" style="display:none;">
     <h2>Sparkräknare</h2>
-    <label for="testDuration">Varaktighet (sek):</label><br/>
+    <label for="testDuration">Varaktighet (sek):</label>
     <input id="testDuration" type="number" value="15" min="1" onchange="updateTestDuration()"/>
     <p id="kickCount">0 sparkar</p><p id="kickTimer">15 sekunder</p>
     <p id="kickStatus">Klicka 'Starta test' för att börja</p>
@@ -203,7 +195,7 @@
   <!-- Sparring page -->
   <div id="sparringPage" class="page-container" style="display:none;">
     <h2>Sparring träning</h2>
-    <label for="sparringDuration">Varaktighet (sek):</label><br/>
+    <label for="sparringDuration">Varaktighet (sek):</label>
     <input id="sparringDuration" type="number" value="60" min="5"/>
     <p id="sparringStatus">Klicka 'Starta' för att börja</p>
     <p id="sparringCommand"></p>
@@ -214,11 +206,103 @@
     </div>
   </div>
 
+  <!-- Live sparring score (operatörsvy) -->
+  <div id="liveScorePage" class="page-container" style="display:none;">
+    <h2>Live sparring score</h2>
+    <p>Manuellt Daedo-inspirerat system: operatören registrerar poäng och straff, publikvyn speglas separat.</p>
+    <div class="score-name-inputs">
+      <div>
+        <label for="redNameInput">Röd</label>
+        <input id="redNameInput" type="text" value="Röd" oninput="setLiveScoreNames()"/>
+      </div>
+      <div>
+        <label for="blueNameInput">Blå</label>
+        <input id="blueNameInput" type="text" value="Blå" oninput="setLiveScoreNames()"/>
+      </div>
+      <div>
+        <label for="matchNumberInput">Match #</label>
+        <input id="matchNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
+      </div>
+      <div>
+        <label for="roundNumberInput">Rond</label>
+        <input id="roundNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
+      </div>
+      <div>
+        <label for="totalRoundsInput">Antal ronder</label>
+        <input id="totalRoundsInput" type="number" value="3" min="1" onchange="setTotalRounds()"/>
+      </div>
+      <div>
+        <label for="matchDurationInput">Rondtid (sek)</label>
+        <input id="matchDurationInput" type="number" value="120" min="10" onchange="setMatchDuration()"/>
+      </div>
+    </div>
+
+    <div class="live-scoreboard">
+      <div class="side-panel blue">
+        <div class="side-header">
+          <span class="panel-label">BLÅ</span>
+          <span id="blueNameLabel">Blå</span>
+        </div>
+        <div class="side-score" id="blueScore">0</div>
+        <div class="panel-label">GAM-JEOM: <span id="bluePenalty">0</span></div>
+      </div>
+
+      <div class="center-panel">
+        <div class="meta-row">
+          <div class="meta-box">Match <span id="liveMatchNumber">1</span></div>
+          <div class="meta-box">Rond <span id="liveRoundNumber">1</span>/<span id="liveTotalRounds">3</span></div>
+        </div>
+        <div class="timer-display" id="liveTimer">02:00</div>
+        <div class="round-score" id="roundScore">Ronder: Röd 0 – 0 Blå</div>
+        <p id="restStatus" style="margin:0;color:#e0e0e0;"></p>
+        <div class="button-group" style="margin:0;">
+          <button class="button" onclick="startLiveTimer()">Start</button>
+          <button class="button" onclick="pauseLiveTimer()">Paus</button>
+          <button class="button" onclick="endCurrentRound()">Avsluta rond</button>
+          <button class="button" onclick="startNextRound()">Nästa rond</button>
+        </div>
+        <p class="panel-label" id="liveScoreStatus"></p>
+      </div>
+
+      <div class="side-panel red">
+        <div class="side-header">
+          <span id="redNameLabel">Röd</span>
+          <span class="panel-label">RÖD</span>
+        </div>
+        <div class="side-score" id="redScore">0</div>
+        <div class="panel-label" style="text-align:right;">GAM-JEOM: <span id="redPenalty">0</span></div>
+      </div>
+    </div>
+
+    <div class="score-actions">
+      <button class="button" onclick="awardScore('blue', 1)">+1 Blå<span class="button-label">Slag/body</span></button>
+      <button class="button" onclick="awardScore('blue', 2)">+2 Blå<span class="button-label">Kropp</span></button>
+      <button class="button" onclick="awardScore('blue', 3)">+3 Blå<span class="button-label">Huvud</span></button>
+      <button class="button" onclick="awardScore('blue', 4)">+4 Blå<span class="button-label">Avancerad</span></button>
+      <button class="button" onclick="awardScore('blue', 5)">+5 Blå<span class="button-label">Max</span></button>
+      <button class="button" onclick="awardPenalty('blue')">Gam-jeom (Blå)</button>
+      <button class="button" onclick="awardPenalty('red')">Gam-jeom (Röd)</button>
+      <button class="button" onclick="awardScore('red', 1)">+1 Röd<span class="button-label">Slag/body</span></button>
+      <button class="button" onclick="awardScore('red', 2)">+2 Röd<span class="button-label">Kropp</span></button>
+      <button class="button" onclick="awardScore('red', 3)">+3 Röd<span class="button-label">Huvud</span></button>
+      <button class="button" onclick="awardScore('red', 4)">+4 Röd<span class="button-label">Avancerad</span></button>
+      <button class="button" onclick="awardScore('red', 5)">+5 Röd<span class="button-label">Max</span></button>
+    </div>
+
+    <div class="button-group">
+      <button class="button" onclick="undoLastAction()">Ångra senaste</button>
+      <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
+      <button class="button" onclick="toggleAudienceView(true)">Visa publikvy (samma flik)</button>
+      <button class="button" onclick="openAudienceWindow()">Öppna publikvy i ny flik</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
+    </div>
+  </div>
+
   <!-- Competition setup -->
   <div id="competitionSetupPage" class="page-container" style="display:none;">
     <h2>Tävlingsläge – inställningar</h2>
     <p>Ställ in antal deltagare och deras namn.</p>
-    <label for="competitionCount">Antal deltagare:</label><br/>
+    <label for="competitionCount">Antal deltagare:</label>
     <input id="competitionCount" type="number" min="1" value="2" onchange="updateCompetitionNameInputs()"/>
     <div id="competitionNames" style="margin-top:1rem;"></div>
     <div class="button-group">
@@ -227,7 +311,6 @@
     </div>
   </div>
 
-  <!-- Competition run -->
   <div id="competitionRunPage" class="page-container" style="display:none;">
     <h2>Tävlingsläge</h2>
     <ul id="competitionNamesList" style="list-style:none; padding-left:0; margin-bottom:1rem;"></ul>
@@ -239,7 +322,6 @@
     <div id="competitionResults"></div>
   </div>
 
-  <!-- Competition round -->
   <div id="competitionRoundPage" class="page-container" style="display:none;">
     <h2 id="roundParticipantName" style="font-size:2rem; margin-bottom:2rem;"></h2>
     <div class="button-group">
@@ -248,43 +330,63 @@
     </div>
   </div>
 
-  <!-- Countdown overlay -->
   <div id="countdownOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;z-index:1000;background:black;color:orange;font-size:8rem;font-weight:bold;"></div>
 
-  <!-- Klickljud -->
-  <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
-
-  <!-- Cheering sound -->
   <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
 
   <script src="main.js"></script>
-<script>
-  // Klickljud
-  document.addEventListener('DOMContentLoaded', () => {
-    const clickSound = document.getElementById('clickSound');
-    document.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        clickSound.currentTime = 0;
-        clickSound.play().catch(() => {});
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const clickSound = document.getElementById('clickSound');
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          clickSound.currentTime = 0;
+          clickSound.play().catch(() => {});
+        });
       });
     });
-  });
+    window.addEventListener('load', () => {
+      setTimeout(() => { document.getElementById('loaderOverlay').style.display = 'none'; }, 2000);
+    });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('serviceWorker.js')
+        .then(reg => console.log('ServiceWorker registrerad:', reg))
+        .catch(err => console.error('ServiceWorker fel:', err));
+    }
+  </script>
 
-  // Loader: Dölj efter 2 sekunder
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('loaderOverlay').style.display = 'none';
-    }, 2000);
-  });
-
-  // Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('serviceWorker.js')
-      .then(reg => console.log('ServiceWorker registrerad:', reg))
-      .catch(err => console.error('ServiceWorker fel:', err));
-  }
-</script>
+  <div id="audienceView" class="audience-view">
+    <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
+    <div class="audience-board">
+      <div class="audience-panel blue">
+        <div class="audience-badge" id="audienceBlueBadge">🇸🇪</div>
+        <div class="audience-name" id="audienceBlueName">Blå</div>
+        <div class="audience-score" id="audienceBlueScore">0</div>
+        <div class="audience-hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
+        <div>Gam-jeom: <span id="audienceBluePenalty">0</span></div>
+      </div>
+      <div class="audience-meta">
+        <div id="audienceMatchTitle">Match</div>
+        <div class="audience-timer" id="audienceTimer">02:00</div>
+        <div class="audience-row">
+          <span>Rond <span id="audienceRound">1</span></span>
+          <span id="audienceInfo"></span>
+        </div>
+        <div class="audience-row">
+          <span id="audienceRoundScore">Ronder: 0 – 0</span>
+        </div>
+        <div class="audience-rest" id="audienceRest">Rest: --</div>
+        <div class="audience-winner" id="audienceWinner"></div>
+      </div>
+      <div class="audience-panel red">
+        <div class="audience-badge" id="audienceRedBadge">🇸🇪</div>
+        <div class="audience-name" id="audienceRedName">Röd</div>
+        <div class="audience-score" id="audienceRedScore">0</div>
+        <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
+        <div>Gam-jeom: <span id="audienceRedPenalty">0</span></div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
-
