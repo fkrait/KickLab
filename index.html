@@ -114,6 +114,125 @@
       text-align: center;
       font-size: 1rem;
     }
+    .scoreboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .live-scoreboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      align-items: stretch;
+    }
+    .side-panel {
+      border-radius: 18px;
+      padding: 1.2rem;
+      color: white;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 260px;
+    }
+    .side-panel.blue { background: linear-gradient(180deg, #163d9b, #0b214f); }
+    .side-panel.red { background: linear-gradient(180deg, #b22626, #5c1111); }
+    .side-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .side-score {
+      font-size: 4.4rem;
+      font-weight: 800;
+      margin: 0.8rem 0;
+      text-align: center;
+    }
+    .panel-label { font-size: 0.95rem; opacity: 0.85; }
+    .center-panel {
+      background: #0b0b0f;
+      border-radius: 18px;
+      padding: 1rem;
+      color: #ffe600;
+      text-align: center;
+      display: grid;
+      gap: 0.6rem;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.3);
+      min-height: 260px;
+    }
+    .timer-display {
+      background: #111;
+      border-radius: 12px;
+      padding: 0.8rem 0.6rem;
+      font-size: 3.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #ffe600;
+      border: 2px solid #444;
+      box-shadow: inset 0 0 0 1px #222;
+    }
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.5rem;
+      color: #e0e0e0;
+    }
+    .meta-box {
+      background: #1a1a1f;
+      border-radius: 10px;
+      padding: 0.6rem 0.7rem;
+      border: 1px solid #2a2a34;
+      font-weight: 700;
+    }
+    .score-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+      margin: 1.2rem 0;
+    }
+    .score-actions .button {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.9rem;
+      font-size: 1rem;
+    }
+    .button-label { font-size: 0.85rem; color: #222; }
+    .score-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .score-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+    .score-value { font-size: 2.4rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+    .score-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .score-buttons .button { padding: 0.65rem 0.4rem; font-size: 0.95rem; }
+    .score-name-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .score-name-inputs label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+    }
+    .score-name-inputs input[type='text'] {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+    }
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
@@ -135,6 +254,7 @@
       <button class="button" onclick="showKickCounterPage()"><span class="icon">🦵</span> Sparkräknare</button>
       <button class="button" onclick="showSparringPage()"><span class="icon">🥋</span> Sparring träning</button>
       <button class="button" onclick="showCompetitionSetupPage()"><span class="icon">🏆</span> Tävlingsläge</button>
+      <button class="button" onclick="showLiveScorePage()"><span class="icon">📊</span> Live sparring score</button>
     </div>
   </div>
 
@@ -214,6 +334,84 @@
     </div>
   </div>
 
+  <!-- Live sparring score -->
+  <div id="liveScorePage" class="page-container" style="display:none;">
+    <h2>Live sparring score</h2>
+    <p>Manuellt Poängsystem inspirerat av Daedo – välj träfftyp och starta matchklockan.</p>
+    <div class="score-name-inputs">
+      <div>
+        <label for="redNameInput">Röd</label>
+        <input id="redNameInput" type="text" value="Röd" oninput="setLiveScoreNames()"/>
+      </div>
+      <div>
+        <label for="blueNameInput">Blå</label>
+        <input id="blueNameInput" type="text" value="Blå" oninput="setLiveScoreNames()"/>
+      </div>
+      <div>
+        <label for="matchNumberInput">Match #</label>
+        <input id="matchNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
+      </div>
+      <div>
+        <label for="roundNumberInput">Rond</label>
+        <input id="roundNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
+      </div>
+      <div>
+        <label for="matchDurationInput">Matchtid (sek)</label>
+        <input id="matchDurationInput" type="number" value="120" min="10" onchange="setMatchDuration()"/>
+      </div>
+    </div>
+
+    <div class="live-scoreboard">
+      <div class="side-panel blue">
+        <div class="side-header">
+          <span class="panel-label">HKG</span>
+          <span id="blueNameLabel">Blå</span>
+        </div>
+        <div class="side-score" id="blueScore">0</div>
+        <div class="panel-label">GAM-JEOM: <span id="bluePenalty">0</span></div>
+      </div>
+
+      <div class="center-panel">
+        <div class="meta-row">
+          <div class="meta-box">Match <span id="liveMatchNumber">1</span></div>
+          <div class="meta-box">Rond <span id="liveRoundNumber">1</span></div>
+        </div>
+        <div class="timer-display" id="liveTimer">02:00</div>
+        <div class="button-group" style="margin:0;">
+          <button class="button" onclick="startLiveTimer()">Start</button>
+          <button class="button" onclick="pauseLiveTimer()">Paus</button>
+          <button class="button" onclick="resetLiveMatch()">Nollställ</button>
+        </div>
+        <p class="panel-label" id="liveScoreStatus"></p>
+      </div>
+
+      <div class="side-panel red">
+        <div class="side-header">
+          <span id="redNameLabel">Röd</span>
+          <span class="panel-label">HKG</span>
+        </div>
+        <div class="side-score" id="redScore">0</div>
+        <div class="panel-label" style="text-align:right;">GAM-JEOM: <span id="redPenalty">0</span></div>
+      </div>
+    </div>
+
+    <div class="score-actions">
+      <button class="button" onclick="awardScore('blue', 'head')">+3 Huvudspark (Blå)<span class="button-label">Head kick</span></button>
+      <button class="button" onclick="awardScore('blue', 'bodyKick')">+2 Spark väst (Blå)<span class="button-label">Body kick</span></button>
+      <button class="button" onclick="awardScore('blue', 'punch')">+1 Slag väst (Blå)<span class="button-label">Body punch</span></button>
+      <button class="button" onclick="awardPenalty('blue')">-1 Gam-jeom (Blå)</button>
+      <button class="button" onclick="awardPenalty('red')">-1 Gam-jeom (Röd)</button>
+      <button class="button" onclick="awardScore('red', 'punch')">+1 Slag väst (Röd)<span class="button-label">Body punch</span></button>
+      <button class="button" onclick="awardScore('red', 'bodyKick')">+2 Spark väst (Röd)<span class="button-label">Body kick</span></button>
+      <button class="button" onclick="awardScore('red', 'head')">+3 Huvudspark (Röd)<span class="button-label">Head kick</span></button>
+    </div>
+
+    <div class="button-group">
+      <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
+    </div>
+  </div>
+
   <!-- Competition setup -->
   <div id="competitionSetupPage" class="page-container" style="display:none;">
     <h2>Tävlingsläge – inställningar</h2>
@@ -287,4 +485,3 @@
 
 </body>
 </html>
-
