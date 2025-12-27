@@ -106,44 +106,6 @@
       border: none; border-radius: 12px; padding: 0.6rem 1rem; font-weight: 700; cursor: pointer;
       box-shadow: 0 6px 18px rgba(0,0,0,0.3);
     }
-    .scoreboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
-    }
-    .score-card {
-      background: rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 1rem;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-    }
-    .score-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
-    .score-value { font-size: 2.4rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
-    .score-buttons {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.5rem;
-    }
-    .score-buttons .button { padding: 0.65rem 0.4rem; font-size: 0.95rem; }
-    .score-name-inputs {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.8rem;
-      margin: 1rem 0;
-    }
-    .score-name-inputs label {
-      display: block;
-      margin-bottom: 0.35rem;
-      font-weight: 600;
-    }
-    .score-name-inputs input[type='text'] {
-      width: 100%;
-      padding: 0.6rem;
-      border-radius: 10px;
-      border: none;
-      font-size: 1rem;
-    }
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
@@ -237,10 +199,6 @@
   <div id="liveScorePage" class="page-container" style="display:none;">
     <h2>Live sparring score</h2>
     <p>Manuellt Daedo-inspirerat system: operatören registrerar poäng och straff, publikvyn speglas separat.</p>
-  <!-- Live sparring score -->
-  <div id="liveScorePage" class="page-container" style="display:none;">
-    <h2>Live sparring score</h2>
-    <p>Registrera poäng live under sparring och håll koll på ställningen.</p>
     <div class="score-name-inputs">
       <div>
         <label for="redNameInput">Röd</label>
@@ -322,30 +280,6 @@
       <button class="button" onclick="undoLastAction()">Ångra senaste</button>
       <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
       <button class="button" onclick="toggleAudienceView(true)">Visa publikvy</button>
-    </div>
-    <div class="scoreboard-grid">
-      <div class="score-card">
-        <h3 id="redNameLabel">Röd</h3>
-        <p class="score-value" id="redScore">0</p>
-        <div class="score-buttons">
-          <button class="button" onclick="adjustLiveScore('red', 1)">+1</button>
-          <button class="button" onclick="adjustLiveScore('red', 2)">+2</button>
-          <button class="button" onclick="adjustLiveScore('red', -1)">-1</button>
-        </div>
-      </div>
-      <div class="score-card">
-        <h3 id="blueNameLabel">Blå</h3>
-        <p class="score-value" id="blueScore">0</p>
-        <div class="score-buttons">
-          <button class="button" onclick="adjustLiveScore('blue', 1)">+1</button>
-          <button class="button" onclick="adjustLiveScore('blue', 2)">+2</button>
-          <button class="button" onclick="adjustLiveScore('blue', -1)">-1</button>
-        </div>
-      </div>
-    </div>
-    <p id="liveScoreStatus"></p>
-    <div class="button-group">
-      <button class="button" onclick="resetLiveScore()">Nollställ poäng</button>
       <button class="button" onclick="showStartPage()">Tillbaka</button>
     </div>
   </div>
