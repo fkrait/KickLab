@@ -33,6 +33,7 @@ let totalRounds = 3;
 let currentRound = 1;
 let lastAction = null; // { type: 'score'|'penalty', side, value }
 let audienceMode = false;
+let broadcastChannel = null;
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
@@ -184,6 +185,7 @@ function updateLiveScoreDisplay() {
   if (audInfo) audInfo.textContent = `Rond ${currentRound}`;
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
+  broadcastState();
 }
 
 function setLiveScoreNames() {
@@ -368,8 +370,59 @@ function toggleAudienceView(show) {
   updateLiveScoreDisplay();
 }
 
+function broadcastState() {
+  if (!broadcastChannel || audienceMode) return;
+  const payload = {
+    liveScore: { ...liveScore },
+    livePenalties: { ...livePenalties },
+    liveScoreNames: { ...liveScoreNames },
+    currentRound,
+    totalRounds,
+    liveTimeLeft,
+    matchDurationSeconds,
+    matchNumber: document.getElementById("matchNumberInput")?.value || "1",
+    timerRunning: liveTimerRunning,
+  };
+  broadcastChannel.postMessage(payload);
+}
+
+function applyIncomingState(state) {
+  // Uppdaterar publikvyn i en separat flik utan att påverka operatörens flik.
+  const redName = state.liveScoreNames?.red || "Röd";
+  const blueName = state.liveScoreNames?.blue || "Blå";
+  const timerText = formatLiveTime(state.liveTimeLeft ?? 0);
+  const audRedName = document.getElementById("audienceRedName");
+  const audBlueName = document.getElementById("audienceBlueName");
+  const audRedScore = document.getElementById("audienceRedScore");
+  const audBlueScore = document.getElementById("audienceBlueScore");
+  const audTimer = document.getElementById("audienceTimer");
+  const audRound = document.getElementById("audienceRound");
+  const audInfo = document.getElementById("audienceInfo");
+  const audMatchTitle = document.getElementById("audienceMatchTitle");
+  const audRedPen = document.getElementById("audienceRedPenalty");
+  const audBluePen = document.getElementById("audienceBluePenalty");
+  if (audRedName) audRedName.textContent = redName;
+  if (audBlueName) audBlueName.textContent = blueName;
+  if (audRedScore) audRedScore.textContent = state.liveScore?.red ?? 0;
+  if (audBlueScore) audBlueScore.textContent = state.liveScore?.blue ?? 0;
+  if (audTimer) audTimer.textContent = timerText;
+  if (audRound) audRound.textContent = `${state.currentRound ?? 1}/${state.totalRounds ?? 1}`;
+  if (audInfo) audInfo.textContent = `Rond ${state.currentRound ?? 1}`;
+  if (audMatchTitle) audMatchTitle.textContent = `Match ${state.matchNumber ?? "1"}`;
+  if (audRedPen) audRedPen.textContent = state.livePenalties?.red ?? 0;
+  if (audBluePen) audBluePen.textContent = state.livePenalties?.blue ?? 0;
+}
+
 // Säkerställ att vi startar på startmenyn även om någon vy sparats i cache
 document.addEventListener("DOMContentLoaded", () => {
+  if ("BroadcastChannel" in window) {
+    broadcastChannel = new BroadcastChannel("kicklab-live-score");
+    broadcastChannel.onmessage = (event) => {
+      if (!audienceMode) return;
+      if (!event.data) return;
+      applyIncomingState(event.data);
+    };
+  }
   toggleAudienceView(false);
   showStartPage();
   const params = new URLSearchParams(window.location.search);
