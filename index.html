@@ -114,6 +114,44 @@
       text-align: center;
       font-size: 1rem;
     }
+    .scoreboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .score-card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .score-card h3 { margin: 0 0 0.4rem; font-size: 1.1rem; }
+    .score-value { font-size: 2.4rem; font-weight: 700; margin: 0.4rem 0 0.8rem; }
+    .score-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .score-buttons .button { padding: 0.65rem 0.4rem; font-size: 0.95rem; }
+    .score-name-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .score-name-inputs label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+    }
+    .score-name-inputs input[type='text'] {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+    }
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
@@ -135,6 +173,7 @@
       <button class="button" onclick="showKickCounterPage()"><span class="icon">🦵</span> Sparkräknare</button>
       <button class="button" onclick="showSparringPage()"><span class="icon">🥋</span> Sparring träning</button>
       <button class="button" onclick="showCompetitionSetupPage()"><span class="icon">🏆</span> Tävlingsläge</button>
+      <button class="button" onclick="showLiveScorePage()"><span class="icon">📊</span> Live sparring score</button>
     </div>
   </div>
 
@@ -214,6 +253,47 @@
     </div>
   </div>
 
+  <!-- Live sparring score -->
+  <div id="liveScorePage" class="page-container" style="display:none;">
+    <h2>Live sparring score</h2>
+    <p>Registrera poäng live under sparring och håll koll på ställningen.</p>
+    <div class="score-name-inputs">
+      <div>
+        <label for="redNameInput">Röd</label>
+        <input id="redNameInput" type="text" value="Röd" oninput="setLiveScoreNames()"/>
+      </div>
+      <div>
+        <label for="blueNameInput">Blå</label>
+        <input id="blueNameInput" type="text" value="Blå" oninput="setLiveScoreNames()"/>
+      </div>
+    </div>
+    <div class="scoreboard-grid">
+      <div class="score-card">
+        <h3 id="redNameLabel">Röd</h3>
+        <p class="score-value" id="redScore">0</p>
+        <div class="score-buttons">
+          <button class="button" onclick="adjustLiveScore('red', 1)">+1</button>
+          <button class="button" onclick="adjustLiveScore('red', 2)">+2</button>
+          <button class="button" onclick="adjustLiveScore('red', -1)">-1</button>
+        </div>
+      </div>
+      <div class="score-card">
+        <h3 id="blueNameLabel">Blå</h3>
+        <p class="score-value" id="blueScore">0</p>
+        <div class="score-buttons">
+          <button class="button" onclick="adjustLiveScore('blue', 1)">+1</button>
+          <button class="button" onclick="adjustLiveScore('blue', 2)">+2</button>
+          <button class="button" onclick="adjustLiveScore('blue', -1)">-1</button>
+        </div>
+      </div>
+    </div>
+    <p id="liveScoreStatus"></p>
+    <div class="button-group">
+      <button class="button" onclick="resetLiveScore()">Nollställ poäng</button>
+      <button class="button" onclick="showStartPage()">Tillbaka</button>
+    </div>
+  </div>
+
   <!-- Competition setup -->
   <div id="competitionSetupPage" class="page-container" style="display:none;">
     <h2>Tävlingsläge – inställningar</h2>
@@ -287,4 +367,3 @@
 
 </body>
 </html>
-

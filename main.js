@@ -21,12 +21,17 @@ let currentKickIndex = 0;
 let competitionStartTime;
 let competitionAudioCtx, competitionMediaStream, competitionMediaStreamSource,
   competitionAnalyser, competitionDataArray;
+// Live score-läge
+const liveScore = { red: 0, blue: 0 };
+const liveScoreNames = { red: "Röd", blue: "Blå" };
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
 
   // Dölj även tävlingssidorna om de är aktiva (både setup och run)
   const compSetup = document.getElementById("competitionSetupPage");
@@ -74,6 +79,8 @@ function showTestPage() {
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "block";
   document.getElementById("kickCounterPage").style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
   loadStats();
 }
 
@@ -82,14 +89,74 @@ function showSparringPage() {
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "block";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
 }
 
 function showKickCounterPage() {
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "block";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
   stopListening();
   loadKickStats();
+}
+
+function showLiveScorePage() {
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("testPage").style.display = "none";
+  document.getElementById("kickCounterPage").style.display = "none";
+  document.getElementById("sparringPage").style.display = "none";
+  const compSetup = document.getElementById("competitionSetupPage");
+  const compRun = document.getElementById("competitionRunPage");
+  const compRound = document.getElementById("competitionRoundPage");
+  if (compSetup) compSetup.style.display = "none";
+  if (compRun) compRun.style.display = "none";
+  if (compRound) compRound.style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "block";
+  stopTest();
+  stopKickTest();
+  stopSparringTraining();
+  updateLiveScoreDisplay();
+}
+
+function updateLiveScoreDisplay() {
+  const redNameInput = document.getElementById("redNameInput");
+  const blueNameInput = document.getElementById("blueNameInput");
+  if (redNameInput) liveScoreNames.red = redNameInput.value.trim() || "Röd";
+  if (blueNameInput) liveScoreNames.blue = blueNameInput.value.trim() || "Blå";
+  const redLabel = document.getElementById("redNameLabel");
+  const blueLabel = document.getElementById("blueNameLabel");
+  if (redLabel) redLabel.textContent = liveScoreNames.red;
+  if (blueLabel) blueLabel.textContent = liveScoreNames.blue;
+  const redScore = document.getElementById("redScore");
+  const blueScore = document.getElementById("blueScore");
+  if (redScore) redScore.textContent = liveScore.red;
+  if (blueScore) blueScore.textContent = liveScore.blue;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) {
+    status.textContent = `${liveScoreNames.red}: ${liveScore.red} – ${liveScoreNames.blue}: ${liveScore.blue}`;
+  }
+}
+
+function setLiveScoreNames() {
+  updateLiveScoreDisplay();
+}
+
+function adjustLiveScore(side, delta) {
+  if (!(side in liveScore)) return;
+  liveScore[side] = Math.max(0, liveScore[side] + delta);
+  updateLiveScoreDisplay();
+}
+
+function resetLiveScore() {
+  liveScore.red = 0;
+  liveScore.blue = 0;
+  updateLiveScoreDisplay();
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = "Poängen har nollställts.";
 }
 
 function playBeep() {
