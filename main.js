@@ -257,7 +257,7 @@ function resetLiveMatch() {
   liveTimeLeft = matchDurationSeconds;
   resetLiveScore();
   const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = "Match nollställd";
+  if (status) status.textContent = `Match nollställd – ${liveScoreNames.red}: ${liveScore.red} | ${liveScoreNames.blue}: ${liveScore.blue}`;
   updateLiveScoreDisplay();
 }
 
