@@ -21,12 +21,25 @@ let currentKickIndex = 0;
 let competitionStartTime;
 let competitionAudioCtx, competitionMediaStream, competitionMediaStreamSource,
   competitionAnalyser, competitionDataArray;
+// Live score-läge
+const liveScore = { red: 0, blue: 0 };
+const liveScoreNames = { red: "Röd", blue: "Blå" };
+const livePenalties = { red: 0, blue: 0 };
+let matchDurationSeconds = 120;
+let liveTimeLeft = matchDurationSeconds;
+let liveTimerId = null;
+let liveTimerRunning = false;
+let totalRounds = 3;
+let currentRound = 1;
+let lastAction = null; // { type: 'score'|'penalty', side, value }
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
 
   // Dölj även tävlingssidorna om de är aktiva (både setup och run)
   const compSetup = document.getElementById("competitionSetupPage");
@@ -43,6 +56,8 @@ function showStartPage() {
 
   stopSparringTraining();
   stopListening();
+  pauseLiveTimer();
+  toggleAudienceView(false);
 }
 
 function stopSparringTraining() {
@@ -74,6 +89,9 @@ function showTestPage() {
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "block";
   document.getElementById("kickCounterPage").style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
+  pauseLiveTimer();
   loadStats();
 }
 
@@ -82,14 +100,271 @@ function showSparringPage() {
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "block";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
+  pauseLiveTimer();
 }
 
 function showKickCounterPage() {
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "block";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
   stopListening();
+  pauseLiveTimer();
   loadKickStats();
+}
+
+function showLiveScorePage() {
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("testPage").style.display = "none";
+  document.getElementById("kickCounterPage").style.display = "none";
+  document.getElementById("sparringPage").style.display = "none";
+  const compSetup = document.getElementById("competitionSetupPage");
+  const compRun = document.getElementById("competitionRunPage");
+  const compRound = document.getElementById("competitionRoundPage");
+  if (compSetup) compSetup.style.display = "none";
+  if (compRun) compRun.style.display = "none";
+  if (compRound) compRound.style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "block";
+  stopTest();
+  stopKickTest();
+  stopSparringTraining();
+  setMatchDuration();
+  updateLiveMeta();
+  updateLiveScoreDisplay();
+}
+
+function updateLiveScoreDisplay() {
+  const redNameInput = document.getElementById("redNameInput");
+  const blueNameInput = document.getElementById("blueNameInput");
+  if (redNameInput) liveScoreNames.red = redNameInput.value.trim() || "Röd";
+  if (blueNameInput) liveScoreNames.blue = blueNameInput.value.trim() || "Blå";
+  const redLabel = document.getElementById("redNameLabel");
+  const blueLabel = document.getElementById("blueNameLabel");
+  if (redLabel) redLabel.textContent = liveScoreNames.red;
+  if (blueLabel) blueLabel.textContent = liveScoreNames.blue;
+  const redScore = document.getElementById("redScore");
+  const blueScore = document.getElementById("blueScore");
+  if (redScore) redScore.textContent = liveScore.red;
+  if (blueScore) blueScore.textContent = liveScore.blue;
+  const redPenalty = document.getElementById("redPenalty");
+  const bluePenalty = document.getElementById("bluePenalty");
+  if (redPenalty) redPenalty.textContent = livePenalties.red;
+  if (bluePenalty) bluePenalty.textContent = livePenalties.blue;
+  const timerEl = document.getElementById("liveTimer");
+  if (timerEl) timerEl.textContent = formatLiveTime(liveTimeLeft);
+  const status = document.getElementById("liveScoreStatus");
+  if (status) {
+    status.textContent = `${liveScoreNames.red}: ${liveScore.red} – ${liveScoreNames.blue}: ${liveScore.blue}`;
+  }
+  const totalRoundsEl = document.getElementById("liveTotalRounds");
+  if (totalRoundsEl) totalRoundsEl.textContent = totalRounds;
+  // Publikvy
+  const audRedName = document.getElementById("audienceRedName");
+  const audBlueName = document.getElementById("audienceBlueName");
+  const audRedScore = document.getElementById("audienceRedScore");
+  const audBlueScore = document.getElementById("audienceBlueScore");
+  const audTimer = document.getElementById("audienceTimer");
+  const audRound = document.getElementById("audienceRound");
+  const audInfo = document.getElementById("audienceInfo");
+  const audMatchTitle = document.getElementById("audienceMatchTitle");
+  const audRedPen = document.getElementById("audienceRedPenalty");
+  const audBluePen = document.getElementById("audienceBluePenalty");
+  if (audRedName) audRedName.textContent = liveScoreNames.red;
+  if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
+  if (audRedScore) audRedScore.textContent = liveScore.red;
+  if (audBlueScore) audBlueScore.textContent = liveScore.blue;
+  if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
+  if (audRound) audRound.textContent = `${currentRound}/${totalRounds}`;
+  if (audMatchTitle) audMatchTitle.textContent = `Match ${document.getElementById("matchNumberInput")?.value || "1"}`;
+  if (audInfo) audInfo.textContent = `Rond ${currentRound}`;
+  if (audRedPen) audRedPen.textContent = livePenalties.red;
+  if (audBluePen) audBluePen.textContent = livePenalties.blue;
+}
+
+function setLiveScoreNames() {
+  updateLiveScoreDisplay();
+}
+
+function setTotalRounds() {
+  const totalInput = document.getElementById("totalRoundsInput");
+  if (totalInput) {
+    const val = parseInt(totalInput.value, 10);
+    if (!isNaN(val) && val > 0) totalRounds = val;
+  }
+  if (currentRound > totalRounds) currentRound = totalRounds;
+  updateLiveScoreDisplay();
+}
+
+function adjustLiveScore(side, delta) {
+  if (!(side in liveScore)) return;
+  liveScore[side] = Math.max(0, liveScore[side] + delta);
+  updateLiveScoreDisplay();
+}
+
+function awardScore(side, value) {
+  if (!(side in liveScore)) return;
+  liveScore[side] += value;
+  lastAction = { type: "score", side, value };
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `${liveScoreNames[side]} +${value}`;
+  updateLiveScoreDisplay();
+}
+
+function awardPenalty(side) {
+  if (!(side in liveScore)) return;
+  // Gam-jeom: +1 till motståndaren och registrera penalty
+  livePenalties[side] += 1;
+  const opponent = side === "red" ? "blue" : "red";
+  liveScore[opponent] += 1;
+  lastAction = { type: "penalty", side, value: 1 };
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `${liveScoreNames[side]} gam-jeom ( +1 ${liveScoreNames[opponent]} )`;
+  updateLiveScoreDisplay();
+}
+
+function resetLiveScore() {
+  liveScore.red = 0;
+  liveScore.blue = 0;
+  livePenalties.red = 0;
+  livePenalties.blue = 0;
+  updateLiveScoreDisplay();
+}
+
+function undoLastAction() {
+  if (!lastAction) {
+    const status = document.getElementById("liveScoreStatus");
+    if (status) status.textContent = "Inget att ångra.";
+    return;
+  }
+  if (lastAction.type === "score") {
+    liveScore[lastAction.side] = Math.max(0, liveScore[lastAction.side] - lastAction.value);
+  } else if (lastAction.type === "penalty") {
+    const opponent = lastAction.side === "red" ? "blue" : "red";
+    liveScore[opponent] = Math.max(0, liveScore[opponent] - 1);
+    livePenalties[lastAction.side] = Math.max(0, livePenalties[lastAction.side] - 1);
+  }
+  lastAction = null;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = "Senaste åtgärden ångrad.";
+  updateLiveScoreDisplay();
+}
+
+function updateLiveMeta() {
+  const matchInput = document.getElementById("matchNumberInput");
+  const roundInput = document.getElementById("roundNumberInput");
+  const matchDisplay = document.getElementById("liveMatchNumber");
+  const roundDisplay = document.getElementById("liveRoundNumber");
+  if (matchInput && matchDisplay) matchDisplay.textContent = matchInput.value || "1";
+  if (roundInput && roundDisplay) {
+    const rVal = parseInt(roundInput.value, 10);
+    currentRound = !isNaN(rVal) && rVal > 0 ? rVal : 1;
+    roundDisplay.textContent = currentRound;
+  }
+  const totalInput = document.getElementById("totalRoundsInput");
+  if (totalInput) {
+    const val = parseInt(totalInput.value, 10);
+    if (!isNaN(val) && val > 0) totalRounds = val;
+  }
+  const totalRoundsEl = document.getElementById("liveTotalRounds");
+  if (totalRoundsEl) totalRoundsEl.textContent = totalRounds;
+}
+
+function setMatchDuration() {
+  const durInput = document.getElementById("matchDurationInput");
+  if (durInput) {
+    const val = parseInt(durInput.value, 10);
+    if (!isNaN(val) && val > 0) {
+      matchDurationSeconds = val;
+    }
+  }
+  liveTimeLeft = matchDurationSeconds;
+  updateLiveScoreDisplay();
+}
+
+function formatLiveTime(seconds) {
+  const clamped = Math.max(0, Math.round(seconds));
+  const m = Math.floor(clamped / 60).toString().padStart(2, "0");
+  const s = (clamped % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function startLiveTimer() {
+  if (liveTimerRunning) return;
+  if (liveTimeLeft <= 0) {
+    liveTimeLeft = matchDurationSeconds;
+  }
+  liveTimerRunning = true;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = "Matchklockan startad";
+  liveTimerId = setInterval(() => {
+    liveTimeLeft -= 1;
+    if (liveTimeLeft <= 0) {
+      liveTimeLeft = 0;
+      endCurrentRound();
+    } else {
+      updateLiveScoreDisplay();
+    }
+  }, 1000);
+}
+
+function pauseLiveTimer() {
+  liveTimerRunning = false;
+  if (liveTimerId) clearInterval(liveTimerId);
+  liveTimerId = null;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = "Matchklockan pausad";
+  updateLiveScoreDisplay();
+}
+
+function resetLiveMatch() {
+  pauseLiveTimer();
+  liveTimeLeft = matchDurationSeconds;
+  currentRound = 1;
+  const roundInput = document.getElementById("roundNumberInput");
+  if (roundInput) roundInput.value = currentRound;
+  const roundDisplay = document.getElementById("liveRoundNumber");
+  if (roundDisplay) roundDisplay.textContent = currentRound;
+  resetLiveScore();
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `Match nollställd – ${liveScoreNames.red}: ${liveScore.red} | ${liveScoreNames.blue}: ${liveScore.blue}`;
+  updateLiveScoreDisplay();
+}
+
+function endCurrentRound() {
+  pauseLiveTimer();
+  liveTimeLeft = 0;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `Rond ${currentRound} slut. Starta nästa rond manuellt.`;
+  updateLiveScoreDisplay();
+}
+
+function startNextRound() {
+  if (currentRound >= totalRounds) {
+    const status = document.getElementById("liveScoreStatus");
+    if (status) status.textContent = "Matchen är redan i sista ronden.";
+    return;
+  }
+  currentRound += 1;
+  const roundInput = document.getElementById("roundNumberInput");
+  if (roundInput) roundInput.value = currentRound;
+  const roundDisplay = document.getElementById("liveRoundNumber");
+  if (roundDisplay) roundDisplay.textContent = currentRound;
+  liveTimeLeft = matchDurationSeconds;
+  pauseLiveTimer();
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `Rond ${currentRound} förberedd. Starta klockan.`;
+  updateLiveScoreDisplay();
+}
+
+function toggleAudienceView(show) {
+  const view = document.getElementById("audienceView");
+  if (!view) return;
+  view.style.display = show ? "block" : "none";
+  updateLiveScoreDisplay();
 }
 
 function playBeep() {
