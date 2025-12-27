@@ -32,6 +32,7 @@ let liveTimerRunning = false;
 let totalRounds = 3;
 let currentRound = 1;
 let lastAction = null; // { type: 'score'|'penalty', side, value }
+let audienceMode = false;
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
@@ -371,7 +372,21 @@ function toggleAudienceView(show) {
 document.addEventListener("DOMContentLoaded", () => {
   toggleAudienceView(false);
   showStartPage();
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("audience") === "1") {
+    audienceMode = true;
+    const loader = document.getElementById("loaderOverlay");
+    if (loader) loader.style.display = "none";
+    document.querySelectorAll(".page-container").forEach((el) => (el.style.display = "none"));
+    toggleAudienceView(true);
+  }
 });
+
+function openAudienceWindow() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("audience", "1");
+  window.open(url.toString(), "_blank", "noopener,noreferrer");
+}
 
 function playBeep() {
   const duration = 0.1;
