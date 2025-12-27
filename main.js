@@ -365,6 +365,12 @@ function toggleAudienceView(show) {
   if (!view) return;
   view.style.display = show ? "block" : "none";
   updateLiveScoreDisplay();
+function resetLiveScore() {
+  liveScore.red = 0;
+  liveScore.blue = 0;
+  updateLiveScoreDisplay();
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = "Poängen har nollställts.";
 }
 
 function playBeep() {
