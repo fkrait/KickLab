@@ -196,27 +196,26 @@ function updateLiveScoreDisplay() {
   const audRest = document.getElementById("audienceRest");
   const audRedHits = document.getElementById("audienceRedHits");
   const audBlueHits = document.getElementById("audienceBlueHits");
-  if (audRedName) audRedName.textContent = `🇸🇪 ${liveScoreNames.red}`;
-  if (audBlueName) audBlueName.textContent = `🇸🇪 ${liveScoreNames.blue}`;
+  if (audRedName) audRedName.textContent = liveScoreNames.red;
+  if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
   if (audRedScore) audRedScore.textContent = liveScore.red;
   if (audBlueScore) audBlueScore.textContent = liveScore.blue;
-  const timerText = restTimeLeft > 0 ? formatLiveTime(restTimeLeft) : formatLiveTime(liveTimeLeft);
-  if (audTimer) audTimer.textContent = timerText;
+  if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
   if (audRound) audRound.textContent = `${currentRound}/${totalRounds}`;
   if (audMatchTitle) audMatchTitle.textContent = `Match ${document.getElementById("matchNumberInput")?.value || "1"}`;
-  if (audInfo) audInfo.textContent = restTimeLeft > 0 ? "Paus" : `Rond ${currentRound}`;
+  if (audInfo) audInfo.textContent = `Rond ${currentRound}`;
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
-  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} - ${roundWins.blue}`;
+  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.blue} - ${roundWins.red}`;
   if (audWinner) audWinner.textContent = matchEnded ? `WINNER: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
   if (audRest) audRest.textContent = restTimeLeft > 0 ? `Rest: ${formatLiveTime(restTimeLeft)}` : "";
-  const statsRed = restTimeLeft > 0 ? lastRoundHits.red : currentHits.red;
-  const statsBlue = restTimeLeft > 0 ? lastRoundHits.blue : currentHits.blue;
   if (audRedHits) {
-    audRedHits.textContent = `Huvud ${statsRed.head} | Väst ${statsRed.body} | Slag ${statsRed.punch}`;
+    const lr = lastRoundHits.red;
+    audRedHits.textContent = `Huvud ${lr.head} | Väst ${lr.body} | Slag ${lr.punch}`;
   }
   if (audBlueHits) {
-    audBlueHits.textContent = `Huvud ${statsBlue.head} | Väst ${statsBlue.body} | Slag ${statsBlue.punch}`;
+    const lb = lastRoundHits.blue;
+    audBlueHits.textContent = `Huvud ${lb.head} | Väst ${lb.body} | Slag ${lb.punch}`;
   }
   broadcastState();
 }
@@ -398,7 +397,6 @@ function endCurrentRound() {
   const needed = Math.floor(totalRounds / 2) + 1;
   if (roundWins[winner] >= needed) {
     matchEnded = true;
-    stopRestTimer();
     showMatchWinner(winner);
     return;
   }
@@ -453,17 +451,6 @@ function stopRestTimer() {
   restTimeLeft = 0;
 }
 
-function showMatchWinner(side) {
-  matchEnded = true;
-  pauseLiveTimer();
-  stopRestTimer();
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Vinnare: ${liveScoreNames[side]}`;
-  const audWinner = document.getElementById("audienceWinner");
-  if (audWinner) audWinner.textContent = `WINNER: ${liveScoreNames[side]}`;
-  updateLiveScoreDisplay();
-}
-
 function toggleAudienceView(show) {
   const view = document.getElementById("audienceView");
   if (!view) return;
@@ -487,7 +474,6 @@ function broadcastState() {
     matchEnded,
     lastRoundHits,
     restTimeLeft,
-    currentHits,
   };
   broadcastChannel.postMessage(payload);
 }
@@ -536,14 +522,12 @@ function applyIncomingState(state) {
     }
   }
   if (audRest) audRest.textContent = state.restTimeLeft > 0 ? `Rest: ${formatLiveTime(state.restTimeLeft)}` : "";
-  const statsRed = state.restTimeLeft > 0 ? state.lastRoundHits?.red : state.currentHits?.red;
-  const statsBlue = state.restTimeLeft > 0 ? state.lastRoundHits?.blue : state.currentHits?.blue;
   if (audRedHits) {
-    const lr = statsRed || { head: 0, body: 0, punch: 0 };
+    const lr = state.lastRoundHits?.red || { head: 0, body: 0, punch: 0 };
     audRedHits.textContent = `Huvud ${lr.head} | Väst ${lr.body} | Slag ${lr.punch}`;
   }
   if (audBlueHits) {
-    const lb = statsBlue || { head: 0, body: 0, punch: 0 };
+    const lb = state.lastRoundHits?.blue || { head: 0, body: 0, punch: 0 };
     audBlueHits.textContent = `Huvud ${lb.head} | Väst ${lb.body} | Slag ${lb.punch}`;
   }
 }
