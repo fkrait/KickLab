@@ -183,6 +183,8 @@ function updateLiveScoreDisplay() {
   // Publikvy
   const audRedName = document.getElementById("audienceRedName");
   const audBlueName = document.getElementById("audienceBlueName");
+  const audRedBadge = document.getElementById("audienceRedBadge");
+  const audBlueBadge = document.getElementById("audienceBlueBadge");
   const audRedScore = document.getElementById("audienceRedScore");
   const audBlueScore = document.getElementById("audienceBlueScore");
   const audTimer = document.getElementById("audienceTimer");
@@ -198,8 +200,10 @@ function updateLiveScoreDisplay() {
   const audBlueHits = document.getElementById("audienceBlueHits");
   const displayRedName = liveScoreNames.red.toUpperCase();
   const displayBlueName = liveScoreNames.blue.toUpperCase();
-  if (audRedName) audRedName.textContent = `🇸🇪 ${displayRedName}`;
-  if (audBlueName) audBlueName.textContent = `🇸🇪 ${displayBlueName}`;
+  if (audRedBadge) audRedBadge.textContent = "🇸🇪";
+  if (audBlueBadge) audBlueBadge.textContent = "🇸🇪";
+  if (audRedName) audRedName.textContent = displayRedName;
+  if (audBlueName) audBlueName.textContent = displayBlueName;
   if (audRedScore) audRedScore.textContent = liveScore.red;
   if (audBlueScore) audBlueScore.textContent = liveScore.blue;
   const timerText = restTimeLeft > 0 ? formatLiveTime(restTimeLeft) : formatLiveTime(liveTimeLeft);

@@ -94,13 +94,14 @@
     .audience-board {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: stretch; height: 100%;
     }
-    .audience-panel { border-radius: 18px; padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; text-align: center; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
-    .audience-panel.red { background: linear-gradient(180deg, #b22626, #5c1111); }
-    .audience-panel.blue { background: linear-gradient(180deg, #163d9b, #0b214f); }
-    .audience-name { font-size: 6rem; font-weight: 800; margin-bottom: 0.4rem; }
-    .audience-score { font-size: 20rem; font-weight: 800; margin: 0.4rem 0; }
+    .audience-panel { border-radius: 18px; padding: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+    .audience-panel.red { background: linear-gradient(180deg, #a61212, #5c0a0a); }
+    .audience-panel.blue { background: linear-gradient(180deg, #0d2ca8, #081b5d); }
+    .audience-badge { background:#000; border:2px solid #ffe600; color:#fff; padding:0.35rem 0.75rem; border-radius:10px; font-weight:800; font-size:1rem; margin-bottom:0.5rem; }
+    .audience-name { font-size: 5rem; font-weight: 800; margin: 0.2rem 0 0.6rem; text-align:left; }
+    .audience-score { font-size: 15rem; font-weight: 800; margin: 0.2rem 0; width: 100%; text-align: center; }
     .audience-meta { background: #0b0b0f; border-radius: 14px; padding: 1rem; color: #ffe600; text-align: center; display: grid; gap: 0.6rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
-    .audience-timer { font-size: 6rem; font-weight: 800; letter-spacing: 1px; }
+    .audience-timer { font-size: 3.4rem; font-weight: 800; letter-spacing: 1px; }
     .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; }
     .audience-rest { font-size: 1.4rem; color: #ffe600; }
     .audience-hits { font-size: 1rem; color: #e0e0e0; }
@@ -358,8 +359,10 @@
     <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
     <div class="audience-board">
       <div class="audience-panel blue">
-        <div id="audienceBlueName">Blå</div>
+        <div class="audience-badge" id="audienceBlueBadge">🇸🇪</div>
+        <div class="audience-name" id="audienceBlueName">Blå</div>
         <div class="audience-score" id="audienceBlueScore">0</div>
+        <div class="audience-hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
         <div>Gam-jeom: <span id="audienceBluePenalty">0</span></div>
       </div>
       <div class="audience-meta">
@@ -376,7 +379,8 @@
         <div class="audience-winner" id="audienceWinner"></div>
       </div>
       <div class="audience-panel red">
-        <div id="audienceRedName">Röd</div>
+        <div class="audience-badge" id="audienceRedBadge">🇸🇪</div>
+        <div class="audience-name" id="audienceRedName">Röd</div>
         <div class="audience-score" id="audienceRedScore">0</div>
         <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
         <div>Gam-jeom: <span id="audienceRedPenalty">0</span></div>
