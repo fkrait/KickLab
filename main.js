@@ -40,6 +40,7 @@ let restTimeLeft = 0;
 let restTimerId = null;
 let currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 let lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+let roundEndReason = "";
 
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
@@ -224,6 +225,15 @@ function updateLiveScoreDisplay() {
   if (audBlueHits) {
     audBlueHits.textContent = `Huvud ${statsBlue.head} | Väst ${statsBlue.body} | Slag ${statsBlue.punch}`;
   }
+  const audAlert = document.getElementById("audienceAlert");
+  if (audAlert) {
+    if (roundEndReason) {
+      audAlert.style.display = "inline-block";
+      audAlert.textContent = roundEndReason;
+    } else {
+      audAlert.style.display = "none";
+    }
+  }
   const opTimer = document.getElementById("operatorTimer");
   if (opTimer) opTimer.textContent = timerText;
   broadcastState();
@@ -247,6 +257,7 @@ function adjustLiveScore(side, delta) {
   if (!(side in liveScore)) return;
   liveScore[side] = Math.max(0, liveScore[side] + delta);
   updateLiveScoreDisplay();
+  checkAutoRoundEnd();
 }
 
 function awardScore(side, value) {
@@ -261,6 +272,7 @@ function awardScore(side, value) {
   const status = document.getElementById("liveScoreStatus");
   if (status) status.textContent = `${liveScoreNames[side]} +${value}`;
   updateLiveScoreDisplay();
+  checkAutoRoundEnd();
 }
 
 function awardPenalty(side) {
@@ -273,6 +285,12 @@ function awardPenalty(side) {
   const status = document.getElementById("liveScoreStatus");
   if (status) status.textContent = `${liveScoreNames[side]} gam-jeom ( +1 ${liveScoreNames[opponent]} )`;
   updateLiveScoreDisplay();
+  // Om 5 gam-jeom -> motståndaren vinner ronden
+  if (livePenalties[side] >= 5) {
+    finishRound(opponent, "5 GAM-JEOM");
+  } else {
+    checkAutoRoundEnd();
+  }
 }
 
 function resetLiveScore() {
@@ -377,6 +395,7 @@ function resetLiveMatch() {
   currentRound = 1;
   roundWins = { red: 0, blue: 0 };
   matchEnded = false;
+  roundEndReason = "";
   lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
   const roundInput = document.getElementById("roundNumberInput");
   if (roundInput) roundInput.value = currentRound;
@@ -398,19 +417,7 @@ function endCurrentRound() {
     return;
   }
   const winner = liveScore.red > liveScore.blue ? "red" : "blue";
-  roundWins[winner] += 1;
-  lastRoundHits = JSON.parse(JSON.stringify(currentHits));
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `${liveScoreNames[winner]} vinner rond ${currentRound}.`;
-  // Avgör om matchen är klar (bäst av totalRounds, standard 3)
-  const needed = Math.floor(totalRounds / 2) + 1;
-  if (roundWins[winner] >= needed) {
-    matchEnded = true;
-    stopRestTimer();
-    showMatchWinner(winner);
-    return;
-  }
-  startRestTimer();
+  finishRound(winner, "Rond slut");
 }
 
 function startNextRound() {
@@ -420,6 +427,7 @@ function startNextRound() {
     return;
   }
   stopRestTimer();
+  roundEndReason = "";
   prepareNextRound();
   const status = document.getElementById("liveScoreStatus");
   if (status) status.textContent = `Rond ${currentRound} förberedd. Starta klockan.`;
@@ -432,6 +440,7 @@ function prepareNextRound() {
   if (roundInput) roundInput.value = currentRound;
   const roundDisplay = document.getElementById("liveRoundNumber");
   if (roundDisplay) roundDisplay.textContent = currentRound;
+  roundEndReason = "";
   resetLiveScore();
   liveTimeLeft = matchDurationSeconds;
   updateLiveScoreDisplay();
@@ -440,6 +449,7 @@ function prepareNextRound() {
 function startRestTimer() {
   stopRestTimer();
   restTimeLeft = 60;
+  roundEndReason = roundEndReason || "";
   const status = document.getElementById("liveScoreStatus");
   if (status) status.textContent = `Paus ${formatLiveTime(restTimeLeft)} – starta nästa rond när du är redo.`;
   restTimerId = setInterval(() => {
@@ -459,6 +469,7 @@ function stopRestTimer() {
   if (restTimerId) clearInterval(restTimerId);
   restTimerId = null;
   restTimeLeft = 0;
+  roundEndReason = roundEndReason && matchEnded ? roundEndReason : roundEndReason;
 }
 
 function showMatchWinner(side) {
@@ -469,7 +480,35 @@ function showMatchWinner(side) {
   if (status) status.textContent = `Vinnare: ${liveScoreNames[side]}`;
   const audWinner = document.getElementById("audienceWinner");
   if (audWinner) audWinner.textContent = `WINNER: ${liveScoreNames[side]}`;
+  roundEndReason = "";
   updateLiveScoreDisplay();
+}
+
+function checkAutoRoundEnd() {
+  if (matchEnded) return;
+  const lead = Math.abs(liveScore.red - liveScore.blue);
+  if (lead >= 12) {
+    const leader = liveScore.red > liveScore.blue ? "red" : "blue";
+    finishRound(leader, "PTG");
+  }
+}
+
+function finishRound(winner, reason) {
+  if (matchEnded) return;
+  pauseLiveTimer();
+  stopRestTimer();
+  roundEndReason = reason || "";
+  roundWins[winner] += 1;
+  lastRoundHits = JSON.parse(JSON.stringify(currentHits));
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `${liveScoreNames[winner]} vinner rond ${currentRound}.`;
+  const needed = Math.floor(totalRounds / 2) + 1;
+  if (roundWins[winner] >= needed) {
+    matchEnded = true;
+    showMatchWinner(winner);
+    return;
+  }
+  startRestTimer();
 }
 
 function toggleAudienceView(show) {
@@ -496,6 +535,7 @@ function broadcastState() {
     lastRoundHits,
     restTimeLeft,
     currentHits,
+    roundEndReason,
   };
   broadcastChannel.postMessage(payload);
 }
@@ -504,7 +544,7 @@ function applyIncomingState(state) {
   // Uppdaterar publikvyn i en separat flik utan att påverka operatörens flik.
   const redName = state.liveScoreNames?.red || "Röd";
   const blueName = state.liveScoreNames?.blue || "Blå";
-  const timerText = formatLiveTime(state.liveTimeLeft ?? 0);
+  const timerText = (state.restTimeLeft ?? 0) > 0 ? formatLiveTime(state.restTimeLeft) : formatLiveTime(state.liveTimeLeft ?? 0);
   const audRedName = document.getElementById("audienceRedName");
   const audBlueName = document.getElementById("audienceBlueName");
   const audRedScore = document.getElementById("audienceRedScore");
@@ -520,6 +560,7 @@ function applyIncomingState(state) {
   const audRest = document.getElementById("audienceRest");
   const audRedHits = document.getElementById("audienceRedHits");
   const audBlueHits = document.getElementById("audienceBlueHits");
+  const audAlert = document.getElementById("audienceAlert");
   if (audRedName) audRedName.textContent = redName;
   if (audBlueName) audBlueName.textContent = blueName;
   if (audRedScore) audRedScore.textContent = state.liveScore?.red ?? 0;
@@ -553,6 +594,14 @@ function applyIncomingState(state) {
   if (audBlueHits) {
     const lb = statsBlue || { head: 0, body: 0, punch: 0 };
     audBlueHits.textContent = `Huvud ${lb.head} | Väst ${lb.body} | Slag ${lb.punch}`;
+  }
+  if (audAlert) {
+    if (state.roundEndReason) {
+      audAlert.style.display = "inline-block";
+      audAlert.textContent = state.roundEndReason;
+    } else {
+      audAlert.style.display = "none";
+    }
   }
 }
 
