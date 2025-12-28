@@ -93,6 +93,12 @@
     .btn-red { background: linear-gradient(180deg, #e34040, #8a0b0b); }
     .button-label { font-size: 0.85rem; color: #222; }
     .operator-timer { font-size: 2rem; font-weight: 800; color: #ffe600; text-align: center; margin: 0.4rem 0; }
+    .operator-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.6rem;
+      margin: 0.8rem 0 1rem;
+    }
     .audience-view {
       position: fixed; inset: 0; background: #050505; color: white; display: none; z-index: 3000; padding: 1.2rem;
     }
@@ -102,9 +108,9 @@
     .audience-panel { border-radius: 18px; padding: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
     .audience-panel.red { background: linear-gradient(180deg, #a61212, #5c0a0a); }
     .audience-panel.blue { background: linear-gradient(180deg, #0d2ca8, #081b5d); }
-    .audience-badge { background:#000; border:2px solid #ffe600; color:#fff; padding:0.35rem 0.75rem; border-radius:10px; font-weight:800; font-size:1rem; margin-bottom:0.5rem; }
-    .audience-name { font-size: 2.4rem; font-weight: 800; margin: 0.2rem 0 0.6rem; text-align:left; }
-    .audience-score { font-size: 7.5rem; font-weight: 800; margin: 0.2rem 0; width: 100%; text-align: center; }
+    .audience-badge { background:#000; border:2px solid #ffe600; color:#fff; padding:0.35rem 0.75rem; border-radius:10px; font-weight:800; font-size:4rem; margin-bottom:0.5rem; }
+    .audience-name { font-size: 4rem; font-weight: 800; margin: 0.2rem 0 0.6rem; text-align:left; }
+    .audience-score { font-size: 15rem; font-weight: 800; margin: 0.2rem 0; width: 100%; text-align: center; }
     .audience-meta { background: #0b0b0f; border-radius: 14px; padding: 1rem; color: #ffe600; text-align: center; display: grid; gap: 0.6rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
     .audience-timer { font-size: 3.4rem; font-weight: 800; letter-spacing: 1px; }
     .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; }
@@ -216,6 +222,13 @@
     <h2>Live sparring score</h2>
     <p>Manuellt Daedo-inspirerat system: operatören registrerar poäng och straff, publikvyn speglas separat.</p>
     <div class="operator-timer">Tid: <span id="operatorTimer">02:00</span></div>
+    <div class="operator-controls">
+      <button class="button" onclick="startLiveTimer()">Starta klocka</button>
+      <button class="button" onclick="pauseLiveTimer()">Pausa klocka</button>
+      <button class="button" onclick="endCurrentRound()">Avsluta rond</button>
+      <button class="button" onclick="startNextRound()">Nästa rond</button>
+      <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
+    </div>
     <div class="score-name-inputs">
       <div>
         <label for="redNameInput">Röd</label>
