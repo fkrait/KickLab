@@ -103,42 +103,61 @@
       position: fixed; inset: 0; background: #050505; color: white; display: none; z-index: 3000; padding: 1.2rem;
     }
     .audience-board {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: stretch; height: 100%;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; align-items: stretch; height: 100%; max-height: calc(100vh - 2.4rem);
     }
-    .audience-panel { border-radius: 18px; padding: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
-    .audience-panel.red { background: linear-gradient(180deg, #a61212, #5c0a0a); }
-    .audience-panel.blue { background: linear-gradient(180deg, #0d2ca8, #081b5d); }
-    .audience-badge { background:#000; border:2px solid #ffe600; color:#fff; padding:0.35rem 0.75rem; border-radius:10px; font-weight:800; font-size:3rem; margin-bottom:0.5rem; }
-    .audience-name { font-size: 3rem; font-weight: 800; margin: 0.2rem 0 0.6rem; text-align:left; }
-    .audience-score { font-size: 15rem; font-weight: 800; margin: 0.2rem 0; width: 100%; text-align: center; }
-    .audience-meta { background: #0b0b0f; border-radius: 14px; padding: 1rem; color: #ffe600; text-align: center; display: grid; gap: 0.6rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
-    .audience-timer { font-size: 6rem; font-weight: 800; letter-spacing: 1px; }
-    .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; }
-    .audience-rest { font-size: 1.4rem; color: #ffe600; }
-    .audience-hits { font-size: 1rem; color: #e0e0e0; }
-    .audience-alert {
-    font-size: 5rem;
-      margin-top: 0.4rem;
-      background: #ffe600;
-      color: #000;
-      font-weight: 800;
-      padding: 0.4rem 0.8rem;
-      border-radius: 10px;
-      display: inline-block;
-      min-width: 120px;
+    .audience-panel { 
+      border-radius: 20px; padding: 2rem; display: flex; flex-direction: column; 
+      align-items: center; justify-content: space-between; box-shadow: 0 16px 48px rgba(0,0,0,0.5); 
+      min-height: 600px;
     }
+    .audience-panel.red { background: linear-gradient(180deg, #b22626, #5c1111); border: 4px solid #e34040; }
+    .audience-panel.blue { background: linear-gradient(180deg, #163d9b, #0b214f); border: 4px solid #1e5fff; }
+    .flag-land-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+    .audience-flag { font-size: 5rem; line-height: 1; }
+    .audience-land-code { font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .audience-badge { background:#000; border:3px solid #ffe600; color:#fff; padding:0.5rem 1rem; border-radius:14px; font-weight:800; font-size:4rem; margin-bottom:1rem; box-shadow: 0 4px 12px rgba(255,230,0,0.3); }
+    .audience-name { font-size: 3.5rem; font-weight: 900; margin: 1rem 0; text-align: center; text-shadow: 0 4px 8px rgba(0,0,0,0.5); letter-spacing: 2px; }
+    .audience-score { font-size: 18rem; font-weight: 900; margin: 2rem 0; width: 100%; text-align: center; line-height: 1; text-shadow: 0 8px 16px rgba(0,0,0,0.7); }
+    .audience-details { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+    .detail-row { display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 1.2rem; font-weight: 600; }
+    .audience-meta { 
+      background: #0b0b0f; border-radius: 20px; padding: 2rem; color: #ffe600; text-align: center; 
+      display: flex; flex-direction: column; justify-content: space-around; gap: 1.5rem; 
+      box-shadow: 0 16px 36px rgba(0,0,0,0.5); border: 2px solid #2a2a34; min-height: 600px;
+    }
+    #audienceMatchTitle { font-size: 2.5rem; font-weight: 800; color: #fff; margin-bottom: 1rem; }
+    .audience-timer { font-size: 8rem; font-weight: 900; letter-spacing: 2px; color: #ffe600; text-shadow: 0 4px 12px rgba(255,230,0,0.5); font-family: 'Courier New', monospace; }
+    .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; font-size: 1.6rem; }
+    .audience-rest { font-size: 2rem; color: #ff8008; font-weight: 800; margin: 1rem 0; }
+    .audience-hits { font-size: 1.3rem; color: #e0e0e0; text-align: center; font-weight: 600; }
     .close-audience {
-      position: absolute; top: 1rem; right: 1rem; background: #ff8008; color: #222;
-      border: none; border-radius: 12px; padding: 0.6rem 1rem; font-weight: 700; cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+      position: absolute; top: 1.5rem; right: 1.5rem; background: #ff8008; color: #222;
+      border: none; border-radius: 16px; padding: 0.8rem 1.5rem; font-weight: 800; font-size: 1.2rem; cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4); z-index: 3100; transition: all 0.3s ease;
     }
+    .close-audience:hover { background: #ffc837; transform: scale(1.05); }
     .audience-winner {
-      margin-top: 0.6rem;
-      font-size: 6rem;
-      font-weight: 800;
-      color: #fff;
+      font-size: 5rem; font-weight: 900; color: #ffe600; margin-top: 1rem;
+      text-shadow: 0 4px 16px rgba(255,230,0,0.7); animation: winner-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes winner-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
     }
     .round-score { font-weight: 700; color: #e0e0e0; }
+    @media (max-width: 1400px) {
+      .audience-board { grid-template-columns: 1fr 0.8fr 1fr; gap: 1rem; }
+      .audience-score { font-size: 12rem; }
+      .audience-name { font-size: 2.5rem; }
+      .audience-timer { font-size: 5rem; }
+      .audience-winner { font-size: 3.5rem; }
+    }
+    @media (max-width: 900px) {
+      .audience-board { grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 1rem; }
+      .audience-panel { padding: 1.5rem; min-height: auto; }
+      .audience-score { font-size: 8rem; }
+      .audience-meta { min-height: auto; padding: 1rem; }
+    }
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
@@ -241,6 +260,10 @@
       <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
     </div>
     <div class="score-name-inputs">
+      <div>
+        <label for="matchTitleInput">Matchtitel</label>
+        <input id="matchTitleInput" type="text" value="Match" oninput="updateMatchTitle()"/>
+      </div>
       <div>
         <label for="redNameInput">Röd</label>
         <input id="redNameInput" type="text" value="Röd" oninput="setLiveScoreNames()"/>
@@ -388,33 +411,48 @@
   <div id="audienceView" class="audience-view">
     <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
     <div class="audience-board">
-      <div class="audience-panel red">
-        <div class="audience-badge" id="audienceRedBadge">🇸🇪</div>
-        <div class="audience-name" id="audienceRedName">Röd</div>
-        <div class="audience-score" id="audienceRedScore">0</div>
-        <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
-        <div>Gam-jeom: <span id="audienceRedPenalty">0</span></div>
+      <div class="audience-panel blue">
+        <div class="flag-land-container">
+          <div class="audience-flag" id="audienceBlueBadge">🇸🇪</div>
+          <div class="audience-land-code">SWE</div>
+        </div>
+        <div class="audience-name" id="audienceBlueName">Blå</div>
+        <div class="audience-score" id="audienceBlueScore">0</div>
+        <div class="audience-details">
+          <div class="detail-row">
+            <span>Gam-jeom:</span>
+            <span id="audienceBluePenalty">0</span>
+          </div>
+          <div class="audience-hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
+        </div>
       </div>
       <div class="audience-meta">
         <div id="audienceMatchTitle">Match</div>
         <div class="audience-timer" id="audienceTimer">02:00</div>
         <div class="audience-row">
           <span>Rond <span id="audienceRound">1</span></span>
-          <span id="audienceInfo"></span>
         </div>
         <div class="audience-row">
           <span id="audienceRoundScore">Ronder: 0 – 0</span>
         </div>
-        <div class="audience-rest" id="audienceRest">Rest: --</div>
+        <div class="audience-rest" id="audienceRest"></div>
         <div class="audience-winner" id="audienceWinner"></div>
-        <div class="audience-alert" id="audienceAlert" style="display:none;"></div>
       </div>
-      <div class="audience-panel blue">
-        <div class="audience-badge" id="audienceBlueBadge">🇸🇪</div>
-        <div class="audience-name" id="audienceBlueName">Blå</div>
-        <div class="audience-score" id="audienceBlueScore">0</div>
-        <div class="audience-hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
-        <div>Gam-jeom: <span id="audienceBluePenalty">0</span></div>
+      <div class="audience-panel red">
+        <div class="flag-land-container">
+          <div class="audience-flag" id="audienceRedBadge">🇸🇪</div>
+          <div class="audience-land-code">SWE</div>
+        </div>
+        <div class="audience-name" id="audienceRedName">Röd</div>
+        <div class="audience-score" id="audienceRedScore">0</div>
+        <div class="audience-details">
+          <div class="detail-row">
+            <span>Gam-jeom:</span>
+            <span id="audienceRedPenalty">0</span>
+          </div>
+          <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
+        </div>
+      </div>
       </div>
     </div>
   </div>

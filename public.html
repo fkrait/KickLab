@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KickLab - Publikvy</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icon-512.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      font-family: 'Inter', sans-serif;
+      height: 100%;
+      background: #050505;
+      color: white;
+      overflow: hidden;
+    }
+
+    .audience-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      height: 100vh;
+      padding: 1rem;
+    }
+
+    /* Blue panel (left) */
+    .audience-panel {
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .audience-panel.blue {
+      background: linear-gradient(180deg, #163d9b, #0b214f);
+      border: 4px solid #1e5fff;
+    }
+
+    .audience-panel.red {
+      background: linear-gradient(180deg, #b22626, #5c1111);
+      border: 4px solid #e34040;
+    }
+
+    .flag-land-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .audience-flag {
+      font-size: 5rem;
+      line-height: 1;
+    }
+
+    .audience-land-code {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .audience-name {
+      font-size: 3.5rem;
+      font-weight: 900;
+      margin: 1rem 0;
+      text-align: center;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      letter-spacing: 2px;
+    }
+
+    .audience-score {
+      font-size: 18rem;
+      font-weight: 900;
+      margin: 2rem 0;
+      width: 100%;
+      text-align: center;
+      line-height: 1;
+      text-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+    }
+
+    .audience-details {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+    }
+
+    /* Center panel (black) */
+    .center-panel {
+      background: #0b0b0f;
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2rem;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+      border: 2px solid #2a2a34;
+    }
+
+    .match-title {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .timer-display {
+      font-size: 10rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #ffe600;
+      text-shadow: 0 4px 12px rgba(255, 230, 0, 0.5);
+      font-family: 'Courier New', monospace;
+    }
+
+    .round-info {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e0e0e0;
+      text-align: center;
+    }
+
+    .round-score {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #e0e0e0;
+      text-align: center;
+    }
+
+    .rest-info {
+      font-size: 2.5rem;
+      color: #ff8008;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .winner-display {
+      font-size: 5rem;
+      font-weight: 900;
+      color: #ffe600;
+      text-align: center;
+      text-shadow: 0 4px 16px rgba(255, 230, 0, 0.7);
+      animation: winner-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes winner-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1400px) {
+      .audience-container {
+        gap: 0.5rem;
+        padding: 0.5rem;
+      }
+      
+      .audience-score {
+        font-size: 12rem;
+      }
+      
+      .audience-name {
+        font-size: 2.5rem;
+      }
+      
+      .timer-display {
+        font-size: 6rem;
+      }
+      
+      .match-title {
+        font-size: 2rem;
+      }
+      
+      .round-info {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .audience-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        overflow-y: auto;
+      }
+      
+      .audience-score {
+        font-size: 8rem;
+      }
+      
+      .timer-display {
+        font-size: 4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="audience-container">
+    <!-- Blue Panel (Left) -->
+    <div class="audience-panel blue">
+      <div class="flag-land-container">
+        <div class="audience-flag" id="blueFlag">🇸🇪</div>
+        <div class="audience-land-code" id="blueLandCode">SWE</div>
+      </div>
+      <div class="audience-name" id="blueName">Blå</div>
+      <div class="audience-score" id="blueScore">0</div>
+      <div class="audience-details">
+        <div class="detail-row">
+          <span>Gam-jeom:</span>
+          <span id="blueGamJeom">0</span>
+        </div>
+        <div class="detail-row">
+          <span>Video Review:</span>
+          <span id="blueVideoReview">-</span>
+        </div>
+        <div class="detail-row">
+          <span>Väst:</span>
+          <span id="blueVest">Blå</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Panel (Black) -->
+    <div class="center-panel">
+      <div class="match-title" id="matchTitle">Match</div>
+      <div class="timer-display" id="timerDisplay">02:00</div>
+      <div class="round-info">
+        <span>Rond <span id="currentRound">1</span></span>
+      </div>
+      <div class="round-score" id="roundScore">Ronder: 0 – 0</div>
+      <div class="rest-info" id="restInfo"></div>
+      <div class="winner-display" id="winnerDisplay"></div>
+    </div>
+
+    <!-- Red Panel (Right) -->
+    <div class="audience-panel red">
+      <div class="flag-land-container">
+        <div class="audience-flag" id="redFlag">🇸🇪</div>
+        <div class="audience-land-code" id="redLandCode">SWE</div>
+      </div>
+      <div class="audience-name" id="redName">Röd</div>
+      <div class="audience-score" id="redScore">0</div>
+      <div class="audience-details">
+        <div class="detail-row">
+          <span>Gam-jeom:</span>
+          <span id="redGamJeom">0</span>
+        </div>
+        <div class="detail-row">
+          <span>Video Review:</span>
+          <span id="redVideoReview">-</span>
+        </div>
+        <div class="detail-row">
+          <span>Väst:</span>
+          <span id="redVest">Röd</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // BroadcastChannel for receiving updates from operator view
+    let broadcastChannel = null;
+
+    if ("BroadcastChannel" in window) {
+      try {
+        broadcastChannel = new BroadcastChannel('kicklab-live');
+        
+        broadcastChannel.onmessage = (event) => {
+          const data = event.data;
+          if (data) {
+            updateDisplay(data);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to initialize BroadcastChannel:', error);
+      }
+    } else {
+      console.warn('BroadcastChannel API not supported in this browser');
+    }
+
+    function updateDisplay(data) {
+      // Update names
+      if (data.liveScoreNames) {
+        document.getElementById('redName').textContent = data.liveScoreNames.red || 'Röd';
+        document.getElementById('blueName').textContent = data.liveScoreNames.blue || 'Blå';
+      }
+
+      // Update scores
+      if (data.liveScore) {
+        document.getElementById('redScore').textContent = data.liveScore.red || 0;
+        document.getElementById('blueScore').textContent = data.liveScore.blue || 0;
+      }
+
+      // Update gam-jeom (penalties)
+      if (data.livePenalties) {
+        document.getElementById('redGamJeom').textContent = data.livePenalties.red || 0;
+        document.getElementById('blueGamJeom').textContent = data.livePenalties.blue || 0;
+      }
+
+      // Update timer
+      if (data.liveTimeLeft !== undefined) {
+        document.getElementById('timerDisplay').textContent = formatTime(data.liveTimeLeft);
+      }
+
+      // Update round
+      if (data.currentRound !== undefined) {
+        document.getElementById('currentRound').textContent = data.currentRound;
+      }
+
+      // Update round score
+      if (data.roundWins) {
+        document.getElementById('roundScore').textContent = `Ronder: ${data.roundWins.red || 0} – ${data.roundWins.blue || 0}`;
+      }
+
+      // Update rest time
+      if (data.restTimeLeft !== undefined && data.restTimeLeft > 0) {
+        document.getElementById('restInfo').textContent = `Paus: ${formatTime(data.restTimeLeft)}`;
+      } else {
+        document.getElementById('restInfo').textContent = '';
+      }
+
+      // Update match title
+      if (data.matchTitle) {
+        document.getElementById('matchTitle').textContent = data.matchTitle;
+      }
+
+      // Update winner display
+      if (data.matchEnded && data.roundWins) {
+        if (data.roundWins.red > data.roundWins.blue) {
+          const winner = data.liveScoreNames?.red || 'Röd';
+          document.getElementById('winnerDisplay').textContent = `Vinnare: ${winner}`;
+        } else if (data.roundWins.blue > data.roundWins.red) {
+          const winner = data.liveScoreNames?.blue || 'Blå';
+          document.getElementById('winnerDisplay').textContent = `Vinnare: ${winner}`;
+        } else {
+          document.getElementById('winnerDisplay').textContent = 'Oavgjort';
+        }
+      } else {
+        document.getElementById('winnerDisplay').textContent = '';
+      }
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Request initial state on load
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Audience view loaded, waiting for broadcast data...');
+    });
+  </script>
+
+</body>
+</html>

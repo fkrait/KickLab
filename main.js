@@ -656,13 +656,12 @@ function updateLiveScoreDisplay() {
   if (audBlueScore) audBlueScore.textContent = liveScore.blue;
   if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
   if (audRound) audRound.textContent = currentRound;
-  if (audInfo) audInfo.textContent = `${liveScoreNames.red} vs ${liveScoreNames.blue}`;
-  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitle")?.value || "Match";
+  if (audMatchTitle) audMatchTitle.textContent = getMatchTitle();
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
   if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
-  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "Rest: --";
+  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "";
   if (audRedHits) audRedHits.textContent = `Huvud ${currentHits.red.head} | Väst ${currentHits.red.body} | Slag ${currentHits.red.punch}`;
   if (audBlueHits) audBlueHits.textContent = `Huvud ${currentHits.blue.head} | Väst ${currentHits.blue.body} | Slag ${currentHits.blue.punch}`;
 }
@@ -888,9 +887,10 @@ function toggleAudienceView(open) {
 }
 
 function updateMatchTitle() {
-  const title = document.getElementById("matchTitle")?.value || "Match";
+  const title = getMatchTitle();
   const audTitle = document.getElementById("audienceMatchTitle");
   if (audTitle) audTitle.textContent = title;
+  broadcastLiveData();
 }
 
 /* ---------- Sparring träningslogik ---------- */
@@ -924,6 +924,10 @@ function speak(text) {
 }
 
 /* ---------- Hjälpfunktioner ---------- */
+function getMatchTitle() {
+  return document.getElementById("matchTitleInput")?.value || "Match";
+}
+
 function formatLiveTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -961,6 +965,7 @@ function broadcastLiveData() {
     restTimeLeft,
     currentHits,
     lastRoundHits,
+    matchTitle: getMatchTitle(),
   };
   broadcastChannel.postMessage(data);
 }
@@ -1003,9 +1008,12 @@ function startNextRound() {
 }
 
 function openAudienceWindow() {
-  // Open audience view in a new window/tab
-  const url = window.location.href.split('?')[0] + '?audienceView=true';
+  // Open audience view in a new window/tab - use public.html
+  const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
+  const url = baseUrl + '/public.html';
   window.open(url, '_blank', 'width=1920,height=1080');
+  // Broadcast current state immediately after opening
+  broadcastLiveData();
 }
 
 // Parse URL parameters once at initialization
