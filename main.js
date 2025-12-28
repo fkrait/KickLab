@@ -946,8 +946,7 @@ function playEndBeep() {
 }
 
 function broadcastLiveData() {
-  if (!("BroadcastChannel" in window)) return;
-  if (!broadcastChannel) broadcastChannel = new BroadcastChannel("kicklab-live");
+  if (!broadcastChannel || !("BroadcastChannel" in window)) return;
   const data = {
     liveScore,
     livePenalties,
@@ -966,7 +965,107 @@ function broadcastLiveData() {
   broadcastChannel.postMessage(data);
 }
 
-// Initiera värden vid start
-document.addEventListener("DOMContentLoaded", () => {
+// Wrapper functions for HTML onclick handlers
+function awardScore(side, value) {
+  addScore(side, value);
+}
+
+function awardPenalty(side) {
+  addPenalty(side);
+}
+
+function setLiveScoreNames() {
   updateLiveScoreDisplay();
+  broadcastLiveData();
+}
+
+function resetLiveMatch() {
+  resetLiveScore();
+}
+
+function endCurrentRound() {
+  checkRoundEnd();
+}
+
+function startNextRound() {
+  if (matchEnded) return;
+  // Reset scores for next round
+  liveScore.red = 0;
+  liveScore.blue = 0;
+  livePenalties.red = 0;
+  livePenalties.blue = 0;
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  liveTimeLeft = matchDurationSeconds;
+  lastAction = null;
+  updateLiveScoreDisplay();
+  broadcastLiveData();
+  startLiveTimer();
+}
+
+function openAudienceWindow() {
+  // Open audience view in a new window/tab
+  const url = window.location.href.split('?')[0] + '?audienceView=true';
+  window.open(url, '_blank', 'width=1920,height=1080');
+}
+
+// Parse URL parameters once at initialization
+const urlParams = new URLSearchParams(window.location.search);
+const isStandaloneAudienceView = urlParams.get('audienceView') === 'true';
+
+// Page IDs for managing visibility in standalone audience view
+const NON_AUDIENCE_PAGES = ['startPage', 'testPage', 'kickCounterPage', 'sparringPage', 
+                            'liveScorePage', 'competitionSetupPage', 'competitionRunPage', 
+                            'competitionRoundPage'];
+
+// Initialize BroadcastChannel for live synchronization
+// Only create one instance and set up message listener
+if (("BroadcastChannel" in window) && !broadcastChannel) {
+  broadcastChannel = new BroadcastChannel('kicklab-live');
+  
+  // Listen for messages from operator window
+  broadcastChannel.onmessage = (event) => {
+    const data = event.data;
+    if (data) {
+      // Update local state with received data
+      Object.assign(liveScore, data.liveScore || {});
+      Object.assign(livePenalties, data.livePenalties || {});
+      Object.assign(liveScoreNames, data.liveScoreNames || {});
+      if (data.matchDurationSeconds !== undefined) matchDurationSeconds = data.matchDurationSeconds;
+      if (data.liveTimeLeft !== undefined) liveTimeLeft = data.liveTimeLeft;
+      if (data.liveTimerRunning !== undefined) liveTimerRunning = data.liveTimerRunning;
+      if (data.totalRounds !== undefined) totalRounds = data.totalRounds;
+      if (data.currentRound !== undefined) currentRound = data.currentRound;
+      Object.assign(roundWins, data.roundWins || {});
+      if (data.matchEnded !== undefined) matchEnded = data.matchEnded;
+      if (data.restTimeLeft !== undefined) restTimeLeft = data.restTimeLeft;
+      if (data.currentHits) currentHits = JSON.parse(JSON.stringify(data.currentHits));
+      if (data.lastRoundHits) lastRoundHits = JSON.parse(JSON.stringify(data.lastRoundHits));
+      
+      // Update display if we're in audience mode
+      if (audienceMode || isStandaloneAudienceView) {
+        updateLiveScoreDisplay();
+      }
+    }
+  };
+}
+
+// Check if page was opened with audienceView parameter
+document.addEventListener("DOMContentLoaded", () => {
+  if (isStandaloneAudienceView) {
+    // Hide all other pages and show only audience view
+    NON_AUDIENCE_PAGES.forEach(pageId => {
+      const page = document.getElementById(pageId);
+      if (page) page.style.display = 'none';
+    });
+    
+    // Show audience view in standalone mode
+    toggleAudienceView(true);
+    audienceMode = true;
+    
+    // Remove close button in standalone audience view
+    const closeBtn = document.querySelector('.close-audience');
+    if (closeBtn) closeBtn.style.display = 'none';
+  } else {
+    updateLiveScoreDisplay();
+  }
 });
