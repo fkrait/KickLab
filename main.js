@@ -888,9 +888,10 @@ function toggleAudienceView(open) {
 }
 
 function updateMatchTitle() {
-  const title = document.getElementById("matchTitle")?.value || "Match";
+  const title = document.getElementById("matchTitleInput")?.value || "Match";
   const audTitle = document.getElementById("audienceMatchTitle");
   if (audTitle) audTitle.textContent = title;
+  broadcastLiveData();
 }
 
 /* ---------- Sparring träningslogik ---------- */
@@ -947,6 +948,7 @@ function playEndBeep() {
 
 function broadcastLiveData() {
   if (!broadcastChannel || !("BroadcastChannel" in window)) return;
+  const matchTitleEl = document.getElementById("matchTitleInput");
   const data = {
     liveScore,
     livePenalties,
@@ -961,6 +963,7 @@ function broadcastLiveData() {
     restTimeLeft,
     currentHits,
     lastRoundHits,
+    matchTitle: matchTitleEl?.value || "Match",
   };
   broadcastChannel.postMessage(data);
 }
@@ -1003,9 +1006,12 @@ function startNextRound() {
 }
 
 function openAudienceWindow() {
-  // Open audience view in a new window/tab
-  const url = window.location.href.split('?')[0] + '?audienceView=true';
+  // Open audience view in a new window/tab - use public.html
+  const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
+  const url = baseUrl + '/public.html';
   window.open(url, '_blank', 'width=1920,height=1080');
+  // Broadcast current state immediately after opening
+  broadcastLiveData();
 }
 
 // Parse URL parameters once at initialization
