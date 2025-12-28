@@ -387,27 +387,6 @@
 
   <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
 
-  <script src="main.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const clickSound = document.getElementById('clickSound');
-      document.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          clickSound.currentTime = 0;
-          clickSound.play().catch(() => {});
-        });
-      });
-    });
-    window.addEventListener('load', () => {
-      setTimeout(() => { document.getElementById('loaderOverlay').style.display = 'none'; }, 2000);
-    });
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('serviceWorker.js')
-        .then(reg => console.log('ServiceWorker registrerad:', reg))
-        .catch(err => console.error('ServiceWorker fel:', err));
-    }
-  </script>
-
   <div id="audienceView" class="audience-view">
     <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
     <div class="audience-board">
