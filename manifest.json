@@ -1,6 +1,6 @@
 {
-  "name": "Reaktionstest Taekwondo",
-  "short_name": "Reaktionstest",
+  "name": "Taekwondo Kicklab",
+  "short_name": "Kicklab",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
