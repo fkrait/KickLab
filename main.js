@@ -1012,9 +1012,14 @@ function openAudienceWindow() {
 const urlParams = new URLSearchParams(window.location.search);
 const isStandaloneAudienceView = urlParams.get('audienceView') === 'true';
 
+// Page IDs for managing visibility in standalone audience view
+const NON_AUDIENCE_PAGES = ['startPage', 'testPage', 'kickCounterPage', 'sparringPage', 
+                            'liveScorePage', 'competitionSetupPage', 'competitionRunPage', 
+                            'competitionRoundPage'];
+
 // Initialize BroadcastChannel for live synchronization
 // Only create one instance and set up message listener
-if (typeof BroadcastChannel !== 'undefined' && !broadcastChannel) {
+if (("BroadcastChannel" in window) && !broadcastChannel) {
   broadcastChannel = new BroadcastChannel('kicklab-live');
   
   // Listen for messages from operator window
@@ -1048,9 +1053,7 @@ if (typeof BroadcastChannel !== 'undefined' && !broadcastChannel) {
 document.addEventListener("DOMContentLoaded", () => {
   if (isStandaloneAudienceView) {
     // Hide all other pages and show only audience view
-    const pages = ['startPage', 'testPage', 'kickCounterPage', 'sparringPage', 'liveScorePage', 
-                   'competitionSetupPage', 'competitionRunPage', 'competitionRoundPage'];
-    pages.forEach(pageId => {
+    NON_AUDIENCE_PAGES.forEach(pageId => {
       const page = document.getElementById(pageId);
       if (page) page.style.display = 'none';
     });
