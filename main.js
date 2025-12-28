@@ -616,6 +616,8 @@ function updateLiveScoreDisplay() {
   if (bluePenalty) bluePenalty.textContent = livePenalties.blue;
   const timerEl = document.getElementById("liveTimer");
   if (timerEl) timerEl.textContent = formatLiveTime(liveTimeLeft);
+  const operatorTimerEl = document.getElementById("operatorTimer");
+  if (operatorTimerEl) operatorTimerEl.textContent = formatLiveTime(liveTimeLeft);
   const status = document.getElementById("liveScoreStatus");
   if (status) {
     status.textContent = `${liveScoreNames.red}: ${liveScore.red} – ${liveScoreNames.blue}: ${liveScore.blue}`;
@@ -738,7 +740,7 @@ function resetLiveScore() {
 }
 
 function setMatchDuration() {
-  const val = parseInt(document.getElementById("matchDuration")?.value, 10);
+  const val = parseInt(document.getElementById("matchDurationInput")?.value, 10);
   if (!isNaN(val) && val > 0) {
     matchDurationSeconds = val;
     liveTimeLeft = val;
@@ -748,7 +750,7 @@ function setMatchDuration() {
 }
 
 function setTotalRounds() {
-  const val = parseInt(document.getElementById("totalRounds")?.value, 10);
+  const val = parseInt(document.getElementById("totalRoundsInput")?.value, 10);
   if (!isNaN(val) && val > 0) {
     totalRounds = val;
     document.getElementById("liveTotalRounds").textContent = totalRounds;
@@ -776,7 +778,6 @@ function toggleLiveTimer() {
 function startLiveTimer() {
   if (liveTimerRunning) return;
   liveTimerRunning = true;
-  document.getElementById("timerToggleLabel").textContent = "Pausa";
   liveTimerId = setInterval(() => {
     liveTimeLeft--;
     if (liveTimeLeft <= 0) {
@@ -791,7 +792,6 @@ function startLiveTimer() {
 function pauseLiveTimer() {
   liveTimerRunning = false;
   clearInterval(liveTimerId);
-  document.getElementById("timerToggleLabel").textContent = "Starta";
 }
 
 function resetLiveTimer() {
