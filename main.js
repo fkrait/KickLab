@@ -224,6 +224,8 @@ function updateLiveScoreDisplay() {
   if (audBlueHits) {
     audBlueHits.textContent = `Huvud ${statsBlue.head} | Väst ${statsBlue.body} | Slag ${statsBlue.punch}`;
   }
+  const opTimer = document.getElementById("operatorTimer");
+  if (opTimer) opTimer.textContent = timerText;
   broadcastState();
 }
 
