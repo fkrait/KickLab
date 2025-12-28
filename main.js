@@ -1,7 +1,9 @@
 /*
- * Uppdaterad version av KickLabs huvudskript med publikvy som matchar referensbilden.
- * Bevarar all befintlig funktionalitet (reaktionstest, sparkräknare, sparringträning,
- * tävlingsläge, live score) och justerar publikvyns layout-data i updateLiveScoreDisplay.
+ * Uppdaterad version av KickLabs huvudskript. Den här filen innehåller
+ * fixar för att kunna avbryta alla tester via stop‑knappar och dämpa
+ * ljud när sparringträningen stoppas. Funktionen stopKickTest() är
+ * ny, och stopSparringTraining() uppdaterar nu användargränssnittet när
+ * träningen avbryts.
  */
 
 // Variabler för reaktionstestet
@@ -19,7 +21,6 @@ let currentKickIndex = 0;
 let competitionStartTime;
 let competitionAudioCtx, competitionMediaStream, competitionMediaStreamSource,
   competitionAnalyser, competitionDataArray;
-
 // Live score-läge
 const liveScore = { red: 0, blue: 0 };
 const liveScoreNames = { red: "Röd", blue: "Blå" };
@@ -629,80 +630,41 @@ function updateLiveScoreDisplay() {
   }
   const totalRoundsEl = document.getElementById("liveTotalRounds");
   if (totalRoundsEl) totalRoundsEl.textContent = totalRounds;
-
-  // Publikvy: namn, poäng, timer, rond
+  // Publikvy
   const audRedName = document.getElementById("audienceRedName");
   const audBlueName = document.getElementById("audienceBlueName");
-  if (audRedName) audRedName.textContent = liveScoreNames.red;
-  if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
-
+  const audRedBadge = document.getElementById("audienceRedBadge");
+  const audBlueBadge = document.getElementById("audienceBlueBadge");
   const audRedScore = document.getElementById("audienceRedScore");
   const audBlueScore = document.getElementById("audienceBlueScore");
-  if (audRedScore) audRedScore.textContent = liveScore.red;
-  if (audBlueScore) audBlueScore.textContent = liveScore.blue;
-
   const audTimer = document.getElementById("audienceTimer");
-  if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
-
   const audRound = document.getElementById("audienceRound");
-  if (audRound) audRound.textContent = currentRound;
-
   const audInfo = document.getElementById("audienceInfo");
-  if (audInfo) audInfo.textContent = `${liveScoreNames.red} vs ${liveScoreNames.blue}`;
-
   const audMatchTitle = document.getElementById("audienceMatchTitle");
-  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitle")?.value || "Match";
-
   const audRedPen = document.getElementById("audienceRedPenalty");
   const audBluePen = document.getElementById("audienceBluePenalty");
-  if (audRedPen) audRedPen.textContent = livePenalties.red;
-  if (audBluePen) audBluePen.textContent = livePenalties.blue;
-
   const audRoundScore = document.getElementById("audienceRoundScore");
-  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
-
   const audWinner = document.getElementById("audienceWinner");
-  if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
-
   const audRest = document.getElementById("audienceRest");
-  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "Rest: --";
-
   const audRedHits = document.getElementById("audienceRedHits");
   const audBlueHits = document.getElementById("audienceBlueHits");
+  if (audRedName) audRedName.textContent = liveScoreNames.red;
+  if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
+  if (audRedBadge) audRedBadge.textContent = "🇸🇪";
+  if (audBlueBadge) audBlueBadge.textContent = "🇸🇪";
+  if (audRedScore) audRedScore.textContent = liveScore.red;
+  if (audBlueScore) audBlueScore.textContent = liveScore.blue;
+  if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
+  if (audRound) audRound.textContent = currentRound;
+  if (audInfo) audInfo.textContent = `${liveScoreNames.red} vs ${liveScoreNames.blue}`;
+  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitle")?.value || "Match";
+  if (audRedPen) audRedPen.textContent = livePenalties.red;
+  if (audBluePen) audBluePen.textContent = livePenalties.blue;
+  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
+  if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
+  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "Rest: --";
   if (audRedHits) audRedHits.textContent = `Huvud ${currentHits.red.head} | Väst ${currentHits.red.body} | Slag ${currentHits.red.punch}`;
   if (audBlueHits) audBlueHits.textContent = `Huvud ${currentHits.blue.head} | Väst ${currentHits.blue.body} | Slag ${currentHits.blue.punch}`;
-
-  // Nya element för referenslayouten (flagga/landkod, västnummer, centerlabel)
-  const audCat = document.getElementById("audienceCategory");
-  if (audCat) audCat.textContent = document.getElementById("matchTitle")?.value || "Qualification Olympic M -58 kg";
-
-  const audBlueFlag = document.getElementById("audienceBlueFlag");
-  const audRedFlag = document.getElementById("audienceRedFlag");
-  if (audBlueFlag) audBlueFlag.textContent = "🇲🇦"; // TODO: bind dynamiskt
-  if (audRedFlag) audRedFlag.textContent = "🇰🇷";  // TODO: bind dynamiskt
-
-  const audBlueCountry = document.getElementById("audienceBlueCountry");
-  const audRedCountry = document.getElementById("audienceRedCountry");
-  if (audBlueCountry) audBlueCountry.textContent = "MAR"; // TODO: bind dynamiskt
-  if (audRedCountry) audRedCountry.textContent = "KOR";   // TODO: bind dynamiskt
-
-  const audBlueVestMain = document.getElementById("audienceBlueVestMain");
-  const audBlueVestAlt = document.getElementById("audienceBlueVestAlt");
-  const audRedVestMain = document.getElementById("audienceRedVestMain");
-  const audRedVestAlt = document.getElementById("audienceRedVestAlt");
-  if (audBlueVestMain) audBlueVestMain.textContent = "3";
-  if (audBlueVestAlt) audBlueVestAlt.textContent = "5";
-  if (audRedVestMain) audRedVestMain.textContent = "74";
-  if (audRedVestAlt) audRedVestAlt.textContent = "10";
-
-  const audCenterLabel = document.getElementById("audienceCenterLabel");
-  if (audCenterLabel) audCenterLabel.textContent = restTimeLeft > 0 ? "Rest" : (liveTimerRunning ? "Fight" : "Time out");
-
-  // Optional: video review ikon (placeholder)
-  const audBlueVR = document.getElementById("audienceBlueVR");
-  const audRedVR = document.getElementById("audienceRedVR");
-  if (audBlueVR) audBlueVR.textContent = "🎥";
-  if (audRedVR) audRedVR.textContent = "🎥";
 }
 
 function addScore(side, value) {
@@ -865,6 +827,7 @@ function startRest() {
 function checkRoundEnd() {
   pauseLiveTimer();
   if (liveScore.red === liveScore.blue) {
+    // Oavgjort: sudden death? Här markerar vi bara att ronden är slut.
     roundEndReason = "Rond slut: oavgjort";
   } else if (liveScore.red > liveScore.blue) {
     roundWins.red += 1;
@@ -903,9 +866,9 @@ function showWinner() {
 function updateLiveMeta() {
   const status = document.getElementById("liveScoreStatus");
   if (!status) return;
-  const redScoreTxt = `${liveScoreNames.red}: ${liveScore.red} (GJ: ${livePenalties.red})`;
-  const blueScoreTxt = `${liveScoreNames.blue}: ${liveScore.blue} (GJ: ${livePenalties.blue})`;
-  status.textContent = `${redScoreTxt} – ${blueScoreTxt} | Rond ${currentRound}/${totalRounds}`;
+  const redScore = `${liveScoreNames.red}: ${liveScore.red} (GJ: ${livePenalties.red})`;
+  const blueScore = `${liveScoreNames.blue}: ${liveScore.blue} (GJ: ${livePenalties.blue})`;
+  status.textContent = `${redScore} – ${blueScore} | Rond ${currentRound}/${totalRounds}`;
   const audInfo = document.getElementById("audienceInfo");
   if (audInfo) audInfo.textContent = status.textContent;
   const audMetaScore = document.getElementById("audienceMetaScore");
