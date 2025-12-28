@@ -93,50 +93,102 @@
     .rest-info { text-align: center; color: #ffd54f; font-weight: 700; }
     .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); margin: 1.2rem 0; }
     .section-title { font-size: 1.2rem; margin: 0.8rem 0 0.4rem; color: #ffe082; font-weight: 800; }
+    /* Publikvy (ny layout) */
     .audience-view {
-      position: fixed; inset: 0; background: radial-gradient(ellipse at top, rgba(13,71,161,0.45), transparent), radial-gradient(ellipse at bottom, rgba(183,28,28,0.45), transparent), #05060a;
-      z-index: 3000; display: none; align-items: center; justify-content: center; padding: 2rem;
+      position: fixed; inset: 0; background: #05060a;
+      z-index: 3000; display: none; align-items: center; justify-content: center; padding: 1.2rem;
     }
     .audience-board {
-      width: min(1100px, 100%); background: #0a0b12; border-radius: 18px; padding: 1.6rem; color: white;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.6); display: grid; gap: 1.1rem;
+      width: min(1200px, 100%);
+      background: #0a0b12;
+      border-radius: 18px;
+      padding: 1rem 1.4rem 1.6rem;
+      color: white;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      display: grid;
+      gap: 0.8rem;
     }
-    .audience-panel { border-radius: 18px; padding: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
-    .audience-panel.red { background: linear-gradient(180deg, #a61212, #5c0a0a); }
-    .audience-panel.blue { background: linear-gradient(180deg, #0d2ca8, #081b5d); }
-    .audience-badge { background:#000; border:2px solid #ffe600; color:#fff; padding:0.35rem 0.75rem; border-radius:10px; font-weight:800; font-size:1rem; margin-bottom:0.5rem; }
-    .audience-name { font-size: 2.4rem; font-weight: 800; margin: 0.2rem 0 0.6rem; text-align:left; }
-    .audience-score { font-size: 7.5rem; font-weight: 800; margin: 0.2rem 0; width: 100%; text-align: center; }
-    .audience-meta { background: #0b0b0f; border-radius: 14px; padding: 1rem; color: #ffe600; text-align: center; display: grid; gap: 0.6rem; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
-    .audience-timer { font-size: 3.4rem; font-weight: 800; letter-spacing: 1px; }
-    .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; }
-    .audience-rest { font-size: 1.4rem; color: #ffe600; }
-    .audience-hits { font-size: 1rem; color: #e0e0e0; }
-    .audience-alert {
-      background: #f44336; color: #fff; font-weight: 800; padding: 0.7rem 1rem; border-radius: 12px; text-align: center;
-      box-shadow: 0 12px 28px rgba(244,67,54,0.45); display:none;
+    .audience-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 700; font-size: 1rem; letter-spacing: 0.02em; color: #eee;
+    }
+    .audience-topbar .logos { display: flex; gap: 0.6rem; align-items: center; opacity: 0.9; }
+    .audience-topbar .title { text-transform: uppercase; font-weight: 800; }
+    .audience-topbar .match-meta { display: flex; gap: 0.8rem; align-items: center; }
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr 0.8fr 1fr;
+      gap: 0.7rem;
+      align-items: stretch;
+    }
+    .side {
+      border-radius: 16px;
+      padding: 1.2rem;
+      position: relative;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto auto;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 40px rgba(0,0,0,0.45);
+    }
+    .side.blue { background: linear-gradient(180deg, #0d2ca8, #081b5d); }
+    .side.red  { background: linear-gradient(180deg, #a61212, #5c0a0a); }
+    .side .row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+    .flag { font-size: 2.2rem; }
+    .code { font-size: 1rem; font-weight: 800; letter-spacing: 0.08em; }
+    .name { font-size: 1.7rem; font-weight: 800; }
+    .score-big { font-size: 8rem; font-weight: 900; text-align: center; margin: 0.2rem 0 0.4rem; line-height: 0.9; }
+    .video-icon { font-size: 1.4rem; opacity: 0.9; }
+    .gamjeom { font-weight: 800; font-size: 1.1rem; }
+    .hits { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; font-size: 0.95rem; }
+    .hit-pill { background: rgba(0,0,0,0.25); padding: 0.45rem 0.75rem; border-radius: 12px; font-weight: 700; }
+    .vest-row { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.4rem; font-weight: 800; }
+    .vest { background: rgba(255,255,255,0.12); padding: 0.35rem 0.6rem; border-radius: 10px; }
+    .center {
+      background: #0b0b0f;
+      border-radius: 16px;
+      padding: 1rem;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+      justify-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 18px 40px rgba(0,0,0,0.45);
+    }
+    .center .timeout-label {
+      background: #000;
+      color: #fff;
+      padding: 0.3rem 0.8rem;
+      border-radius: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.25rem;
+    }
+    .center .time-big {
+      font-size: 3.6rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+    }
+    .center .round {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      margin-top: 0.3rem;
+    }
+    .center .info {
+      font-size: 0.95rem;
+      color: #ccc;
+      text-align: center;
+      line-height: 1.3;
     }
     .close-audience {
       position: absolute; right: 1rem; top: 1rem; background: rgba(0,0,0,0.4); color: white; border: 1px solid rgba(255,255,255,0.2);
       padding: 0.5rem 0.9rem; border-radius: 10px; cursor: pointer; font-weight: 700;
+      z-index: 10;
     }
-    .audience-winner { font-size: 1.8rem; font-weight: 800; color: #ffe600; }
-    .overlay {
-      position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 2500;
-      background: rgba(0,0,0,0.7);
+    .audience-alert {
+      background: #f44336; color: #fff; font-weight: 800; padding: 0.7rem 1rem; border-radius: 12px; text-align: center;
+      box-shadow: 0 12px 28px rgba(244,67,54,0.45); display:none;
     }
-    .overlay-content {
-      background: #0f172a; padding: 2rem 2.4rem; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.55);
-      text-align: center; max-width: 500px; width: 90%;
-    }
-    .countdown-circle {
-      width: 120px; height: 120px; border-radius: 50%; border: 8px solid #ffd54f;
-      display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; margin: 1rem auto;
-      box-shadow: 0 12px 30px rgba(255,213,79,0.35);
-    }
-    .link-btn {
-      background: transparent; color: #ffd54f; border: none; cursor: pointer; font-weight: 700; text-decoration: underline;
-    }
+    .audience-winner { font-size: 1.2rem; font-weight: 800; color: #ffe600; text-align: center; }
     .live-tag { font-size: 0.85rem; padding: 0.25rem 0.55rem; border-radius: 8px; background: #b71c1c; color: #fff; font-weight: 800; letter-spacing: 0.08em; }
   </style>
 </head>
@@ -335,11 +387,19 @@
         <label for="restSeconds">Paustid (sek)</label>
         <input id="restSeconds" type="number" min="5" value="30" onchange="setRestTime()"/>
         <label for="matchTitle">Matchtitel</label>
-        <input id="matchTitle" type="text" placeholder="Final / Träning" oninput="updateMatchTitle()"/>
+        <input id="matchTitle" type="text" placeholder="Final / Träning" oninput="updateMatchTitle(); updateLiveScoreDisplay();"/>
         <label for="redNameInput">Röd deltagare</label>
         <input id="redNameInput" type="text" placeholder="Röd" oninput="updateLiveScoreDisplay()"/>
+        <label for="redCountryInput">Landskod Röd (t.ex. MAR)</label>
+        <input id="redCountryInput" type="text" placeholder="MAR" value="MAR" oninput="updateLiveScoreDisplay()"/>
+        <label for="redFlagInput">Flagga Röd (emoji)</label>
+        <input id="redFlagInput" type="text" placeholder="🇲🇦" value="🇲🇦" oninput="updateLiveScoreDisplay()"/>
         <label for="blueNameInput">Blå deltagare</label>
         <input id="blueNameInput" type="text" placeholder="Blå" oninput="updateLiveScoreDisplay()"/>
+        <label for="blueCountryInput">Landskod Blå (t.ex. KOR)</label>
+        <input id="blueCountryInput" type="text" placeholder="KOR" value="KOR" oninput="updateLiveScoreDisplay()"/>
+        <label for="blueFlagInput">Flagga Blå (emoji)</label>
+        <input id="blueFlagInput" type="text" placeholder="🇰🇷" value="🇰🇷" oninput="updateLiveScoreDisplay()"/>
       </div>
       <div class="stat-box">
         <div class="stat-title">Senaste händelser</div>
@@ -357,39 +417,73 @@
     </div>
   </div>
 
-  <!-- Audience view -->
+  <!-- Audience view (ny layout) -->
   <div id="audienceView" class="audience-view">
     <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
     <div class="audience-board">
-      <div class="audience-panel blue">
-        <div class="audience-badge" id="audienceBlueBadge">🇸🇪</div>
-        <div class="audience-name" id="audienceBlueName">Blå</div>
-        <div class="audience-score" id="audienceBlueScore">0</div>
-        <div class="audience-hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
-        <div>Gam-jeom: <span id="audienceBluePenalty">0</span></div>
-      </div>
-      <div class="audience-meta">
-        <div id="audienceMatchTitle">Match</div>
-        <div class="audience-timer" id="audienceTimer">02:00</div>
-        <div class="audience-row">
-          <span>Rond <span id="audienceRound">1</span></span>
-          <span id="audienceInfo"></span>
+      <div class="audience-topbar">
+        <div class="logos">
+          <span>🌐 World Taekwondo</span>
+          <span>KPNP</span>
         </div>
-        <div class="audience-row">
+        <div class="title" id="audienceMatchTitle">Qualification Olympic M -58 kg</div>
+        <div class="match-meta">
           <span id="audienceRoundScore">Ronder: 0 – 0</span>
-          <span id="audienceMetaScore"></span>
+          <span class="live-tag">LIVE</span>
         </div>
-        <div class="audience-rest" id="audienceRest">Rest: --</div>
-        <div class="audience-winner" id="audienceWinner"></div>
-        <div class="audience-alert" id="audienceAlert" style="display:none;"></div>
       </div>
-      <div class="audience-panel red">
-        <div class="audience-badge" id="audienceRedBadge">🇸🇪</div>
-        <div class="audience-name" id="audienceRedName">Röd</div>
-        <div class="audience-score" id="audienceRedScore">0</div>
-        <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
-        <div>Gam-jeom: <span id="audienceRedPenalty">0</span></div>
+
+      <div class="scoreboard">
+        <!-- Blue side -->
+        <div class="side blue">
+          <div class="row">
+            <span class="flag" id="audienceBlueFlag">🇰🇷</span>
+            <span class="code" id="audienceBlueCode">KOR</span>
+          </div>
+          <div class="name" id="audienceBlueName">Kim</div>
+          <div class="score-big" id="audienceBlueScore">0</div>
+          <div class="row" style="justify-content: space-between;">
+            <span class="video-icon">🎥</span>
+            <span class="gamjeom">GAM-JEOM: <span id="audienceBluePenalty">0</span></span>
+          </div>
+          <div class="hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
+          <div class="vest-row">
+            <span class="vest" id="audienceBlueVestL">74</span>
+            <span class="vest" id="audienceBlueVestR">10</span>
+          </div>
+        </div>
+
+        <!-- Center -->
+        <div class="center">
+          <div class="timeout-label" id="audienceTimeoutLabel">Time out</div>
+          <div class="time-big" id="audienceTimer">02:00</div>
+          <div class="round">ROND <span id="audienceRound">1</span></div>
+          <div class="info" id="audienceInfo">Red vs Blue</div>
+          <div class="audience-alert" id="audienceAlert"></div>
+          <div class="audience-winner" id="audienceWinner"></div>
+        </div>
+
+        <!-- Red side -->
+        <div class="side red">
+          <div class="row">
+            <span class="flag" id="audienceRedFlag">🇲🇦</span>
+            <span class="code" id="audienceRedCode">MAR</span>
+          </div>
+          <div class="name" id="audienceRedName">Hassan</div>
+          <div class="score-big" id="audienceRedScore">0</div>
+          <div class="row" style="justify-content: space-between;">
+            <span class="gamjeom">GAM-JEOM: <span id="audienceRedPenalty">0</span></span>
+            <span class="video-icon">🎥</span>
+          </div>
+          <div class="hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
+          <div class="vest-row">
+            <span class="vest" id="audienceRedVestL">3</span>
+            <span class="vest" id="audienceRedVestR">5</span>
+          </div>
+        </div>
       </div>
+
+      <div class="audience-winner" id="audienceRest">Rest: --</div>
     </div>
   </div>
 
