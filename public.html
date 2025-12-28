@@ -287,14 +287,20 @@
     let broadcastChannel = null;
 
     if ("BroadcastChannel" in window) {
-      broadcastChannel = new BroadcastChannel('kicklab-live');
-      
-      broadcastChannel.onmessage = (event) => {
-        const data = event.data;
-        if (data) {
-          updateDisplay(data);
-        }
-      };
+      try {
+        broadcastChannel = new BroadcastChannel('kicklab-live');
+        
+        broadcastChannel.onmessage = (event) => {
+          const data = event.data;
+          if (data) {
+            updateDisplay(data);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to initialize BroadcastChannel:', error);
+      }
+    } else {
+      console.warn('BroadcastChannel API not supported in this browser');
     }
 
     function updateDisplay(data) {
@@ -345,10 +351,15 @@
 
       // Update winner display
       if (data.matchEnded && data.roundWins) {
-        const winner = data.roundWins.red > data.roundWins.blue 
-          ? (data.liveScoreNames?.red || 'Röd')
-          : (data.liveScoreNames?.blue || 'Blå');
-        document.getElementById('winnerDisplay').textContent = `Vinnare: ${winner}`;
+        if (data.roundWins.red > data.roundWins.blue) {
+          const winner = data.liveScoreNames?.red || 'Röd';
+          document.getElementById('winnerDisplay').textContent = `Vinnare: ${winner}`;
+        } else if (data.roundWins.blue > data.roundWins.red) {
+          const winner = data.liveScoreNames?.blue || 'Blå';
+          document.getElementById('winnerDisplay').textContent = `Vinnare: ${winner}`;
+        } else {
+          document.getElementById('winnerDisplay').textContent = 'Oavgjort';
+        }
       } else {
         document.getElementById('winnerDisplay').textContent = '';
       }

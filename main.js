@@ -656,7 +656,7 @@ function updateLiveScoreDisplay() {
   if (audBlueScore) audBlueScore.textContent = liveScore.blue;
   if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
   if (audRound) audRound.textContent = currentRound;
-  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitleInput")?.value || "Match";
+  if (audMatchTitle) audMatchTitle.textContent = getMatchTitle();
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
@@ -887,7 +887,7 @@ function toggleAudienceView(open) {
 }
 
 function updateMatchTitle() {
-  const title = document.getElementById("matchTitleInput")?.value || "Match";
+  const title = getMatchTitle();
   const audTitle = document.getElementById("audienceMatchTitle");
   if (audTitle) audTitle.textContent = title;
   broadcastLiveData();
@@ -924,6 +924,10 @@ function speak(text) {
 }
 
 /* ---------- Hjälpfunktioner ---------- */
+function getMatchTitle() {
+  return document.getElementById("matchTitleInput")?.value || "Match";
+}
+
 function formatLiveTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -947,7 +951,6 @@ function playEndBeep() {
 
 function broadcastLiveData() {
   if (!broadcastChannel || !("BroadcastChannel" in window)) return;
-  const matchTitleEl = document.getElementById("matchTitleInput");
   const data = {
     liveScore,
     livePenalties,
@@ -962,7 +965,7 @@ function broadcastLiveData() {
     restTimeLeft,
     currentHits,
     lastRoundHits,
-    matchTitle: matchTitleEl?.value || "Match",
+    matchTitle: getMatchTitle(),
   };
   broadcastChannel.postMessage(data);
 }
