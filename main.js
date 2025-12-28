@@ -42,6 +42,7 @@ let currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 
 let lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 let roundEndReason = "";
 
+/* ---------- Generella sidväxlingar ---------- */
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
   document.getElementById("testPage").style.display = "none";
@@ -69,6 +70,7 @@ function showStartPage() {
   toggleAudienceView(false);
 }
 
+/* ---------- Sparringträning ---------- */
 function stopSparringTraining() {
   if (typeof sparringInterval !== 'undefined' && sparringInterval) {
     clearInterval(sparringInterval);
@@ -88,6 +90,7 @@ function stopSparringTraining() {
   if (commandEl) commandEl.textContent = "";
 }
 
+/* ---------- Reaktionstest ---------- */
 function stopTest() {
   testActive = false;
   stopListening();
@@ -104,15 +107,117 @@ function showTestPage() {
   loadStats();
 }
 
-function showSparringPage() {
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "none";
-  document.getElementById("sparringPage").style.display = "block";
-  const liveScorePage = document.getElementById("liveScorePage");
-  if (liveScorePage) liveScorePage.style.display = "none";
-  pauseLiveTimer();
+function startTest() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById("status").textContent = "Mikrofon krävs för testet.";
+    return;
+  }
+  const command = commands[Math.floor(Math.random() * commands.length)];
+  document.getElementById("command").textContent = `Gör: ${command}`;
+  document.getElementById("status").textContent = "Lyssnar...";
+  testActive = true;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      mediaStream = stream;
+      mediaStreamSource = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      const bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+      mediaStreamSource.connect(analyser);
+      startTime = performance.now();
+      listenForImpact();
+    })
+    .catch(() => {
+      document.getElementById("status").textContent = "Mikrofon behövs för testet.";
+      testActive = false;
+    });
 }
+
+function listenForImpact() {
+  function checkVolume() {
+    if (!testActive) return;
+    analyser.getByteTimeDomainData(dataArray);
+    let max = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const value = Math.abs(dataArray[i] - 128);
+      if (value > max) max = value;
+    }
+    if (max > 40) {
+      const reactionTime = performance.now() - startTime;
+      saveResult(reactionTime);
+    } else {
+      animationId = requestAnimationFrame(checkVolume);
+    }
+  }
+  animationId = requestAnimationFrame(checkVolume);
+}
+
+function stopListening() {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((track) => track.stop());
+  }
+  if (animationId) cancelAnimationFrame(animationId);
+  animationId = null;
+  mediaStream = null;
+}
+
+function saveResult(time) {
+  testActive = false;
+  stopListening();
+  recentResults.unshift(time);
+  if (recentResults.length > 5) recentResults.pop();
+  localStorage.setItem("recentResults", JSON.stringify(recentResults));
+  let historyText = " Senaste resultat ";
+  for (let t of recentResults) {
+    historyText += ` ${(t / 1000).toFixed(2)}s `;
+  }
+  document.getElementById("history").innerHTML = historyText;
+  if (!bestTime || time < bestTime) {
+    bestTime = time;
+    localStorage.setItem("bestTime", bestTime);
+    document.getElementById("highscore").innerHTML = ` 🎉 Nytt rekord! ${(bestTime / 1000).toFixed(2)} s `;
+  } else {
+    document.getElementById("highscore").innerHTML = ` Bästa tid ${(bestTime / 1000).toFixed(2)} s `;
+  }
+  document.getElementById("result").textContent = `Tid: ${(time / 1000).toFixed(2)} sekunder`;
+  document.getElementById("status").textContent = "Klart!";
+}
+
+function resetStats() {
+  localStorage.removeItem("recentResults");
+  localStorage.removeItem("bestTime");
+  recentResults = [];
+  bestTime = null;
+  document.getElementById("history").innerHTML = "";
+  document.getElementById("highscore").innerHTML = "";
+  document.getElementById("result").textContent = "";
+  document.getElementById("status").textContent = "Statistik nollställd.";
+}
+
+function loadStats() {
+  if (recentResults.length > 0) {
+    let historyText = " Senaste resultat ";
+    for (let t of recentResults) {
+      historyText += ` ${(t / 1000).toFixed(2)}s `;
+    }
+    document.getElementById("history").innerHTML = historyText;
+  }
+  if (bestTime) {
+    document.getElementById("highscore").innerHTML = ` Bästa tid ${(bestTime / 1000).toFixed(2)} s `;
+  }
+}
+
+/* ---------- Sparkräknare ---------- */
+let kickAudioCtx, kickMediaStream, kickMediaStreamSource, kickAnalyser, kickDataArray, kickAnimationId;
+let kickTestActive = false;
+let kickCount = 0;
+let kickRecentResults = JSON.parse(localStorage.getItem("kickRecentResults")) || [];
+let bestKickCount = parseInt(localStorage.getItem("bestKickCount")) || 0;
+let kickTestDuration = 15;
+let kickTimeRemaining = kickTestDuration;
+let kickTestInterval = null;
 
 function showKickCounterPage() {
   document.getElementById("startPage").style.display = "none";
@@ -125,6 +230,350 @@ function showKickCounterPage() {
   loadKickStats();
 }
 
+function updateTestDuration() {
+  const val = parseInt(document.getElementById("testDuration").value, 10);
+  if (!isNaN(val) && val > 0) {
+    kickTestDuration = val;
+    kickTimeRemaining = val;
+    document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
+  }
+}
+
+function startKickTest() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById("kickStatus").textContent = "Mikrofon krävs för testet.";
+    return;
+  }
+  kickCount = 0;
+  kickTimeRemaining = kickTestDuration;
+  document.getElementById("kickCount").textContent = `${kickCount} sparkar`;
+  document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
+  document.getElementById("kickStatus").textContent = "Lyssnar efter sparkar...";
+  kickTestActive = true;
+
+  if (!kickAudioCtx) kickAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    kickMediaStream = stream;
+    kickMediaStreamSource = kickAudioCtx.createMediaStreamSource(stream);
+    kickAnalyser = kickAudioCtx.createAnalyser();
+    kickAnalyser.fftSize = 2048;
+    const bufferLength = kickAnalyser.frequencyBinCount;
+    kickDataArray = new Uint8Array(bufferLength);
+    kickMediaStreamSource.connect(kickAnalyser);
+    listenForKickImpact();
+
+    // Starta timer
+    kickTestInterval = setInterval(() => {
+      kickTimeRemaining--;
+      if (kickTimeRemaining <= 0) {
+        endKickTest();
+      } else {
+        document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
+      }
+    }, 1000);
+  }).catch(() => {
+    document.getElementById("kickStatus").textContent = "Mikrofon behövs för sparkräknaren.";
+    kickTestActive = false;
+  });
+}
+
+function listenForKickImpact() {
+  function checkKickVolume() {
+    if (!kickTestActive) return;
+    kickAnalyser.getByteTimeDomainData(kickDataArray);
+    let max = 0;
+    for (let i = 0; i < kickDataArray.length; i++) {
+      const value = Math.abs(kickDataArray[i] - 128);
+      if (value > max) max = value;
+    }
+    if (max > 40) {
+      kickCount++;
+      document.getElementById("kickCount").textContent = `${kickCount} sparkar`;
+    }
+    kickAnimationId = requestAnimationFrame(checkKickVolume);
+  }
+  checkKickVolume();
+}
+
+function endKickTest() {
+  kickTestActive = false;
+  clearInterval(kickTestInterval);
+  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
+  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
+
+  playEndBeep();
+
+  document.getElementById("kickStatus").textContent = `Test slutfört! ${kickCount} sparkar på ${kickTestDuration} sekunder`;
+  document.getElementById("kickTimer").textContent = "0 sekunder";
+
+  saveKickResult(kickCount);
+}
+
+// Ny funktion: stoppa kicktestet utan slutsignal.
+function stopKickTest() {
+  if (!kickTestActive) return;
+  kickTestActive = false;
+  clearInterval(kickTestInterval);
+  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
+  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
+  // Avbryt mikrofon och uppdatera status utan att spela slutsignalen
+  document.getElementById("kickStatus").textContent = `Test stoppat! ${kickCount} sparkar på ${kickTestDuration - kickTimeRemaining} sekunder`;
+  document.getElementById("kickTimer").textContent = "0 sekunder";
+  saveKickResult(kickCount);
+}
+
+function saveKickResult(count) {
+  kickRecentResults.unshift(count);
+  if (kickRecentResults.length > 5) kickRecentResults.pop();
+  localStorage.setItem("kickRecentResults", JSON.stringify(kickRecentResults));
+  let historyText = " Senaste resultat ";
+  for (let c of kickRecentResults) {
+    historyText += ` ${c} sparkar `;
+  }
+  historyText += " ";
+  if (kickRecentResults.length > 0) {
+    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
+    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
+  }
+  document.getElementById("kickHistory").innerHTML = historyText;
+  if (count > bestKickCount) {
+    bestKickCount = count;
+    localStorage.setItem("bestKickCount", bestKickCount);
+    document.getElementById("kickHighscore").innerHTML = ` 🎉 Nytt rekord! ${bestKickCount} sparkar! 🎉 `;
+    document.getElementById("cheerSound").play();
+  } else {
+    document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
+  }
+}
+
+function resetKickStats() {
+  localStorage.removeItem("kickRecentResults");
+  localStorage.removeItem("bestKickCount");
+  kickRecentResults = [];
+  bestKickCount = 0;
+  document.getElementById("kickHistory").innerHTML = "";
+  document.getElementById("kickHighscore").innerHTML = "";
+  document.getElementById("kickCount").textContent = "0 sparkar";
+  document.getElementById("kickTimer").textContent = `${kickTestDuration} sekunder`;
+  document.getElementById("kickStatus").textContent = "Statistik nollställd.";
+}
+
+function loadKickStats() {
+  if (kickRecentResults.length > 0) {
+    let historyText = " Senaste resultat ";
+    for (let c of kickRecentResults) {
+      historyText += ` ${c} sparkar `;
+    }
+    historyText += " ";
+    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
+    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
+    document.getElementById("kickHistory").innerHTML = historyText;
+  }
+  document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
+}
+
+/* ---------- Tävlingsläge (reaktionstid) ---------- */
+function updateCompetitionNameInputs() {
+  const count = parseInt(document.getElementById("competitionCount").value, 10) || 0;
+  const container = document.getElementById("competitionNames");
+  container.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = `Deltagare ${i + 1}`;
+    input.id = `participant-${i}`;
+    input.style.marginBottom = "0.5rem";
+    container.appendChild(input);
+  }
+}
+
+function startCompetition() {
+  const count = parseInt(document.getElementById("competitionCount").value, 10) || 0;
+  competitionParticipants = [];
+  for (let i = 0; i < count; i++) {
+    const nameInput = document.getElementById(`participant-${i}`);
+    const name = nameInput ? nameInput.value.trim() || `Deltagare ${i + 1}` : `Deltagare ${i + 1}`;
+    competitionParticipants.push({ name, times: [], best: Infinity, avg: Infinity });
+  }
+  if (competitionParticipants.length === 0) {
+    alert("Ange minst en deltagare.");
+    return;
+  }
+  currentParticipantIndex = 0;
+  currentKickIndex = 0;
+  const statusEl = document.getElementById("competitionStatus");
+  const listEl = document.getElementById("competitionNamesList");
+  if (statusEl) statusEl.textContent = "Tävling startad!";
+  if (listEl) listEl.innerHTML = competitionParticipants.map(p => `<li>${p.name}</li>`).join("");
+  document.getElementById("competitionSetupPage").style.display = "none";
+  document.getElementById("competitionRunPage").style.display = "block";
+  competitionActive = true;
+  showNextRoundStartPage();
+}
+
+function showCompetitionSetupPage() {
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("competitionSetupPage").style.display = "block";
+}
+
+function showNextRoundStartPage() {
+  if (currentParticipantIndex >= competitionParticipants.length) return;
+  const participant = competitionParticipants[currentParticipantIndex];
+  const overlay = document.getElementById("countdownOverlay");
+  const countdownEl = document.getElementById("countdownNumber");
+  const infoEl = document.getElementById("overlayInfo");
+  const titleEl = document.getElementById("overlayTitle");
+  if (!overlay || !countdownEl || !infoEl || !titleEl) return;
+  overlay.style.display = "flex";
+  titleEl.textContent = `${participant.name}, spark ${currentKickIndex + 1} av 3`;
+  infoEl.textContent = "Gör dig redo. Start om 3...";
+  let count = 3;
+  countdownEl.textContent = count;
+  const interval = setInterval(() => {
+    count--;
+    countdownEl.textContent = count;
+    if (count <= 0) {
+      clearInterval(interval);
+      overlay.style.display = "none";
+      startCompetitionRound();
+    }
+  }, 1000);
+}
+
+async function startCompetitionRound() {
+  if (!competitionActive) return;
+  // Stoppa tidigare stream om den finns
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+  }
+  // Förbered mikrofonen i förväg så att nedräkning och start hänger ihop
+  try {
+    await prepareCompetitionMicrophone();
+  } catch (err) {
+    const statusEl = document.getElementById("competitionStatus");
+    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
+    competitionActive = false;
+    return;
+  }
+  // Säkerställ att start sker efter en minimal fördröjning så att analys hinner initieras
+  setTimeout(() => {
+    if (!competitionActive) return;
+    competitionStartTime = performance.now();
+    listenForImpactCompetition();
+  }, 120);
+}
+
+async function prepareCompetitionMicrophone() {
+  competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
+  competitionAnalyser = competitionAudioCtx.createAnalyser();
+  competitionAnalyser.fftSize = 2048;
+  const bufferLength = competitionAnalyser.frequencyBinCount;
+  competitionDataArray = new Uint8Array(bufferLength);
+  competitionMediaStreamSource.connect(competitionAnalyser);
+}
+
+function listenForImpactCompetition() {
+  function checkVolume() {
+    if (!competitionActive) return;
+    competitionAnalyser.getByteTimeDomainData(competitionDataArray);
+    let max = 0;
+    for (let i = 0; i < competitionDataArray.length; i++) {
+      const value = Math.abs(competitionDataArray[i] - 128);
+      if (value > max) max = value;
+    }
+    if (max > 40) {
+      const reactionTime = performance.now() - competitionStartTime;
+      saveCompetitionResult(reactionTime);
+    } else {
+      requestAnimationFrame(checkVolume);
+    }
+  }
+  checkVolume();
+}
+
+function saveCompetitionResult(time) {
+  // Stoppa mikrofonen
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+    competitionMediaStream = null;
+  }
+  const participant = competitionParticipants[currentParticipantIndex];
+  participant.times.push(time);
+  if (participant.times.length === 3) {
+    // Beräkna bästa och snitt
+    participant.best = Math.min(...participant.times);
+    participant.avg = participant.times.reduce((a, b) => a + b, 0) / participant.times.length;
+    // Gå vidare till nästa deltagare
+    currentParticipantIndex++;
+    currentKickIndex = 0;
+  } else {
+    // Fler sparkar kvar för samma deltagare
+    currentKickIndex++;
+  }
+  // Vänta kort innan nästa runda startar för att ge användaren feedback
+  setTimeout(() => {
+    if (currentParticipantIndex < competitionParticipants.length) {
+      showNextRoundStartPage();
+    } else {
+      competitionActive = false;
+      finishCompetition();
+    }
+  }, 800);
+}
+
+function finishCompetition() {
+  // Avbryt pågående lyssning
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+    competitionMediaStream = null;
+  }
+  competitionActive = false;
+  if (competitionParticipants.length === 0) return;
+  let bestKickTime = Infinity;
+  let bestKickWinner = null;
+  let bestAvgTime = Infinity;
+  let bestAvgWinner = null;
+  // Beräkna vinnare
+  competitionParticipants.forEach((p) => {
+    if (p.best < bestKickTime) {
+      bestKickTime = p.best;
+      bestKickWinner = p.name;
+    }
+    if (p.avg < bestAvgTime) {
+      bestAvgTime = p.avg;
+      bestAvgWinner = p.name;
+    }
+  });
+  let resultHtml = "";
+  resultHtml += `<p>Vinnare snabbaste spark: ${bestKickWinner} (${bestKickTime.toFixed(0)} ms)</p>`;
+  resultHtml += `<p>Vinnare bästa snitt: ${bestAvgWinner} (${bestAvgTime.toFixed(0)} ms)</p>`;
+  resultHtml += "<h3>Resultat:</h3><ul>";
+  competitionParticipants.forEach((p) => {
+    const timesStr = p.times.map((t) => t.toFixed(0)).join(", ");
+    resultHtml += `<li>${p.name}: tider = ${timesStr} ms, bästa = ${p.best.toFixed(0)} ms, snitt = ${p.avg.toFixed(0)} ms</li>`;
+  });
+  resultHtml += "</ul>";
+  const resultsEl = document.getElementById("competitionResults");
+  if (resultsEl) resultsEl.innerHTML = resultHtml;
+  const statusEl = document.getElementById("competitionStatus");
+  if (statusEl) statusEl.textContent = "Tävlingen är avslutad!";
+
+  // När tävlingen är klar ska vi se till att rätt sida visas.
+  // Döljer inställningssidan och rundsidan och visar resultatsidan
+  const setupPage = document.getElementById("competitionSetupPage");
+  const runPage = document.getElementById("competitionRunPage");
+  const roundPage = document.getElementById("competitionRoundPage");
+  const overlay = document.getElementById("countdownOverlay");
+  if (setupPage) setupPage.style.display = "none";
+  if (roundPage) roundPage.style.display = "none";
+  if (overlay) overlay.style.display = "none";
+  if (runPage) runPage.style.display = "block";
+}
+
+/* ---------- Live sparring score ---------- */
 function showLiveScorePage() {
   document.getElementById("startPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
@@ -199,1193 +648,325 @@ function updateLiveScoreDisplay() {
   const audRest = document.getElementById("audienceRest");
   const audRedHits = document.getElementById("audienceRedHits");
   const audBlueHits = document.getElementById("audienceBlueHits");
-  const displayRedName = liveScoreNames.red.toUpperCase();
-  const displayBlueName = liveScoreNames.blue.toUpperCase();
+  if (audRedName) audRedName.textContent = liveScoreNames.red;
+  if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
   if (audRedBadge) audRedBadge.textContent = "🇸🇪";
   if (audBlueBadge) audBlueBadge.textContent = "🇸🇪";
-  if (audRedName) audRedName.textContent = displayRedName;
-  if (audBlueName) audBlueName.textContent = displayBlueName;
   if (audRedScore) audRedScore.textContent = liveScore.red;
   if (audBlueScore) audBlueScore.textContent = liveScore.blue;
-  const timerText = restTimeLeft > 0 ? formatLiveTime(restTimeLeft) : formatLiveTime(liveTimeLeft);
-  if (audTimer) audTimer.textContent = timerText;
-  if (audRound) audRound.textContent = `${currentRound}/${totalRounds}`;
-  if (audMatchTitle) audMatchTitle.textContent = `Match ${document.getElementById("matchNumberInput")?.value || "1"}`;
-  if (audInfo) audInfo.textContent = restTimeLeft > 0 ? "Paus" : `Rond ${currentRound}`;
+  if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
+  if (audRound) audRound.textContent = currentRound;
+  if (audInfo) audInfo.textContent = `${liveScoreNames.red} vs ${liveScoreNames.blue}`;
+  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitle")?.value || "Match";
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
-  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} - ${roundWins.blue}`;
-  if (audWinner) audWinner.textContent = matchEnded ? `WINNER: ${roundWins.red > roundWins.blue ? displayRedName : displayBlueName}` : "";
-  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Rest: ${formatLiveTime(restTimeLeft)}` : "";
-  const statsRed = restTimeLeft > 0 ? lastRoundHits.red : currentHits.red;
-  const statsBlue = restTimeLeft > 0 ? lastRoundHits.blue : currentHits.blue;
-  if (audRedHits) {
-    audRedHits.textContent = `Huvud ${statsRed.head} | Väst ${statsRed.body} | Slag ${statsRed.punch}`;
-  }
-  if (audBlueHits) {
-    audBlueHits.textContent = `Huvud ${statsBlue.head} | Väst ${statsBlue.body} | Slag ${statsBlue.punch}`;
-  }
-  const audAlert = document.getElementById("audienceAlert");
-  if (audAlert) {
-    if (roundEndReason) {
-      audAlert.style.display = "inline-block";
-      audAlert.textContent = roundEndReason;
-    } else {
-      audAlert.style.display = "none";
-    }
-  }
-  const opTimer = document.getElementById("operatorTimer");
-  if (opTimer) opTimer.textContent = timerText;
-  broadcastState();
+  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
+  if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
+  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "Rest: --";
+  if (audRedHits) audRedHits.textContent = `Huvud ${currentHits.red.head} | Väst ${currentHits.red.body} | Slag ${currentHits.red.punch}`;
+  if (audBlueHits) audBlueHits.textContent = `Huvud ${currentHits.blue.head} | Väst ${currentHits.blue.body} | Slag ${currentHits.blue.punch}`;
 }
 
-function setLiveScoreNames() {
-  updateLiveScoreDisplay();
-}
-
-function setTotalRounds() {
-  const totalInput = document.getElementById("totalRoundsInput");
-  if (totalInput) {
-    const val = parseInt(totalInput.value, 10);
-    if (!isNaN(val) && val > 0) totalRounds = val;
-  }
-  if (currentRound > totalRounds) currentRound = totalRounds;
-  updateLiveScoreDisplay();
-}
-
-function adjustLiveScore(side, delta) {
-  if (!(side in liveScore)) return;
-  liveScore[side] = Math.max(0, liveScore[side] + delta);
-  updateLiveScoreDisplay();
-  checkAutoRoundEnd();
-}
-
-function awardScore(side, value) {
-  if (!(side in liveScore)) return;
+function addScore(side, value) {
+  if (matchEnded) return;
   liveScore[side] += value;
-  // Statistikkategorier: 1 -> punch, 2/4 -> body, 3/5 -> head
-  const hitStats = currentHits[side];
-  if (value === 1) hitStats.punch += 1;
-  else if (value === 2 || value === 4) hitStats.body += 1;
-  else if (value === 3 || value === 5) hitStats.head += 1;
   lastAction = { type: "score", side, value };
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `${liveScoreNames[side]} +${value}`;
+  if (side === "red") currentHits.red.head += value; else currentHits.blue.head += value;
+  updateLiveMeta();
   updateLiveScoreDisplay();
-  checkAutoRoundEnd();
+  broadcastLiveData();
 }
 
-function awardPenalty(side) {
-  if (!(side in liveScore)) return;
-  // Gam-jeom: +1 till motståndaren och registrera penalty
+function addPenalty(side) {
+  if (matchEnded) return;
   livePenalties[side] += 1;
-  const opponent = side === "red" ? "blue" : "red";
-  liveScore[opponent] += 1;
+  // Gam-jeom ger poäng till motståndaren
+  const other = side === "red" ? "blue" : "red";
+  liveScore[other] += 1;
   lastAction = { type: "penalty", side, value: 1 };
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `${liveScoreNames[side]} gam-jeom ( +1 ${liveScoreNames[opponent]} )`;
+  updateLiveMeta();
   updateLiveScoreDisplay();
-  // Om 5 gam-jeom -> motståndaren vinner ronden
-  if (livePenalties[side] >= 5) {
-    finishRound(opponent, "5 GAM-JEOM");
-  } else {
-    checkAutoRoundEnd();
-  }
+  broadcastLiveData();
 }
 
-function resetLiveScore() {
-  liveScore.red = 0;
-  liveScore.blue = 0;
-  livePenalties.red = 0;
-  livePenalties.blue = 0;
-  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+function removePenalty(side) {
+  if (livePenalties[side] <= 0 || matchEnded) return;
+  livePenalties[side] -= 1;
+  const other = side === "red" ? "blue" : "red";
+  liveScore[other] = Math.max(0, liveScore[other] - 1);
+  lastAction = { type: "penalty", side, value: -1 };
+  updateLiveMeta();
   updateLiveScoreDisplay();
+  broadcastLiveData();
 }
 
 function undoLastAction() {
-  if (!lastAction) {
-    const status = document.getElementById("liveScoreStatus");
-    if (status) status.textContent = "Inget att ångra.";
-    return;
-  }
-  if (lastAction.type === "score") {
-    liveScore[lastAction.side] = Math.max(0, liveScore[lastAction.side] - lastAction.value);
-  } else if (lastAction.type === "penalty") {
-    const opponent = lastAction.side === "red" ? "blue" : "red";
-    liveScore[opponent] = Math.max(0, liveScore[opponent] - 1);
-    livePenalties[lastAction.side] = Math.max(0, livePenalties[lastAction.side] - 1);
+  if (!lastAction || matchEnded) return;
+  const { type, side, value } = lastAction;
+  if (type === "score") {
+    liveScore[side] = Math.max(0, liveScore[side] - value);
+  } else if (type === "penalty") {
+    // Om senaste var +1 penalty: ta bort penalty och dra av poäng från motståndaren
+    const other = side === "red" ? "blue" : "red";
+    if (value === 1) {
+      livePenalties[side] = Math.max(0, livePenalties[side] - 1);
+      liveScore[other] = Math.max(0, liveScore[other] - 1);
+    } else if (value === -1) {
+      livePenalties[side] += 1;
+      liveScore[other] += 1;
+    }
   }
   lastAction = null;
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = "Senaste åtgärden ångrad.";
+  updateLiveMeta();
   updateLiveScoreDisplay();
+  broadcastLiveData();
 }
 
-function updateLiveMeta() {
-  const matchInput = document.getElementById("matchNumberInput");
-  const roundInput = document.getElementById("roundNumberInput");
-  const matchDisplay = document.getElementById("liveMatchNumber");
-  const roundDisplay = document.getElementById("liveRoundNumber");
-  if (matchInput && matchDisplay) matchDisplay.textContent = matchInput.value || "1";
-  if (roundInput && roundDisplay) {
-    const rVal = parseInt(roundInput.value, 10);
-    currentRound = !isNaN(rVal) && rVal > 0 ? rVal : 1;
-    roundDisplay.textContent = currentRound;
-  }
-  const totalInput = document.getElementById("totalRoundsInput");
-  if (totalInput) {
-    const val = parseInt(totalInput.value, 10);
-    if (!isNaN(val) && val > 0) totalRounds = val;
-  }
-  const totalRoundsEl = document.getElementById("liveTotalRounds");
-  if (totalRoundsEl) totalRoundsEl.textContent = totalRounds;
+function resetLiveScore() {
+  liveScore.red = 0; liveScore.blue = 0;
+  livePenalties.red = 0; livePenalties.blue = 0;
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  roundWins = { red: 0, blue: 0 };
+  currentRound = 1;
+  liveTimeLeft = matchDurationSeconds;
+  matchEnded = false;
+  restTimeLeft = 0;
+  clearInterval(restTimerId);
+  lastAction = null;
+  updateLiveMeta();
+  updateLiveScoreDisplay();
+  broadcastLiveData();
 }
 
 function setMatchDuration() {
-  const durInput = document.getElementById("matchDurationInput");
-  if (durInput) {
-    const val = parseInt(durInput.value, 10);
-    if (!isNaN(val) && val > 0) {
-      matchDurationSeconds = val;
-    }
+  const val = parseInt(document.getElementById("matchDuration")?.value, 10);
+  if (!isNaN(val) && val > 0) {
+    matchDurationSeconds = val;
+    liveTimeLeft = val;
+    updateLiveScoreDisplay();
+    broadcastLiveData();
   }
-  liveTimeLeft = matchDurationSeconds;
-  updateLiveScoreDisplay();
 }
 
-function formatLiveTime(seconds) {
-  const clamped = Math.max(0, Math.round(seconds));
-  const m = Math.floor(clamped / 60).toString().padStart(2, "0");
-  const s = (clamped % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
+function setTotalRounds() {
+  const val = parseInt(document.getElementById("totalRounds")?.value, 10);
+  if (!isNaN(val) && val > 0) {
+    totalRounds = val;
+    document.getElementById("liveTotalRounds").textContent = totalRounds;
+    broadcastLiveData();
+  }
+}
+
+function setRestTime() {
+  const val = parseInt(document.getElementById("restSeconds")?.value, 10);
+  if (!isNaN(val) && val > 0) {
+    restTimeLeft = val;
+  }
+}
+
+function toggleLiveTimer() {
+  if (matchEnded) return;
+  if (liveTimerRunning) {
+    pauseLiveTimer();
+  } else {
+    startLiveTimer();
+  }
+  broadcastLiveData();
 }
 
 function startLiveTimer() {
   if (liveTimerRunning) return;
-  if (liveTimeLeft <= 0) {
-    liveTimeLeft = matchDurationSeconds;
-  }
   liveTimerRunning = true;
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = "Matchklockan startad";
+  document.getElementById("timerToggleLabel").textContent = "Pausa";
   liveTimerId = setInterval(() => {
-    liveTimeLeft -= 1;
+    liveTimeLeft--;
     if (liveTimeLeft <= 0) {
       liveTimeLeft = 0;
-      endCurrentRound();
-    } else {
-      updateLiveScoreDisplay();
+      checkRoundEnd();
     }
+    updateLiveScoreDisplay();
+    broadcastLiveData();
   }, 1000);
 }
 
 function pauseLiveTimer() {
   liveTimerRunning = false;
-  if (liveTimerId) clearInterval(liveTimerId);
-  liveTimerId = null;
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = "Matchklockan pausad";
-  updateLiveScoreDisplay();
+  clearInterval(liveTimerId);
+  document.getElementById("timerToggleLabel").textContent = "Starta";
 }
 
-function resetLiveMatch() {
+function resetLiveTimer() {
   pauseLiveTimer();
-  stopRestTimer();
   liveTimeLeft = matchDurationSeconds;
   currentRound = 1;
-  roundWins = { red: 0, blue: 0 };
   matchEnded = false;
-  roundEndReason = "";
-  lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
-  const roundInput = document.getElementById("roundNumberInput");
-  if (roundInput) roundInput.value = currentRound;
-  const roundDisplay = document.getElementById("liveRoundNumber");
-  if (roundDisplay) roundDisplay.textContent = currentRound;
-  resetLiveScore();
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Match nollställd – ${liveScoreNames.red}: ${liveScore.red} | ${liveScoreNames.blue}: ${liveScore.blue}`;
+  restTimeLeft = 0;
   updateLiveScoreDisplay();
+  broadcastLiveData();
 }
 
-function endCurrentRound() {
+function startRest() {
   if (matchEnded) return;
+  const val = parseInt(document.getElementById("restSeconds")?.value, 10) || 30;
+  restTimeLeft = val;
   pauseLiveTimer();
-  liveTimeLeft = 0;
-  if (liveScore.red === liveScore.blue) {
-    const tieStatus = document.getElementById("liveScoreStatus");
-    if (tieStatus) tieStatus.textContent = "Oavgjort – ge utslags-poäng innan du går vidare.";
-    return;
-  }
-  const winner = liveScore.red > liveScore.blue ? "red" : "blue";
-  finishRound(winner, "Rond slut");
-}
-
-function startNextRound() {
-  if (matchEnded) {
-    const status = document.getElementById("liveScoreStatus");
-    if (status) status.textContent = "Matchen är redan avgjord.";
-    return;
-  }
-  stopRestTimer();
-  roundEndReason = "";
-  prepareNextRound();
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Rond ${currentRound} förberedd. Starta klockan.`;
   updateLiveScoreDisplay();
-}
-
-function prepareNextRound() {
-  currentRound = Math.min(currentRound + 1, totalRounds);
-  const roundInput = document.getElementById("roundNumberInput");
-  if (roundInput) roundInput.value = currentRound;
-  const roundDisplay = document.getElementById("liveRoundNumber");
-  if (roundDisplay) roundDisplay.textContent = currentRound;
-  roundEndReason = "";
-  resetLiveScore();
-  liveTimeLeft = matchDurationSeconds;
-  updateLiveScoreDisplay();
-}
-
-function startRestTimer() {
-  stopRestTimer();
-  restTimeLeft = 60;
-  roundEndReason = roundEndReason || "";
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Paus ${formatLiveTime(restTimeLeft)} – starta nästa rond när du är redo.`;
+  clearInterval(restTimerId);
   restTimerId = setInterval(() => {
-    restTimeLeft -= 1;
+    restTimeLeft--;
     if (restTimeLeft <= 0) {
       restTimeLeft = 0;
-      stopRestTimer();
-      const st = document.getElementById("liveScoreStatus");
-      if (st) st.textContent = "Paus klar – tryck Nästa rond och starta klockan.";
+      clearInterval(restTimerId);
+      startLiveTimer();
     }
     updateLiveScoreDisplay();
+    broadcastLiveData();
   }, 1000);
-  updateLiveScoreDisplay();
 }
 
-function stopRestTimer() {
-  if (restTimerId) clearInterval(restTimerId);
-  restTimerId = null;
-  restTimeLeft = 0;
-  roundEndReason = roundEndReason && matchEnded ? roundEndReason : roundEndReason;
-}
-
-function showMatchWinner(side) {
-  matchEnded = true;
+function checkRoundEnd() {
   pauseLiveTimer();
-  stopRestTimer();
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Vinnare: ${liveScoreNames[side]}`;
-  const audWinner = document.getElementById("audienceWinner");
-  if (audWinner) audWinner.textContent = `WINNER: ${liveScoreNames[side]}`;
-  roundEndReason = "";
-  updateLiveScoreDisplay();
-}
-
-function checkAutoRoundEnd() {
-  if (matchEnded) return;
-  const lead = Math.abs(liveScore.red - liveScore.blue);
-  if (lead >= 12) {
-    const leader = liveScore.red > liveScore.blue ? "red" : "blue";
-    finishRound(leader, "PTG");
+  if (liveScore.red === liveScore.blue) {
+    // Oavgjort: sudden death? Här markerar vi bara att ronden är slut.
+    roundEndReason = "Rond slut: oavgjort";
+  } else if (liveScore.red > liveScore.blue) {
+    roundWins.red += 1;
+    roundEndReason = `${liveScoreNames.red} vinner ronden`;
+  } else {
+    roundWins.blue += 1;
+    roundEndReason = `${liveScoreNames.blue} vinner ronden`;
   }
-}
-
-function finishRound(winner, reason) {
-  if (matchEnded) return;
-  pauseLiveTimer();
-  stopRestTimer();
-  roundEndReason = reason || "";
-  roundWins[winner] += 1;
+  // Spara träffstatistik per rond
   lastRoundHits = JSON.parse(JSON.stringify(currentHits));
-  const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `${liveScoreNames[winner]} vinner rond ${currentRound}.`;
-  const needed = Math.floor(totalRounds / 2) + 1;
-  if (roundWins[winner] >= needed) {
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+
+  currentRound++;
+  if (currentRound > totalRounds) {
     matchEnded = true;
-    showMatchWinner(winner);
-    return;
+    showWinner();
+  } else {
+    restTimeLeft = parseInt(document.getElementById("restSeconds")?.value, 10) || 30;
+    startRest();
   }
-  startRestTimer();
+  updateLiveMeta();
+  updateLiveScoreDisplay();
+  broadcastLiveData();
 }
 
-function toggleAudienceView(show) {
+function showWinner() {
+  pauseLiveTimer();
+  const winner = roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue;
+  const status = document.getElementById("liveScoreStatus");
+  if (status) status.textContent = `Matchen slut! Vinnare: ${winner}`;
+  const audWinner = document.getElementById("audienceWinner");
+  if (audWinner) audWinner.textContent = `Vinnare: ${winner}`;
+  matchEnded = true;
+}
+
+function updateLiveMeta() {
+  const status = document.getElementById("liveScoreStatus");
+  if (!status) return;
+  const redScore = `${liveScoreNames.red}: ${liveScore.red} (GJ: ${livePenalties.red})`;
+  const blueScore = `${liveScoreNames.blue}: ${liveScore.blue} (GJ: ${livePenalties.blue})`;
+  status.textContent = `${redScore} – ${blueScore} | Rond ${currentRound}/${totalRounds}`;
+  const audInfo = document.getElementById("audienceInfo");
+  if (audInfo) audInfo.textContent = status.textContent;
+  const audMetaScore = document.getElementById("audienceMetaScore");
+  if (audMetaScore) audMetaScore.textContent = `${liveScoreNames.red} ${liveScore.red} – ${liveScore.blue} ${liveScoreNames.blue}`;
+  const audRound = document.getElementById("audienceRound");
+  if (audRound) audRound.textContent = currentRound;
+}
+
+function toggleAudienceView(open) {
   const view = document.getElementById("audienceView");
   if (!view) return;
-  view.style.display = show ? "block" : "none";
-  updateLiveScoreDisplay();
-}
-
-function broadcastState() {
-  if (!broadcastChannel || audienceMode) return;
-  const payload = {
-    liveScore: { ...liveScore },
-    livePenalties: { ...livePenalties },
-    liveScoreNames: { ...liveScoreNames },
-    currentRound,
-    totalRounds,
-    liveTimeLeft,
-    matchDurationSeconds,
-    matchNumber: document.getElementById("matchNumberInput")?.value || "1",
-    timerRunning: liveTimerRunning,
-    roundWins,
-    matchEnded,
-    lastRoundHits,
-    restTimeLeft,
-    currentHits,
-    roundEndReason,
-  };
-  broadcastChannel.postMessage(payload);
-}
-
-function applyIncomingState(state) {
-  // Uppdaterar publikvyn i en separat flik utan att påverka operatörens flik.
-  const redName = state.liveScoreNames?.red || "Röd";
-  const blueName = state.liveScoreNames?.blue || "Blå";
-  const timerText = (state.restTimeLeft ?? 0) > 0 ? formatLiveTime(state.restTimeLeft) : formatLiveTime(state.liveTimeLeft ?? 0);
-  const audRedName = document.getElementById("audienceRedName");
-  const audBlueName = document.getElementById("audienceBlueName");
-  const audRedScore = document.getElementById("audienceRedScore");
-  const audBlueScore = document.getElementById("audienceBlueScore");
-  const audTimer = document.getElementById("audienceTimer");
-  const audRound = document.getElementById("audienceRound");
-  const audInfo = document.getElementById("audienceInfo");
-  const audMatchTitle = document.getElementById("audienceMatchTitle");
-  const audRedPen = document.getElementById("audienceRedPenalty");
-  const audBluePen = document.getElementById("audienceBluePenalty");
-  const audRoundScore = document.getElementById("audienceRoundScore");
-  const audWinner = document.getElementById("audienceWinner");
-  const audRest = document.getElementById("audienceRest");
-  const audRedHits = document.getElementById("audienceRedHits");
-  const audBlueHits = document.getElementById("audienceBlueHits");
-  const audAlert = document.getElementById("audienceAlert");
-  if (audRedName) audRedName.textContent = redName;
-  if (audBlueName) audBlueName.textContent = blueName;
-  if (audRedScore) audRedScore.textContent = state.liveScore?.red ?? 0;
-  if (audBlueScore) audBlueScore.textContent = state.liveScore?.blue ?? 0;
-  if (audTimer) audTimer.textContent = timerText;
-  if (audRound) audRound.textContent = `${state.currentRound ?? 1}/${state.totalRounds ?? 1}`;
-  if (audInfo) audInfo.textContent = `Rond ${state.currentRound ?? 1}`;
-  if (audMatchTitle) audMatchTitle.textContent = `Match ${state.matchNumber ?? "1"}`;
-  if (audRedPen) audRedPen.textContent = state.livePenalties?.red ?? 0;
-  if (audBluePen) audBluePen.textContent = state.livePenalties?.blue ?? 0;
-  if (audRoundScore) {
-    const rw = state.roundWins || { red: 0, blue: 0 };
-    audRoundScore.textContent = `Ronder: ${rw.blue} - ${rw.red}`;
-  }
-  if (audWinner) {
-    if (state.matchEnded) {
-      const rw = state.roundWins || { red: 0, blue: 0 };
-      const winnerSide = (rw.red || 0) > (rw.blue || 0) ? redName : blueName;
-      audWinner.textContent = `WINNER: ${winnerSide}`;
-    } else {
-      audWinner.textContent = "";
-    }
-  }
-  if (audRest) audRest.textContent = state.restTimeLeft > 0 ? `Rest: ${formatLiveTime(state.restTimeLeft)}` : "";
-  const statsRed = state.restTimeLeft > 0 ? state.lastRoundHits?.red : state.currentHits?.red;
-  const statsBlue = state.restTimeLeft > 0 ? state.lastRoundHits?.blue : state.currentHits?.blue;
-  if (audRedHits) {
-    const lr = statsRed || { head: 0, body: 0, punch: 0 };
-    audRedHits.textContent = `Huvud ${lr.head} | Väst ${lr.body} | Slag ${lr.punch}`;
-  }
-  if (audBlueHits) {
-    const lb = statsBlue || { head: 0, body: 0, punch: 0 };
-    audBlueHits.textContent = `Huvud ${lb.head} | Väst ${lb.body} | Slag ${lb.punch}`;
-  }
-  if (audAlert) {
-    if (state.roundEndReason) {
-      audAlert.style.display = "inline-block";
-      audAlert.textContent = state.roundEndReason;
-    } else {
-      audAlert.style.display = "none";
-    }
+  audienceMode = open;
+  view.style.display = open ? "flex" : "none";
+  if (open) {
+    updateLiveScoreDisplay();
   }
 }
 
-// Säkerställ att vi startar på startmenyn även om någon vy sparats i cache
-document.addEventListener("DOMContentLoaded", () => {
-  if ("BroadcastChannel" in window) {
-    broadcastChannel = new BroadcastChannel("kicklab-live-score");
-    broadcastChannel.onmessage = (event) => {
-      if (!audienceMode) return;
-      if (!event.data) return;
-      applyIncomingState(event.data);
-    };
-  }
-  toggleAudienceView(false);
-  showStartPage();
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("audience") === "1") {
-    audienceMode = true;
-    matchEnded = false;
-    restTimeLeft = 0;
-    const loader = document.getElementById("loaderOverlay");
-    if (loader) loader.style.display = "none";
-    document.querySelectorAll(".page-container").forEach((el) => (el.style.display = "none"));
-    toggleAudienceView(true);
-  }
-});
-
-function openAudienceWindow() {
-  const url = new URL(window.location.href);
-  url.searchParams.set("audience", "1");
-  window.open(url.toString(), "_blank", "noopener,noreferrer");
+function updateMatchTitle() {
+  const title = document.getElementById("matchTitle")?.value || "Match";
+  const audTitle = document.getElementById("audienceMatchTitle");
+  if (audTitle) audTitle.textContent = title;
 }
 
-function playBeep() {
-  const duration = 0.1;
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-  oscillator.type = 'sine';
-  oscillator.frequency.value = 1000;
-  oscillator.start();
-  oscillator.stop(audioCtx.currentTime + duration);
+/* ---------- Sparring träningslogik ---------- */
+let sparringInterval = null;
+let sparringTimeout = null;
+const sparringCommands = ["Höger rak", "Vänster krok", "Front kick", "Roundhouse", "Blockera", "Kontring", "Låg spark", "Hög spark", "Sidosteg höger", "Sidosteg vänster"];
+
+function startSparring() {
+  stopSparringTraining();
+  const statusEl = document.getElementById("sparringStatus");
+  if (statusEl) statusEl.textContent = "Träning pågår...";
+  scheduleNextSparringCommand();
+}
+
+function scheduleNextSparringCommand() {
+  const interval = Math.floor(Math.random() * 3000) + 2000; // 2-5 sekunder
+  sparringTimeout = setTimeout(() => {
+    const cmd = sparringCommands[Math.floor(Math.random() * sparringCommands.length)];
+    const cmdEl = document.getElementById("sparringCommand");
+    if (cmdEl) cmdEl.textContent = cmd;
+    speak(cmd);
+    scheduleNextSparringCommand();
+  }, interval);
+}
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "sv-SE";
+  window.speechSynthesis.speak(msg);
+}
+
+/* ---------- Hjälpfunktioner ---------- */
+function formatLiveTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 function playEndBeep() {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
-  oscillator.type = 'square';
-  oscillator.frequency.value = 600;
-  oscillator.connect(gain);
-  gain.connect(ctx.destination);
-  oscillator.start();
-  oscillator.stop(ctx.currentTime + 0.4);
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = "sine";
+  o.frequency.value = 880;
+  o.connect(g);
+  g.connect(ctx.destination);
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+  o.start();
+  o.stop(ctx.currentTime + 0.5);
 }
 
-async function startTest() {
-  testActive = true;
-  document.getElementById("result").textContent = "";
-  document.getElementById("command").textContent = "";
-  document.getElementById("status").textContent = "Vänta på signal...";
-
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaStreamSource = audioCtx.createMediaStreamSource(mediaStream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
-    dataArray = new Uint8Array(analyser.fftSize);
-    mediaStreamSource.connect(analyser);
-
-    const randomDelay = Math.random() * 3000 + 2000;
-    setTimeout(() => {
-      if (!testActive) return;
-      const selectedCommand = commands[Math.floor(Math.random() * commands.length)];
-      document.getElementById("command").textContent = selectedCommand;
-      playBeep();
-      startTime = performance.now();
-      listenForImpact();
-      document.getElementById("status").textContent = "Väntar på smäll...";
-    }, randomDelay);
-  } catch (error) {
-    document.getElementById("status").textContent = "Mikrofon krävs för att använda appen";
-  }
+function broadcastLiveData() {
+  if (!("BroadcastChannel" in window)) return;
+  if (!broadcastChannel) broadcastChannel = new BroadcastChannel("kicklab-live");
+  const data = {
+    liveScore,
+    livePenalties,
+    liveScoreNames,
+    matchDurationSeconds,
+    liveTimeLeft,
+    liveTimerRunning,
+    totalRounds,
+    currentRound,
+    roundWins,
+    matchEnded,
+    restTimeLeft,
+    currentHits,
+    lastRoundHits,
+  };
+  broadcastChannel.postMessage(data);
 }
 
-function listenForImpact() {
-  function checkVolume() {
-    if (!testActive) return;
-    analyser.getByteTimeDomainData(dataArray);
-    let max = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      const value = Math.abs(dataArray[i] - 128);
-      if (value > max) max = value;
-    }
-    if (max > 40) {
-      const reactionTime = performance.now() - startTime;
-      document.getElementById("result").textContent = `${reactionTime.toFixed(0)} ms`;
-      stopListening();
-      saveResult(reactionTime);
-    } else {
-      animationId = requestAnimationFrame(checkVolume);
-    }
-  }
-  checkVolume();
-}
-
-function stopListening() {
-  testActive = false;
-  if (animationId) cancelAnimationFrame(animationId);
-  if (mediaStream) mediaStream.getTracks().forEach((track) => track.stop());
-}
-
-function saveResult(time) {
-  recentResults.unshift(time);
-  if (recentResults.length > 3) recentResults.pop();
-  localStorage.setItem("recentResults", JSON.stringify(recentResults));
-
-  let historyText = " Senaste resultat ";
-  for (let t of recentResults) {
-    historyText += ` ${t.toFixed(0)} ms `;
-  }
-  historyText += " ";
-
-  const avg = recentResults.reduce((a, b) => a + b, 0) / recentResults.length;
-  historyText += ` Snitt: ${avg.toFixed(0)} ms `;
-  document.getElementById("history").innerHTML = historyText;
-
-  if (bestTime === null || time < bestTime) {
-    bestTime = time;
-    localStorage.setItem("bestTime", bestTime);
-    document.getElementById("highscore").innerHTML = ` 🎉 Nytt rekord! ${bestTime.toFixed(0)} ms 🎉 `;
-    document.getElementById("cheerSound").play();
-  } else {
-    document.getElementById("highscore").innerHTML = ` Bästa tid ${bestTime.toFixed(0)} ms `;
-  }
-}
-
-function resetStats() {
-  localStorage.removeItem("recentResults");
-  localStorage.removeItem("bestTime");
-  recentResults = [];
-  bestTime = null;
-  document.getElementById("history").innerHTML = "";
-  document.getElementById("highscore").innerHTML = "";
-  document.getElementById("command").textContent = "";
-  document.getElementById("result").textContent = "";
-  document.getElementById("status").textContent = "";
-}
-
-function loadStats() {
-  if (recentResults.length > 0) {
-    let historyText = " Senaste resultat ";
-    for (let t of recentResults) {
-      historyText += ` ${t.toFixed(0)} ms `;
-    }
-    historyText += " ";
-    const avg = recentResults.reduce((a, b) => a + b, 0) / recentResults.length;
-    historyText += ` Snitt: ${avg.toFixed(0)} ms `;
-    document.getElementById("history").innerHTML = historyText;
-  }
-  if (bestTime !== null) {
-    document.getElementById("highscore").innerHTML = ` Bästa tid ${bestTime.toFixed(0)} ms `;
-  }
-}
-
-// ----- Kick counter -----
-let kickAudioCtx,
-  kickMediaStream,
-  kickMediaStreamSource,
-  kickAnalyser,
-  kickDataArray,
-  kickAnimationId;
-let kickCount = 0,
-  kickTimeRemaining = 15,
-  kickTestDuration = 15,
-  kickTestActive = false,
-  kickTestInterval;
-let kickRecentResults = JSON.parse(localStorage.getItem("kickRecentResults")) || [];
-let bestKickCount = parseInt(localStorage.getItem("bestKickCount")) || 0;
-let lastKickTime = 0;
-const kickCooldown = 200;
-
-function updateTestDuration() {
-  kickTestDuration = parseInt(document.getElementById("testDuration").value);
-  document.getElementById("kickTimer").textContent = `${kickTestDuration} sekunder`;
-}
-
-function speakText(text) {
-  return new Promise((resolve) => {
-    if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "sv-SE";
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      utterance.onend = () => resolve();
-      speechSynthesis.speak(utterance);
-    } else {
-      setTimeout(resolve, 1000);
-    }
-  });
-}
-
-async function startKickTest() {
-  kickTestDuration = parseInt(document.getElementById("testDuration").value);
-  document.getElementById("kickCount").textContent = "0 sparkar";
-  document.getElementById("kickTimer").textContent = `${kickTestDuration} sekunder`;
-  document.getElementById("kickStatus").textContent = "Förbereder mikrofon...";
-
-  kickCount = 0;
-  kickTimeRemaining = kickTestDuration;
-  kickTestActive = false;
-
-  try {
-    kickAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    kickMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    kickMediaStreamSource = kickAudioCtx.createMediaStreamSource(kickMediaStream);
-    kickAnalyser = kickAudioCtx.createAnalyser();
-    kickAnalyser.fftSize = 2048;
-    kickDataArray = new Uint8Array(kickAnalyser.fftSize);
-    kickMediaStreamSource.connect(kickAnalyser);
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    document.getElementById("kickStatus").textContent = "3";
-    await speakText("3");
-    document.getElementById("kickStatus").textContent = "2";
-    await speakText("2");
-    document.getElementById("kickStatus").textContent = "1";
-    await speakText("1");
-    document.getElementById("kickStatus").textContent = "STARTA!";
-    await speakText("Starta");
-
-    startKickListening();
-  } catch (error) {
-    document.getElementById("kickStatus").textContent = "Mikrofon krävs för att använda appen";
-  }
-}
-
-function startKickListening() {
-  kickTestActive = true;
-  kickTimeRemaining = kickTestDuration;
-  lastKickTime = 0;
-  document.getElementById("kickStatus").textContent = "Sparka så mycket du kan!";
-
-  kickTestInterval = setInterval(() => {
-    kickTimeRemaining--;
-    document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
-    if (kickTimeRemaining <= 0) {
-      endKickTest();
-    }
-  }, 1000);
-
-  listenForKicks();
-}
-
-function listenForKicks() {
-  function checkKickVolume() {
-    if (!kickTestActive) return;
-    kickAnalyser.getByteTimeDomainData(kickDataArray);
-    let max = 0;
-    for (let i = 0; i < kickDataArray.length; i++) {
-      const value = Math.abs(kickDataArray[i] - 128);
-      if (value > max) max = value;
-    }
-    const currentTime = performance.now();
-    if (max > 40 && currentTime - lastKickTime > kickCooldown) {
-      kickCount++;
-      lastKickTime = currentTime;
-      document.getElementById("kickCount").textContent = `${kickCount} sparkar`;
-    }
-    if (kickTestActive) {
-      kickAnimationId = requestAnimationFrame(checkKickVolume);
-    }
-  }
-  checkKickVolume();
-}
-
-function endKickTest() {
-  kickTestActive = false;
-  clearInterval(kickTestInterval);
-  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
-  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
-
-  playEndBeep();
-
-  document.getElementById("kickStatus").textContent = `Test slutfört! ${kickCount} sparkar på ${kickTestDuration} sekunder`;
-  document.getElementById("kickTimer").textContent = "0 sekunder";
-
-  saveKickResult(kickCount);
-}
-
-// Ny funktion: stoppa kicktestet utan slutsignal.
-function stopKickTest() {
-  if (!kickTestActive) return;
-  kickTestActive = false;
-  clearInterval(kickTestInterval);
-  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
-  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
-  // Avbryt mikrofon och uppdatera status utan att spela slutsignalen
-  document.getElementById("kickStatus").textContent = `Test stoppat! ${kickCount} sparkar på ${kickTestDuration - kickTimeRemaining} sekunder`;
-  document.getElementById("kickTimer").textContent = "0 sekunder";
-  saveKickResult(kickCount);
-}
-
-function saveKickResult(count) {
-  kickRecentResults.unshift(count);
-  if (kickRecentResults.length > 5) kickRecentResults.pop();
-  localStorage.setItem("kickRecentResults", JSON.stringify(kickRecentResults));
-  let historyText = " Senaste resultat ";
-  for (let c of kickRecentResults) {
-    historyText += ` ${c} sparkar `;
-  }
-  historyText += " ";
-  if (kickRecentResults.length > 0) {
-    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
-    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
-  }
-  document.getElementById("kickHistory").innerHTML = historyText;
-  if (count > bestKickCount) {
-    bestKickCount = count;
-    localStorage.setItem("bestKickCount", bestKickCount);
-    document.getElementById("kickHighscore").innerHTML = ` 🎉 Nytt rekord! ${bestKickCount} sparkar! 🎉 `;
-    document.getElementById("cheerSound").play();
-  } else {
-    document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
-  }
-}
-
-function resetKickStats() {
-  localStorage.removeItem("kickRecentResults");
-  localStorage.removeItem("bestKickCount");
-  kickRecentResults = [];
-  bestKickCount = 0;
-  document.getElementById("kickHistory").innerHTML = "";
-  document.getElementById("kickHighscore").innerHTML = "";
-  document.getElementById("kickCount").textContent = "0 sparkar";
-  document.getElementById("kickTimer").textContent = `${kickTestDuration} sekunder`;
-  document.getElementById("kickStatus").textContent = "Klicka 'Starta Test' för att börja";
-}
-
-function loadKickStats() {
-  if (kickRecentResults.length > 0) {
-    let historyText = " Senaste resultat ";
-    for (let c of kickRecentResults) {
-      historyText += ` ${c} sparkar `;
-    }
-    historyText += " ";
-    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
-    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
-    document.getElementById("kickHistory").innerHTML = historyText;
-  }
-  if (bestKickCount > 0) {
-    document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
-  }
-}
-
-function startSparringTraining() {
-  const duration = parseInt(document.getElementById("sparringDuration").value);
-  const statusEl = document.getElementById("sparringStatus");
-  const commandEl = document.getElementById("sparringCommand");
-  const commands = [
-    "Tornado",
-    "Huvudspark",
-    "Jopp höger",
-    "Jopp vänster",
-    "Slag",
-    "Sax",
-    "Clash",
-    "Pitchagi höger",
-    "Pitchagi vänster",
-    "Bakspark",
-    "Spark främre",
-    "Spark bakre",
-  ];
-  let remainingTime = duration;
-  let intervalId, commandIntervalId;
-  statusEl.textContent = `Tid kvar: ${remainingTime} sekunder`;
-  commandEl.textContent = "Startar...";
-  commandEl.style.fontSize = "2rem";
-  commandEl.style.fontWeight = "bold";
-  if ("speechSynthesis" in window) {
-    const sayCommand = (text) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "sv-SE";
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      speechSynthesis.speak(utterance);
-    };
-    // start commands every two seconds
-    commandIntervalId = setInterval(() => {
-      const command = commands[Math.floor(Math.random() * commands.length)];
-      commandEl.textContent = command;
-      sayCommand(command);
-    }, 2000);
-    // Start countdown
-    intervalId = setInterval(() => {
-      remainingTime--;
-      statusEl.textContent = `Tid kvar: ${remainingTime} sekunder`;
-      if (remainingTime <= 0) {
-        clearInterval(intervalId);
-        clearInterval(commandIntervalId);
-        playEndBeep();
-        statusEl.textContent = "Träning klar!";
-        commandEl.textContent = "Bra jobbat!";
-        sayCommand("Bra jobbat! Sparringträningen är slut");
-      }
-    }, 1000);
-    // Save interval IDs globally so that we can clear them later
-    sparringInterval = intervalId;
-    sparringTimeout = commandIntervalId;
-  } else {
-    statusEl.textContent = "Din webbläsare stöder inte talsyntes.";
-  }
-}
-
-/* ===== Tävlingsläge (competition mode) ===== */
-
-// Visa tävlingssidan och initiera namninmatning
-function showCompetitionSetupPage() {
-  // Visa inställningssidan för tävling och döljer andra sidor
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "none";
-  document.getElementById("sparringPage").style.display = "none";
-  const setupPage = document.getElementById("competitionSetupPage");
-  const runPage = document.getElementById("competitionRunPage");
-  const roundPage = document.getElementById("competitionRoundPage");
-  const overlay = document.getElementById("countdownOverlay");
-  if (setupPage) setupPage.style.display = "block";
-  if (runPage) runPage.style.display = "none";
-  if (roundPage) roundPage.style.display = "none";
-  if (overlay) overlay.style.display = "none";
-  // Avbryt alla pågående tester
-  stopTest();
-  stopSparringTraining();
-  stopListening();
-  // Förbered namninputfält
-  updateCompetitionNameInputs();
-}
-
-// Uppdatera antalet namnfält baserat på vald antal deltagare
-function updateCompetitionNameInputs() {
-  const countInput = document.getElementById("competitionCount");
-  if (!countInput) return;
-  const count = parseInt(countInput.value) || 0;
-  const container = document.getElementById("competitionNames");
-  if (!container) return;
-  container.innerHTML = "";
-  for (let i = 0; i < count; i++) {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.id = `competitionName${i}`;
-    input.placeholder = `Deltagare ${i + 1} namn`;
-    input.style.marginBottom = "0.5rem";
-    input.style.width = "80%";
-    container.appendChild(input);
-    container.appendChild(document.createElement("br"));
-  }
-}
-
-// Bekräfta deltagare och gå vidare till tävlingssidan
-function confirmCompetitionParticipants() {
-  const countInput = document.getElementById("competitionCount");
-  if (!countInput) return;
-  const count = parseInt(countInput.value) || 0;
-  competitionParticipants = [];
-  for (let i = 0; i < count; i++) {
-    const nameInput = document.getElementById(`competitionName${i}`);
-    const name = nameInput && nameInput.value ? nameInput.value : `Deltagare ${i + 1}`;
-    competitionParticipants.push({ name: name, times: [], best: null, avg: null });
-  }
-  // Om inga deltagare angivits, visa ett meddelande
-  if (competitionParticipants.length === 0) {
-    alert("Ange minst en deltagare");
-    return;
-  }
-  showCompetitionRunPage();
-}
-
-// Visa tävlingssidan där namnen visas och tävlingen kan startas
-function showCompetitionRunPage() {
-  // Visa endast run-sidan
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "none";
-  document.getElementById("sparringPage").style.display = "none";
-  const setupPage = document.getElementById("competitionSetupPage");
-  const runPage = document.getElementById("competitionRunPage");
-  const roundPage = document.getElementById("competitionRoundPage");
-  const overlay = document.getElementById("countdownOverlay");
-  if (setupPage) setupPage.style.display = "none";
-  if (runPage) runPage.style.display = "block";
-  if (roundPage) roundPage.style.display = "none";
-  if (overlay) overlay.style.display = "none";
-  // Fyll listan med deltagarnamn
-  const listEl = document.getElementById("competitionNamesList");
-  if (listEl) {
-    listEl.innerHTML = "";
-    competitionParticipants.forEach((p) => {
-      const li = document.createElement("li");
-      li.textContent = p.name;
-      li.style.marginBottom = "0.3rem";
-      listEl.appendChild(li);
-    });
-  }
-  // Rensa status och resultat
-  const statusEl = document.getElementById("competitionStatus");
-  if (statusEl) statusEl.textContent = "";
-  const resultsEl = document.getElementById("competitionResults");
-  if (resultsEl) resultsEl.innerHTML = "";
-  // Avbryt eventuella tidigare tävlingar
-  competitionActive = false;
-}
-
-// Visa sidan för nästkommande runda där användaren kan starta nedräkningen.
-function showNextRoundStartPage() {
-  /*
-   * Denna funktion visar en separat sida med stort namn och en stor
-   * startknapp för aktuell deltagares spark. Den döljer tävlingsrun-sidan
-   * och visar round-sidan. Om tävlingen är avslutad startas finishCompetition().
-   */
-  if (!competitionActive) return;
-  // Om alla deltagare är klara, avsluta
-  if (currentParticipantIndex >= competitionParticipants.length) {
-    finishCompetition();
-    return;
-  }
-  // Döljer run-sidan och visar runda-sidan
-  const runPage = document.getElementById("competitionRunPage");
-  const roundPage = document.getElementById("competitionRoundPage");
-  if (runPage) runPage.style.display = "none";
-  if (roundPage) roundPage.style.display = "block";
-  // Uppdatera deltagarnamn och sparknummer
-  const nameEl = document.getElementById("roundParticipantName");
-  const participant = competitionParticipants[currentParticipantIndex];
-  if (nameEl) {
-    nameEl.textContent = `${participant.name} – spark ${currentKickIndex + 1}/3`;
-  }
-  // Säkerställ att overlay är gömd
-  const overlay = document.getElementById("countdownOverlay");
-  if (overlay) overlay.style.display = "none";
-}
-
-// Förbered mikrofonen och analysen i tävlingsläget så att lyssningen
-// kan starta direkt när signalen ges. Detta anropas i början av
-// varje runda innan nedräkningen.
-async function prepareCompetitionMicrophone() {
-  try {
-    competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
-    competitionAnalyser = competitionAudioCtx.createAnalyser();
-    competitionAnalyser.fftSize = 2048;
-    competitionDataArray = new Uint8Array(competitionAnalyser.fftSize);
-    competitionMediaStreamSource.connect(competitionAnalyser);
-  } catch (e) {
-    const statusEl = document.getElementById("competitionStatus");
-    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
-    competitionActive = false;
-    throw e;
-  }
-}
-
-// Starta nedräkning och sedan själva sparken när startknappen klickas
-async function beginCompetitionRound() {
-  /*
-   * Denna funktion körs när användaren trycker på startknappen för en
-   * specifik runda. Den visar ett svart overlay med orange siffror och
-   * använder speakText för nedräkning. Efter nedräkning och signal
-   * initieras mätningen via startCompetitionTest().
-   */
-  if (!competitionActive) return;
-  // Göm runda-sidan och visa overlay
-  const roundPage = document.getElementById("competitionRoundPage");
-  if (roundPage) roundPage.style.display = "none";
-  const overlay = document.getElementById("countdownOverlay");
-  if (!overlay) return;
-  overlay.style.display = "flex";
-  overlay.style.background = "black";
-  overlay.style.color = "orange";
-  overlay.style.fontSize = "8rem";
-  overlay.style.textAlign = "center";
-  overlay.style.flexDirection = "column";
-  // Förbered mikrofonen tidigt så att den är redo direkt efter signalen.
-  try {
-    await prepareCompetitionMicrophone();
-  } catch (e) {
-    // Om mikrofonen inte kan förberedas, avbryt nedräkning och tävling
-    const overlay = document.getElementById("countdownOverlay");
-    if (overlay) overlay.style.display = "none";
-    return;
-  }
-
-  // Nedräkning
-  overlay.textContent = "3";
-  await speakText("3");
-  overlay.textContent = "2";
-  await speakText("2");
-  overlay.textContent = "1";
-  await speakText("1");
-  overlay.textContent = "KÖR!";
-  
-  // Pip-ljud
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 1000;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.1);
-  } catch (e) {
-    // Om pip-ljud inte kan spelas behövs ingen åtgärd
-  }
-  // Dölj overlay och starta mätningen
-  overlay.style.display = "none";
-  // Uppdatera status för aktuell spark
-  const statusEl = document.getElementById("competitionStatus");
-  const participant = competitionParticipants[currentParticipantIndex];
-  if (statusEl) {
-    statusEl.textContent = `${participant.name}: spark ${currentKickIndex + 1}/3 – vänta på smällen...`;
-  }
-  // Starta mätning
-  await startCompetitionTest();
-}
-
-// Starta tävlingen genom att läsa in alla deltagare och starta första testet
-function startCompetition() {
-  /*
-   * Starta själva tävlingen. Den här funktionen förutsätter att
-   * deltagarnamnen redan har samlats in via confirmCompetitionParticipants()
-   * och competitionParticipants-arrayen är ifylld. Vi kontrollerar att
-   * minst en deltagare finns och initierar indexvariabler. Sedan rensar
-   * vi status/resultat och startar första sparkförsöket.
-   */
-  if (!competitionParticipants || competitionParticipants.length === 0) {
-    alert("Ange minst en deltagare");
-    return;
-  }
-  currentParticipantIndex = 0;
-  currentKickIndex = 0;
-  competitionActive = true;
-  // Rensa resultat och status
-  const resultsEl = document.getElementById("competitionResults");
-  if (resultsEl) resultsEl.innerHTML = "";
-  const statusEl = document.getElementById("competitionStatus");
-  if (statusEl) statusEl.textContent = "";
-  // Visa nästa runda‑startssida för första deltagaren
-  showNextRoundStartPage();
-}
-
-// Starta själva mätningen för aktuell deltagare
-async function startCompetitionTest() {
-  /*
-   * Denna funktion initierar mikrofonen och börjar lyssna efter smällen. Den
-   * förutsätter att nedräkning och signalering redan har gjorts i
-   * beginCompetitionRound().
-   */
-  if (!competitionActive) return;
-  if (currentParticipantIndex >= competitionParticipants.length) {
-    finishCompetition();
-    return;
-  }
-  // Om mikrofonen redan är förberedd från nedräkningen används den direkt
-  if (competitionMediaStream) {
-    competitionStartTime = performance.now();
-    listenForImpactCompetition();
-    return;
-  }
-  // Annars förbered mikrofonen nu (extra fallback)
-  try {
-    await prepareCompetitionMicrophone();
-    competitionStartTime = performance.now();
-    listenForImpactCompetition();
-  } catch (error) {
-    const statusEl = document.getElementById("competitionStatus");
-    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
-    competitionActive = false;
-    return;
-  }
-}
-
-// Lyssna på ljudnivå och registrera reaktionstid när smällen kommer
-function listenForImpactCompetition() {
-  function checkVolume() {
-    if (!competitionActive) return;
-    competitionAnalyser.getByteTimeDomainData(competitionDataArray);
-    let max = 0;
-    for (let i = 0; i < competitionDataArray.length; i++) {
-      const value = Math.abs(competitionDataArray[i] - 128);
-      if (value > max) max = value;
-    }
-    if (max > 40) {
-      const reactionTime = performance.now() - competitionStartTime;
-      saveCompetitionResult(reactionTime);
-    } else {
-      requestAnimationFrame(checkVolume);
-    }
-  }
-  checkVolume();
-}
-
-// Spara reaktionstiden för aktuell deltagare och hantera nästa spark/deltagare
-function saveCompetitionResult(time) {
-  // Stoppa mikrofonen
-  if (competitionMediaStream) {
-    competitionMediaStream.getTracks().forEach((track) => track.stop());
-    competitionMediaStream = null;
-  }
-  const participant = competitionParticipants[currentParticipantIndex];
-  participant.times.push(time);
-  if (participant.times.length === 3) {
-    // Beräkna bästa och snitt
-    participant.best = Math.min(...participant.times);
-    participant.avg = participant.times.reduce((a, b) => a + b, 0) / participant.times.length;
-    // Gå vidare till nästa deltagare
-    currentParticipantIndex++;
-    currentKickIndex = 0;
-  } else {
-    // Fler sparkar kvar för samma deltagare
-    currentKickIndex++;
-  }
-  // Vänta kort innan nästa runda startar för att ge användaren feedback
-  setTimeout(() => {
-    if (currentParticipantIndex < competitionParticipants.length) {
-      showNextRoundStartPage();
-    } else {
-      competitionActive = false;
-      finishCompetition();
-    }
-  }, 800);
-}
-
-// Avsluta tävlingen och visa vinnare samt resultat
-function finishCompetition() {
-  // Avbryt pågående lyssning
-  if (competitionMediaStream) {
-    competitionMediaStream.getTracks().forEach((track) => track.stop());
-    competitionMediaStream = null;
-  }
-  competitionActive = false;
-  if (competitionParticipants.length === 0) return;
-  let bestKickTime = Infinity;
-  let bestKickWinner = null;
-  let bestAvgTime = Infinity;
-  let bestAvgWinner = null;
-  // Beräkna vinnare
-  competitionParticipants.forEach((p) => {
-    if (p.best < bestKickTime) {
-      bestKickTime = p.best;
-      bestKickWinner = p.name;
-    }
-    if (p.avg < bestAvgTime) {
-      bestAvgTime = p.avg;
-      bestAvgWinner = p.name;
-    }
-  });
-  let resultHtml = "";
-  resultHtml += `<p>Vinnare snabbaste spark: ${bestKickWinner} (${bestKickTime.toFixed(0)} ms)</p>`;
-  resultHtml += `<p>Vinnare bästa snitt: ${bestAvgWinner} (${bestAvgTime.toFixed(0)} ms)</p>`;
-  resultHtml += "<h3>Resultat:</h3><ul>";
-  competitionParticipants.forEach((p) => {
-    const timesStr = p.times.map((t) => t.toFixed(0)).join(", ");
-    resultHtml += `<li>${p.name}: tider = ${timesStr} ms, bästa = ${p.best.toFixed(0)} ms, snitt = ${p.avg.toFixed(0)} ms</li>`;
-  });
-  resultHtml += "</ul>";
-  const resultsEl = document.getElementById("competitionResults");
-  if (resultsEl) resultsEl.innerHTML = resultHtml;
-  const statusEl = document.getElementById("competitionStatus");
-  if (statusEl) statusEl.textContent = "Tävlingen är avslutad!";
-
-  // När tävlingen är klar ska vi se till att rätt sida visas.
-  // Döljer inställningssidan och rundsidan och visar resultatsidan
-  const setupPage = document.getElementById("competitionSetupPage");
-  const runPage = document.getElementById("competitionRunPage");
-  const roundPage = document.getElementById("competitionRoundPage");
-  const overlay = document.getElementById("countdownOverlay");
-  if (setupPage) setupPage.style.display = "none";
-  if (roundPage) roundPage.style.display = "none";
-  if (overlay) overlay.style.display = "none";
-  if (runPage) runPage.style.display = "block";
-}
+// Initiera värden vid start
+document.addEventListener("DOMContentLoaded", () => {
+  updateLiveScoreDisplay();
+});
