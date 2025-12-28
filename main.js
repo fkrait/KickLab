@@ -946,8 +946,7 @@ function playEndBeep() {
 }
 
 function broadcastLiveData() {
-  if (!("BroadcastChannel" in window)) return;
-  if (!broadcastChannel) broadcastChannel = new BroadcastChannel("kicklab-live");
+  if (!broadcastChannel || !("BroadcastChannel" in window)) return;
   const data = {
     liveScore,
     livePenalties,
@@ -1009,8 +1008,13 @@ function openAudienceWindow() {
   window.open(url, '_blank', 'width=1920,height=1080');
 }
 
+// Parse URL parameters once at initialization
+const urlParams = new URLSearchParams(window.location.search);
+const isStandaloneAudienceView = urlParams.get('audienceView') === 'true';
+
 // Initialize BroadcastChannel for live synchronization
-if (typeof BroadcastChannel !== 'undefined') {
+// Only create one instance and set up message listener
+if (typeof BroadcastChannel !== 'undefined' && !broadcastChannel) {
   broadcastChannel = new BroadcastChannel('kicklab-live');
   
   // Listen for messages from operator window
@@ -1033,7 +1037,7 @@ if (typeof BroadcastChannel !== 'undefined') {
       if (data.lastRoundHits) lastRoundHits = JSON.parse(JSON.stringify(data.lastRoundHits));
       
       // Update display if we're in audience mode
-      if (audienceMode || new URLSearchParams(window.location.search).get('audienceView') === 'true') {
+      if (audienceMode || isStandaloneAudienceView) {
         updateLiveScoreDisplay();
       }
     }
@@ -1042,8 +1046,7 @@ if (typeof BroadcastChannel !== 'undefined') {
 
 // Check if page was opened with audienceView parameter
 document.addEventListener("DOMContentLoaded", () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('audienceView') === 'true') {
+  if (isStandaloneAudienceView) {
     // Hide all other pages and show only audience view
     const pages = ['startPage', 'testPage', 'kickCounterPage', 'sparringPage', 'liveScorePage', 
                    'competitionSetupPage', 'competitionRunPage', 'competitionRoundPage'];
