@@ -656,13 +656,12 @@ function updateLiveScoreDisplay() {
   if (audBlueScore) audBlueScore.textContent = liveScore.blue;
   if (audTimer) audTimer.textContent = formatLiveTime(liveTimeLeft);
   if (audRound) audRound.textContent = currentRound;
-  if (audInfo) audInfo.textContent = `${liveScoreNames.red} vs ${liveScoreNames.blue}`;
-  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitle")?.value || "Match";
+  if (audMatchTitle) audMatchTitle.textContent = document.getElementById("matchTitleInput")?.value || "Match";
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
   if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
-  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "Rest: --";
+  if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "";
   if (audRedHits) audRedHits.textContent = `Huvud ${currentHits.red.head} | Väst ${currentHits.red.body} | Slag ${currentHits.red.punch}`;
   if (audBlueHits) audBlueHits.textContent = `Huvud ${currentHits.blue.head} | Väst ${currentHits.blue.body} | Slag ${currentHits.blue.punch}`;
 }
