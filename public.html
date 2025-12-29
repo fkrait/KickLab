@@ -169,7 +169,7 @@
       padding: 1rem;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       gap: 0.5rem;
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
@@ -229,11 +229,11 @@
     }
     
     .audience-logo {
-      width: 50px;
-      height: 50px;
+      width: 100px;
+      height: 100px;
       opacity: 0.9;
       transition: opacity 0.3s ease;
-      margin: 0 auto 0.5rem;
+      margin: 0 auto 1rem;
     }
     
     .audience-logo:hover {
@@ -292,6 +292,11 @@
         padding: 0.5rem;
       }
       
+      .audience-logo {
+        width: 90px;
+        height: 90px;
+      }
+      
       .audience-score {
         font-size: 12rem;
       }
@@ -320,12 +325,43 @@
         overflow-y: auto;
       }
       
+      .audience-logo {
+        width: 80px;
+        height: 80px;
+      }
+      
       .audience-score {
         font-size: 8rem;
       }
       
       .timer-display {
         font-size: 4rem;
+      }
+    }
+    
+    /* Mobile landscape adjustments */
+    @media (max-height: 600px) and (orientation: landscape) {
+      .audience-logo {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 0.5rem;
+      }
+      
+      .center-panel {
+        padding: 0.5rem;
+        gap: 0.3rem;
+      }
+      
+      .timer-display {
+        font-size: 3rem;
+      }
+      
+      .match-title {
+        font-size: 1.2rem;
+      }
+      
+      .round-info {
+        font-size: 1.2rem;
       }
     }
   </style>
