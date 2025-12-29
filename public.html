@@ -107,6 +107,44 @@
       border-radius: 8px;
     }
 
+    .score-icons {
+      display: flex;
+      justify-content: space-around;
+      gap: 0.5rem;
+      padding: 1rem 0;
+      margin-top: 0.5rem;
+    }
+
+    .icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.8rem;
+      border-radius: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .score-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .icon-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0.9;
+      text-align: center;
+    }
+
+    .icon-count {
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
     /* Center panel (black) */
     .center-panel {
       background: #0b0b0f;
@@ -234,13 +272,22 @@
           <span>Gam-jeom:</span>
           <span id="blueGamJeom">0</span>
         </div>
-        <div class="detail-row">
-          <span>Video Review:</span>
-          <span id="blueVideoReview">-</span>
-        </div>
-        <div class="detail-row">
-          <span>Väst:</span>
-          <span id="blueVest">Blå</span>
+        <div class="score-icons">
+          <div class="icon-item">
+            <span class="score-icon">👊</span>
+            <span class="icon-label">Slag</span>
+            <span class="icon-count" id="bluePunchCount">0</span>
+          </div>
+          <div class="icon-item">
+            <span class="score-icon">🪖</span>
+            <span class="icon-label">Huvud</span>
+            <span class="icon-count" id="blueHeadCount">0</span>
+          </div>
+          <div class="icon-item">
+            <span class="score-icon">🦺</span>
+            <span class="icon-label">Kropp</span>
+            <span class="icon-count" id="blueBodyCount">0</span>
+          </div>
         </div>
       </div>
     </div>
@@ -270,13 +317,22 @@
           <span>Gam-jeom:</span>
           <span id="redGamJeom">0</span>
         </div>
-        <div class="detail-row">
-          <span>Video Review:</span>
-          <span id="redVideoReview">-</span>
-        </div>
-        <div class="detail-row">
-          <span>Väst:</span>
-          <span id="redVest">Röd</span>
+        <div class="score-icons">
+          <div class="icon-item">
+            <span class="score-icon">👊</span>
+            <span class="icon-label">Slag</span>
+            <span class="icon-count" id="redPunchCount">0</span>
+          </div>
+          <div class="icon-item">
+            <span class="score-icon">🪖</span>
+            <span class="icon-label">Huvud</span>
+            <span class="icon-count" id="redHeadCount">0</span>
+          </div>
+          <div class="icon-item">
+            <span class="score-icon">🦺</span>
+            <span class="icon-label">Kropp</span>
+            <span class="icon-count" id="redBodyCount">0</span>
+          </div>
         </div>
       </div>
     </div>
@@ -320,6 +376,19 @@
       if (data.livePenalties) {
         document.getElementById('redGamJeom').textContent = data.livePenalties.red || 0;
         document.getElementById('blueGamJeom').textContent = data.livePenalties.blue || 0;
+      }
+
+      // Update hit counters (punch, head, body)
+      if (data.currentHits) {
+        // Blue side
+        document.getElementById('bluePunchCount').textContent = data.currentHits.blue.punch || 0;
+        document.getElementById('blueHeadCount').textContent = data.currentHits.blue.head || 0;
+        document.getElementById('blueBodyCount').textContent = data.currentHits.blue.body || 0;
+        
+        // Red side
+        document.getElementById('redPunchCount').textContent = data.currentHits.red.punch || 0;
+        document.getElementById('redHeadCount').textContent = data.currentHits.red.head || 0;
+        document.getElementById('redBodyCount').textContent = data.currentHits.red.body || 0;
       }
 
       // Update timer

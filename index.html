@@ -120,6 +120,39 @@
     .audience-score { font-size: 18rem; font-weight: 900; margin: 2rem 0; width: 100%; text-align: center; line-height: 1; text-shadow: 0 8px 16px rgba(0,0,0,0.7); }
     .audience-details { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
     .detail-row { display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 1.2rem; font-weight: 600; }
+    .score-icons {
+      display: flex;
+      justify-content: space-around;
+      gap: 0.5rem;
+      padding: 1rem 0;
+      margin-top: 0.5rem;
+    }
+    .icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.8rem;
+      border-radius: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+    .score-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+    .icon-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0.9;
+      text-align: center;
+    }
+    .icon-count {
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
     .audience-meta { 
       background: #0b0b0f; border-radius: 20px; padding: 2rem; color: #ffe600; text-align: center; 
       display: flex; flex-direction: column; justify-content: space-around; gap: 1.5rem; 
@@ -129,7 +162,6 @@
     .audience-timer { font-size: 8rem; font-weight: 900; letter-spacing: 2px; color: #ffe600; text-shadow: 0 4px 12px rgba(255,230,0,0.5); font-family: 'Courier New', monospace; }
     .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; font-size: 1.6rem; }
     .audience-rest { font-size: 2rem; color: #ff8008; font-weight: 800; margin: 1rem 0; }
-    .audience-hits { font-size: 1.3rem; color: #e0e0e0; text-align: center; font-weight: 600; }
     .close-audience {
       position: absolute; top: 1.5rem; right: 1.5rem; background: #ff8008; color: #222;
       border: none; border-radius: 16px; padding: 0.8rem 1.5rem; font-weight: 800; font-size: 1.2rem; cursor: pointer;
@@ -328,18 +360,18 @@
     </div>
 
     <div class="score-actions">
-      <button class="button btn-blue" onclick="awardScore('blue', 1)">+1 Blå<span class="button-label">Slag/body</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 2)">+2 Blå<span class="button-label">Kropp</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 3)">+3 Blå<span class="button-label">Huvud</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 4)">+4 Blå<span class="button-label">Avancerad</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 5)">+5 Blå<span class="button-label">Max</span></button>
+      <button class="button btn-blue" onclick="awardScore('blue', 1)">+1 Blå<span class="button-label">👊 Slag</span></button>
+      <button class="button btn-blue" onclick="awardScore('blue', 2)">+2 Blå<span class="button-label">🦺 Kropp</span></button>
+      <button class="button btn-blue" onclick="awardScore('blue', 3)">+3 Blå<span class="button-label">🪖 Huvud</span></button>
+      <button class="button btn-blue" onclick="awardScore('blue', 4)">+4 Blå<span class="button-label">🪖 Avancerad</span></button>
+      <button class="button btn-blue" onclick="awardScore('blue', 5)">+5 Blå<span class="button-label">🪖 Max</span></button>
       <button class="button btn-blue" onclick="awardPenalty('blue')">Gam-jeom (Blå)</button>
       <button class="button btn-red" onclick="awardPenalty('red')">Gam-jeom (Röd)</button>
-      <button class="button btn-red" onclick="awardScore('red', 1)">+1 Röd<span class="button-label">Slag/body</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 2)">+2 Röd<span class="button-label">Kropp</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 3)">+3 Röd<span class="button-label">Huvud</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 4)">+4 Röd<span class="button-label">Avancerad</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 5)">+5 Röd<span class="button-label">Max</span></button>
+      <button class="button btn-red" onclick="awardScore('red', 1)">+1 Röd<span class="button-label">👊 Slag</span></button>
+      <button class="button btn-red" onclick="awardScore('red', 2)">+2 Röd<span class="button-label">🦺 Kropp</span></button>
+      <button class="button btn-red" onclick="awardScore('red', 3)">+3 Röd<span class="button-label">🪖 Huvud</span></button>
+      <button class="button btn-red" onclick="awardScore('red', 4)">+4 Röd<span class="button-label">🪖 Avancerad</span></button>
+      <button class="button btn-red" onclick="awardScore('red', 5)">+5 Röd<span class="button-label">🪖 Max</span></button>
     </div>
 
     <div class="button-group">
@@ -402,7 +434,23 @@
             <span>Gam-jeom:</span>
             <span id="audienceBluePenalty">0</span>
           </div>
-          <div class="audience-hits" id="audienceBlueHits">Huvud 0 | Väst 0 | Slag 0</div>
+          <div class="score-icons">
+            <div class="icon-item">
+              <span class="score-icon">👊</span>
+              <span class="icon-label">Slag</span>
+              <span class="icon-count" id="audienceBluePunchCount">0</span>
+            </div>
+            <div class="icon-item">
+              <span class="score-icon">🪖</span>
+              <span class="icon-label">Huvud</span>
+              <span class="icon-count" id="audienceBlueHeadCount">0</span>
+            </div>
+            <div class="icon-item">
+              <span class="score-icon">🦺</span>
+              <span class="icon-label">Kropp</span>
+              <span class="icon-count" id="audienceBlueBodyCount">0</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="audience-meta">
@@ -429,7 +477,23 @@
             <span>Gam-jeom:</span>
             <span id="audienceRedPenalty">0</span>
           </div>
-          <div class="audience-hits" id="audienceRedHits">Huvud 0 | Väst 0 | Slag 0</div>
+          <div class="score-icons">
+            <div class="icon-item">
+              <span class="score-icon">👊</span>
+              <span class="icon-label">Slag</span>
+              <span class="icon-count" id="audienceRedPunchCount">0</span>
+            </div>
+            <div class="icon-item">
+              <span class="score-icon">🪖</span>
+              <span class="icon-label">Huvud</span>
+              <span class="icon-count" id="audienceRedHeadCount">0</span>
+            </div>
+            <div class="icon-item">
+              <span class="score-icon">🦺</span>
+              <span class="icon-label">Kropp</span>
+              <span class="icon-count" id="audienceRedBodyCount">0</span>
+            </div>
+          </div>
         </div>
       </div>
       </div>
