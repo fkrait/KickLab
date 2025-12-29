@@ -39,7 +39,133 @@
       backdrop-filter: blur(7px);
       text-align: center;
     }
-    #startPage { margin-top: 35vh; opacity: 0; animation: fadein 0.6s forwards; animation-delay: 1.5s; }
+    #startPage { 
+      margin-top: 10vh; 
+      opacity: 0; 
+      animation: fadein 0.6s forwards; 
+      animation-delay: 1.5s;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 2rem;
+      background: none;
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .kicklab-title {
+      text-align: center;
+      font-size: 4rem;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(255,128,8,0.8), 0 0 40px rgba(255,128,8,0.5), 0 4px 8px rgba(0,0,0,0.5);
+      margin-bottom: 3rem;
+      letter-spacing: 4px;
+    }
+
+    .hero-tiles-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-tile {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      opacity: 0;
+      animation: tileFadeIn 0.6s forwards;
+    }
+
+    .hero-tile:nth-child(1) { animation-delay: 1.7s; }
+    .hero-tile:nth-child(2) { animation-delay: 1.85s; }
+    .hero-tile:nth-child(3) { animation-delay: 2.0s; }
+    .hero-tile:nth-child(4) { animation-delay: 2.15s; }
+    .hero-tile:nth-child(5) { animation-delay: 2.3s; }
+
+    @keyframes tileFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.3;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      z-index: -1;
+    }
+
+    .hero-tile:hover::before {
+      transform: scale(1.05);
+      opacity: 0.5;
+    }
+
+    .hero-tile:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0 30px rgba(255,128,8,0.5), 0 8px 32px rgba(0,0,0,0.5);
+      border-color: rgba(255,128,8,0.4);
+    }
+
+    .hero-tile:active {
+      transform: translateY(-2px);
+    }
+
+    .hero-tile.wide {
+      grid-column: 1 / -1;
+    }
+
+    .tile-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .tile-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      margin: 0;
+      text-align: center;
+    }
+
+    /* Background images for tiles */
+    .hero-tile.reaktionstest::before { background-image: url('attached_assets/tile_reaktionstest.png'); }
+    .hero-tile.sparkraknare::before { background-image: url('attached_assets/tile_sparkraknare.png'); }
+    .hero-tile.sparring::before { background-image: url('attached_assets/tile_sparring.png'); }
+    .hero-tile.tavling::before { background-image: url('attached_assets/tile_tavling.png'); }
+    .hero-tile.livescore::before { background-image: url('attached_assets/tile_livescore.png'); }
+
+    /* Old button styles - kept for other pages */
     .button-group {
       display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 440px; margin: 1.5rem auto;
     }
@@ -725,6 +851,36 @@
     @media (max-width: 600px) {
       .page-container { max-width: 95vw; padding: 1rem; }
       .button-group { max-width: 95vw; }
+      
+      /* Mobile styles for hero tiles */
+      #startPage {
+        margin-top: 5vh;
+        padding: 1rem;
+      }
+      
+      .kicklab-title {
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+        letter-spacing: 2px;
+      }
+      
+      .hero-tiles-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .hero-tile {
+        min-height: 150px;
+        padding: 1.5rem;
+      }
+      
+      .tile-icon {
+        font-size: 2.5rem;
+      }
+      
+      .tile-title {
+        font-size: 1.2rem;
+      }
     }
   </style>
 </head>
@@ -735,13 +891,28 @@
   </div>
 
   <div id="startPage" class="page-container">
-    <p class="subtitle fade-in-title">Träna din reaktionsförmåga och teknik med stil</p>
-    <div class="button-group">
-      <button class="button" onclick="showTestPage()"><span class="icon">⚡</span> Reaktionstest</button>
-      <button class="button" onclick="showKickCounterPage()"><span class="icon">🦵</span> Sparkräknare</button>
-      <button class="button" onclick="showSparringPage()"><span class="icon">🥋</span> Sparring träning</button>
-      <button class="button" onclick="showCompetitionSetupPage()"><span class="icon">🏆</span> Tävlingsläge</button>
-      <button class="button" onclick="showLiveScorePage()"><span class="icon">📊</span> Live sparring score</button>
+    <h1 class="kicklab-title">KICKLAB</h1>
+    <div class="hero-tiles-container">
+      <div class="hero-tile reaktionstest" onclick="showTestPage()">
+        <div class="tile-icon">⚡</div>
+        <h2 class="tile-title">Reaktionstest</h2>
+      </div>
+      <div class="hero-tile sparkraknare" onclick="showKickCounterPage()">
+        <div class="tile-icon">🦵</div>
+        <h2 class="tile-title">Sparkräknare</h2>
+      </div>
+      <div class="hero-tile sparring" onclick="showSparringPage()">
+        <div class="tile-icon">🥋</div>
+        <h2 class="tile-title">Sparring träning</h2>
+      </div>
+      <div class="hero-tile tavling" onclick="showCompetitionSetupPage()">
+        <div class="tile-icon">🏆</div>
+        <h2 class="tile-title">Tävlingsläge</h2>
+      </div>
+      <div class="hero-tile livescore wide" onclick="showLiveScorePage()">
+        <div class="tile-icon">📊</div>
+        <h2 class="tile-title">Live sparring score</h2>
+      </div>
     </div>
   </div>
 
