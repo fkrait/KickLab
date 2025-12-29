@@ -107,17 +107,37 @@
     }
     .audience-panel { 
       border-radius: 20px; padding: 2rem; display: flex; flex-direction: column; 
-      align-items: center; justify-content: space-between; box-shadow: 0 16px 48px rgba(0,0,0,0.5); 
+      align-items: center; justify-content: flex-start; box-shadow: 0 16px 48px rgba(0,0,0,0.5); 
       min-height: 600px;
     }
     .audience-panel.red { background: linear-gradient(180deg, #b22626, #5c1111); border: 4px solid #e34040; }
     .audience-panel.blue { background: linear-gradient(180deg, #163d9b, #0b214f); border: 4px solid #1e5fff; }
-    .flag-land-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-    .audience-flag { font-size: 5rem; line-height: 1; }
-    .audience-land-code { font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .flag-land-container { 
+      display: flex; 
+      flex-direction: row; 
+      align-items: center; 
+      gap: 1rem; 
+      margin-bottom: 1.5rem;
+      background: #000;
+      padding: 1rem 1.5rem;
+      border-radius: 15px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .audience-panel.blue .flag-land-container {
+      justify-content: flex-start;
+    }
+    .audience-panel.red .flag-land-container {
+      justify-content: flex-end;
+    }
+    .audience-flag { font-size: 4rem; line-height: 1; }
+    .audience-name { font-size: 2.5rem; font-weight: 900; text-align: left; text-shadow: 0 4px 8px rgba(0,0,0,0.5); letter-spacing: 2px; }
+    .audience-panel.red .audience-name {
+      text-align: right;
+    }
+    .audience-land-code { font-size: 2rem; font-weight: 800; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     .audience-badge { background:#000; border:3px solid #ffe600; color:#fff; padding:0.5rem 1rem; border-radius:14px; font-weight:800; font-size:4rem; margin-bottom:1rem; box-shadow: 0 4px 12px rgba(255,230,0,0.3); }
-    .audience-name { font-size: 3.5rem; font-weight: 900; margin: 1rem 0; text-align: center; text-shadow: 0 4px 8px rgba(0,0,0,0.5); letter-spacing: 2px; }
-    .audience-score { font-size: 18rem; font-weight: 900; margin: 2rem 0; width: 100%; text-align: center; line-height: 1; text-shadow: 0 8px 16px rgba(0,0,0,0.7); }
+    .audience-score { font-size: 16rem; font-weight: 900; margin: 1.5rem 0; width: 100%; text-align: center; line-height: 1; text-shadow: 0 8px 16px rgba(0,0,0,0.7); }
     .audience-details { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
     .detail-row { display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 1.2rem; font-weight: 600; }
     .score-icons {
@@ -168,6 +188,15 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.4); z-index: 3100; transition: all 0.3s ease;
     }
     .close-audience:hover { background: #ffc837; transform: scale(1.05); }
+    .audience-logo {
+      position: absolute; top: 1.5rem; right: 1.5rem; z-index: 3050;
+      width: 80px; height: 80px; opacity: 0.9; transition: opacity 0.3s ease;
+    }
+    .audience-logo:hover { opacity: 1; }
+    .audience-logo img {
+      width: 100%; height: 100%; object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    }
     .audience-winner {
       font-size: 5rem; font-weight: 900; color: #ffe600; margin-top: 1rem;
       text-shadow: 0 4px 16px rgba(255,230,0,0.7); animation: winner-pulse 1.5s ease-in-out infinite;
@@ -313,8 +342,8 @@
         <input id="roundNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
       </div>
       <div>
-        <label for="totalRoundsInput">Antal ronder</label>
-        <input id="totalRoundsInput" type="number" value="3" min="1" onchange="setTotalRounds()"/>
+        <label for="totalRoundsInput">Antal ronder (max 3)</label>
+        <input id="totalRoundsInput" type="number" value="3" min="1" max="3" onchange="setTotalRounds()"/>
       </div>
       <div>
         <label for="matchDurationInput">Rondtid (sek)</label>
@@ -429,13 +458,18 @@
 
   <div id="audienceView" class="audience-view">
     <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
+    <div class="audience-logo">
+      <img src="attached_assets/icon-512.png" alt="KickLab Logo" />
+    </div>
     <div class="audience-board">
       <div class="audience-panel blue">
         <div class="flag-land-container">
           <div class="audience-flag" id="audienceBlueBadge">🇸🇪</div>
-          <div class="audience-land-code">SWE</div>
+          <div style="display: flex; flex-direction: column; align-items: flex-start;">
+            <div class="audience-name" id="audienceBlueName">Blå</div>
+            <div class="audience-land-code">SWE</div>
+          </div>
         </div>
-        <div class="audience-name" id="audienceBlueName">Blå</div>
         <div class="audience-score" id="audienceBlueScore">0</div>
         <div class="audience-details">
           <div class="detail-row">
@@ -475,10 +509,12 @@
       </div>
       <div class="audience-panel red">
         <div class="flag-land-container">
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <div class="audience-name" id="audienceRedName">Röd</div>
+            <div class="audience-land-code">SWE</div>
+          </div>
           <div class="audience-flag" id="audienceRedBadge">🇸🇪</div>
-          <div class="audience-land-code">SWE</div>
         </div>
-        <div class="audience-name" id="audienceRedName">Röd</div>
         <div class="audience-score" id="audienceRedScore">0</div>
         <div class="audience-details">
           <div class="detail-row">

@@ -937,8 +937,14 @@ function setMatchDuration() {
 
 function setTotalRounds() {
   const val = parseInt(document.getElementById("totalRoundsInput")?.value, 10);
-  if (!isNaN(val) && val > 0) {
+  if (!isNaN(val) && val > 0 && val <= 3) {
     totalRounds = val;
+    document.getElementById("liveTotalRounds").textContent = totalRounds;
+    broadcastLiveData();
+  } else if (val > 3) {
+    // Enforce max of 3 rounds
+    totalRounds = 3;
+    document.getElementById("totalRoundsInput").value = 3;
     document.getElementById("liveTotalRounds").textContent = totalRounds;
     broadcastLiveData();
   }
