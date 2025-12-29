@@ -970,6 +970,26 @@ function resetLiveScore() {
   restTimeLeft = 0;
   clearInterval(restTimerId);
   lastAction = null;
+  
+  // Clear all messages and statistics
+  centerMessage = "";
+  roundEndReason = "";
+  lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  
+  // Clear winner message in audience view (both embedded and standalone views)
+  const audWinner = document.getElementById("audienceWinner");
+  if (audWinner) audWinner.textContent = "";
+  
+  // Clear PTG message (handle both embedded and standalone views)
+  const audPTGMessage = document.getElementById("audiencePTGMessage") || document.getElementById("ptgMessage");
+  if (audPTGMessage) audPTGMessage.classList.remove("visible");
+  
+  // Hide statistics boxes (handle both embedded and standalone views)
+  const blueStatsBox = document.getElementById("audienceBlueStats") || document.getElementById("blueStats");
+  const redStatsBox = document.getElementById("audienceRedStats") || document.getElementById("redStats");
+  if (blueStatsBox) blueStatsBox.classList.remove("visible");
+  if (redStatsBox) redStatsBox.classList.remove("visible");
+  
   updateLiveMeta();
   updateLiveScoreDisplay();
   broadcastLiveData();
