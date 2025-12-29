@@ -672,7 +672,20 @@ function addScore(side, value) {
   if (matchEnded) return;
   liveScore[side] += value;
   lastAction = { type: "score", side, value };
-  if (side === "red") currentHits.red.head += value; else currentHits.blue.head += value;
+  
+  // Map score values to hit types based on Taekwondo scoring rules
+  // 1 point = punch or body kick (we'll count as punch for +1)
+  // 2 points = body kick (vest)
+  // 3 points = head kick
+  // 4+ points = advanced/spinning techniques (counted as head for simplicity)
+  if (value === 1) {
+    currentHits[side].punch += 1;
+  } else if (value === 2) {
+    currentHits[side].body += 1;
+  } else if (value >= 3) {
+    currentHits[side].head += 1;
+  }
+  
   updateLiveMeta();
   updateLiveScoreDisplay();
   broadcastLiveData();
@@ -706,6 +719,15 @@ function undoLastAction() {
   const { type, side, value } = lastAction;
   if (type === "score") {
     liveScore[side] = Math.max(0, liveScore[side] - value);
+    
+    // Also undo the hit counter
+    if (value === 1) {
+      currentHits[side].punch = Math.max(0, currentHits[side].punch - 1);
+    } else if (value === 2) {
+      currentHits[side].body = Math.max(0, currentHits[side].body - 1);
+    } else if (value >= 3) {
+      currentHits[side].head = Math.max(0, currentHits[side].head - 1);
+    }
   } else if (type === "penalty") {
     // Om senaste var +1 penalty: ta bort penalty och dra av poäng från motståndaren
     const other = side === "red" ? "blue" : "red";
