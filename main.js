@@ -648,8 +648,15 @@ function updateLiveScoreDisplay() {
   const audRoundScore = document.getElementById("audienceRoundScore");
   const audWinner = document.getElementById("audienceWinner");
   const audRest = document.getElementById("audienceRest");
-  const audRedHits = document.getElementById("audienceRedHits");
-  const audBlueHits = document.getElementById("audienceBlueHits");
+  
+  // Update icon counters in audience view
+  const audRedPunch = document.getElementById("audienceRedPunchCount");
+  const audRedHead = document.getElementById("audienceRedHeadCount");
+  const audRedBody = document.getElementById("audienceRedBodyCount");
+  const audBluePunch = document.getElementById("audienceBluePunchCount");
+  const audBlueHead = document.getElementById("audienceBlueHeadCount");
+  const audBlueBody = document.getElementById("audienceBlueBodyCount");
+  
   if (audRedName) audRedName.textContent = liveScoreNames.red;
   if (audBlueName) audBlueName.textContent = liveScoreNames.blue;
   if (audRedBadge) audRedBadge.textContent = "🇸🇪";
@@ -664,8 +671,14 @@ function updateLiveScoreDisplay() {
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
   if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
   if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "";
-  if (audRedHits) audRedHits.textContent = `Huvud ${currentHits.red.head} | Väst ${currentHits.red.body} | Slag ${currentHits.red.punch}`;
-  if (audBlueHits) audBlueHits.textContent = `Huvud ${currentHits.blue.head} | Väst ${currentHits.blue.body} | Slag ${currentHits.blue.punch}`;
+  
+  // Update hit counters with icons
+  if (audRedPunch) audRedPunch.textContent = currentHits.red.punch;
+  if (audRedHead) audRedHead.textContent = currentHits.red.head;
+  if (audRedBody) audRedBody.textContent = currentHits.red.body;
+  if (audBluePunch) audBluePunch.textContent = currentHits.blue.punch;
+  if (audBlueHead) audBlueHead.textContent = currentHits.blue.head;
+  if (audBlueBody) audBlueBody.textContent = currentHits.blue.body;
 }
 
 function addScore(side, value) {
