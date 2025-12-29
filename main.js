@@ -821,20 +821,10 @@ function shouldEndMatch() {
 function displayCenterMessage(message) {
   centerMessage = message || "";
   
-  // Display message in operator view overlay
-  const overlay = document.getElementById("centerMessageOverlay");
-  const textEl = document.getElementById("centerMessageText");
+  // DO NOT display overlay in operator view - only show in status text
+  // This prevents PTG (Point Gap)/Winner popups from appearing in operator view
   
-  if (message && message.trim() !== "") {
-    if (textEl) textEl.textContent = message;
-    if (overlay) {
-      overlay.style.display = "flex";
-    }
-  } else {
-    if (overlay) overlay.style.display = "none";
-  }
-  
-  // Also update status text
+  // Update status text in operator view
   const status = document.getElementById("liveScoreStatus");
   if (status && message) status.textContent = message;
   
@@ -852,7 +842,7 @@ function displayCenterMessage(message) {
     }
   }
   
-  // Display regular messages in winner area
+  // Display regular messages in winner area (audience view only)
   const audWinner = document.getElementById("audienceWinner");
   if (audWinner && !isPTG) {
     audWinner.textContent = message;
@@ -903,19 +893,13 @@ function displayRoundStatistics() {
   if (blueStatsBox) blueStatsBox.classList.add("visible");
   if (redStatsBox) redStatsBox.classList.add("visible");
   
-  // Also display center message for operator
-  const statsMessage = `Rond ${roundNum} statistik:
-
-${liveScoreNames.red}: ${liveScore.red} poäng
-Slag: ${lastRoundHits.red.punch} | Huvud: ${lastRoundHits.red.head} | Kropp: ${lastRoundHits.red.body} | GJ: ${livePenalties.red}
-
-${liveScoreNames.blue}: ${liveScore.blue} poäng
-Slag: ${lastRoundHits.blue.punch} | Huvud: ${lastRoundHits.blue.head} | Kropp: ${lastRoundHits.blue.body} | GJ: ${livePenalties.blue}`;
-  
-  const overlay = document.getElementById("centerMessageOverlay");
-  const textEl = document.getElementById("centerMessageText");
-  if (textEl) textEl.textContent = statsMessage;
-  if (overlay) overlay.style.display = "flex";
+  // DO NOT display overlay in operator view
+  // Statistics are shown in the audience view panels only
+  // Operator can see status in liveScoreStatus element
+  const status = document.getElementById("liveScoreStatus");
+  if (status) {
+    status.textContent = `Rond ${roundNum} statistik visas i publikvy`;
+  }
 }
 
 function removePenalty(side) {
