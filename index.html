@@ -158,12 +158,27 @@
       text-align: center;
     }
 
-    /* Background images for tiles */
-    .hero-tile.reaktionstest::before { background-image: url('attached_assets/tile_reaktionstest.png'); }
-    .hero-tile.sparkraknare::before { background-image: url('attached_assets/tile_sparkraknare.png'); }
-    .hero-tile.sparring::before { background-image: url('attached_assets/tile_sparring.png'); }
-    .hero-tile.tavling::before { background-image: url('attached_assets/tile_tavling.png'); }
-    .hero-tile.livescore::before { background-image: url('attached_assets/tile_livescore.png'); }
+    /* Background images for tiles with fallback gradients */
+    .hero-tile.reaktionstest::before { 
+      background: linear-gradient(135deg, rgba(255,140,0,0.4), rgba(255,69,0,0.4));
+      background-image: url('attached_assets/tile_reaktionstest.png'); 
+    }
+    .hero-tile.sparkraknare::before { 
+      background: linear-gradient(135deg, rgba(255,100,0,0.4), rgba(139,0,0,0.4));
+      background-image: url('attached_assets/tile_sparkraknare.png'); 
+    }
+    .hero-tile.sparring::before { 
+      background: linear-gradient(135deg, rgba(255,128,8,0.4), rgba(200,50,0,0.4));
+      background-image: url('attached_assets/tile_sparring.png'); 
+    }
+    .hero-tile.tavling::before { 
+      background: linear-gradient(135deg, rgba(255,215,0,0.4), rgba(255,140,0,0.4));
+      background-image: url('attached_assets/tile_tavling.png'); 
+    }
+    .hero-tile.livescore::before { 
+      background: linear-gradient(135deg, rgba(255,165,0,0.4), rgba(255,100,0,0.4));
+      background-image: url('attached_assets/tile_livescore.png'); 
+    }
 
     /* Old button styles - kept for other pages */
     .button-group {
