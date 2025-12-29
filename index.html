@@ -138,8 +138,31 @@
     .audience-land-code { font-size: 2rem; font-weight: 800; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     .audience-badge { background:#000; border:3px solid #ffe600; color:#fff; padding:0.5rem 1rem; border-radius:14px; font-weight:800; font-size:4rem; margin-bottom:1rem; box-shadow: 0 4px 12px rgba(255,230,0,0.3); }
     .audience-score { font-size: 16rem; font-weight: 900; margin: 1.5rem 0; width: 100%; text-align: center; line-height: 1; text-shadow: 0 8px 16px rgba(0,0,0,0.7); }
-    .audience-details { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+    .audience-details {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
     .detail-row { display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 1.2rem; font-weight: 600; }
+    .statistics-box {
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+      text-align: left;
+      display: none;
+    }
+    .statistics-box.visible {
+      display: block;
+    }
+    .stat-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.25rem 0;
+    }
     .score-icons {
       display: flex;
       justify-content: space-around;
@@ -174,12 +197,12 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     .audience-meta { 
-      background: #0b0b0f; border-radius: 20px; padding: 2rem; color: #ffe600; text-align: center; 
-      display: flex; flex-direction: column; justify-content: space-around; gap: 1.5rem; 
+      background: #0b0b0f; border-radius: 20px; padding: 1.5rem; color: #ffe600; text-align: center; 
+      display: flex; flex-direction: column; justify-content: center; gap: 1rem; 
       box-shadow: 0 16px 36px rgba(0,0,0,0.5); border: 2px solid #2a2a34; min-height: 600px;
     }
-    #audienceMatchTitle { font-size: 2.5rem; font-weight: 800; color: #fff; margin-bottom: 1rem; }
-    .audience-timer { font-size: 8rem; font-weight: 900; letter-spacing: 2px; color: #ffe600; text-shadow: 0 4px 12px rgba(255,230,0,0.5); font-family: 'Courier New', monospace; }
+    #audienceMatchTitle { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+    .audience-timer { font-size: 7rem; font-weight: 900; letter-spacing: 2px; color: #ffe600; text-shadow: 0 4px 12px rgba(255,230,0,0.5); font-family: 'Courier New', monospace; }
     .audience-row { display: flex; justify-content: space-around; gap: 1rem; font-weight: 700; color: #e0e0e0; font-size: 1.6rem; }
     .audience-rest { font-size: 2rem; color: #ff8008; font-weight: 800; margin: 1rem 0; }
     .close-audience {
@@ -189,16 +212,31 @@
     }
     .close-audience:hover { background: #ffc837; transform: scale(1.05); }
     .audience-logo {
-      position: absolute; top: 1.5rem; right: 1.5rem; z-index: 3050;
-      width: 80px; height: 80px; opacity: 0.9; transition: opacity 0.3s ease;
+      width: 60px; height: 60px; opacity: 0.9; transition: opacity 0.3s ease;
+      margin: 0 auto 1rem;
     }
     .audience-logo:hover { opacity: 1; }
     .audience-logo img {
       width: 100%; height: 100%; object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
     }
+    .ptg-message {
+      background: #ffe600;
+      color: #000;
+      font-size: 2.5rem;
+      font-weight: 800;
+      padding: 1rem 2rem;
+      border-radius: 15px;
+      text-align: center;
+      margin: 1rem 0;
+      box-shadow: 0 4px 12px rgba(255,230,0,0.5);
+      display: none;
+    }
+    .ptg-message.visible {
+      display: block;
+    }
     .audience-winner {
-      font-size: 5rem; font-weight: 900; color: #ffe600; margin-top: 1rem;
+      font-size: 3.5rem; font-weight: 900; color: #ffe600; margin-top: 0.5rem;
       text-shadow: 0 4px 16px rgba(255,230,0,0.7); animation: winner-pulse 1.5s ease-in-out infinite;
     }
     @keyframes winner-pulse {
@@ -410,7 +448,6 @@
     <div class="button-group">
       <button class="button" onclick="undoLastAction()">Ångra senaste</button>
       <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
-      <button class="button" onclick="toggleAudienceView(true)">Visa publikvy (samma flik)</button>
       <button class="button" onclick="openAudienceWindow()">Öppna publikvy i ny flik</button>
       <button class="button" onclick="showStartPage()">Tillbaka</button>
     </div>
@@ -458,9 +495,6 @@
 
   <div id="audienceView" class="audience-view">
     <button class="close-audience" onclick="toggleAudienceView(false)">Stäng publikvy</button>
-    <div class="audience-logo">
-      <img src="attached_assets/icon-512.png" alt="KickLab Logo" />
-    </div>
     <div class="audience-board">
       <div class="audience-panel blue">
         <div class="flag-land-container">
@@ -493,11 +527,19 @@
               <span class="icon-count" id="audienceBlueBodyCount">0</span>
             </div>
           </div>
+          <div class="statistics-box" id="audienceBlueStats">
+            <strong>Rond statistik:</strong>
+            <div id="audienceBlueStatsContent"></div>
+          </div>
         </div>
       </div>
       <div class="audience-meta">
+        <div class="audience-logo">
+          <img src="attached_assets/icon-512.png" alt="KickLab Logo" />
+        </div>
         <div id="audienceMatchTitle">Match</div>
         <div class="audience-timer" id="audienceTimer">02:00</div>
+        <div class="ptg-message" id="audiencePTGMessage"></div>
         <div class="audience-row">
           <span>Rond <span id="audienceRound">1</span></span>
         </div>
@@ -537,6 +579,10 @@
               <span class="icon-label">Kropp</span>
               <span class="icon-count" id="audienceRedBodyCount">0</span>
             </div>
+          </div>
+          <div class="statistics-box" id="audienceRedStats">
+            <strong>Rond statistik:</strong>
+            <div id="audienceRedStatsContent"></div>
           </div>
         </div>
       </div>

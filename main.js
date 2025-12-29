@@ -838,9 +838,25 @@ function displayCenterMessage(message) {
   const status = document.getElementById("liveScoreStatus");
   if (status && message) status.textContent = message;
   
-  // Display message in audience view
+  // Check if this is a PTG message
+  const isPTG = message && (message.includes("PTG") || message.includes("Point Gap"));
+  
+  // Display PTG message in yellow box in audience view
+  const audPTGMessage = document.getElementById("audiencePTGMessage");
+  if (audPTGMessage) {
+    if (isPTG) {
+      audPTGMessage.textContent = message;
+      audPTGMessage.classList.add("visible");
+    } else {
+      audPTGMessage.classList.remove("visible");
+    }
+  }
+  
+  // Display regular messages in winner area
   const audWinner = document.getElementById("audienceWinner");
-  if (audWinner) audWinner.textContent = message;
+  if (audWinner && !isPTG) {
+    audWinner.textContent = message;
+  }
   
   // Broadcast the message
   broadcastLiveData();
@@ -856,7 +872,39 @@ function startRoundPause() {
 }
 
 function displayRoundStatistics() {
-  const statsMessage = `Rond ${currentRound - 1} statistik:
+  const roundNum = currentRound - 1;
+  
+  // Display statistics in respective panels
+  const blueStatsBox = document.getElementById("audienceBlueStats");
+  const redStatsBox = document.getElementById("audienceRedStats");
+  const blueStatsContent = document.getElementById("audienceBlueStatsContent");
+  const redStatsContent = document.getElementById("audienceRedStatsContent");
+  
+  if (blueStatsContent) {
+    blueStatsContent.innerHTML = `
+      <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${liveScore.blue}</span></div>
+      <div class="stat-line"><span>Slag:</span><span>${lastRoundHits.blue.punch}</span></div>
+      <div class="stat-line"><span>Huvud:</span><span>${lastRoundHits.blue.head}</span></div>
+      <div class="stat-line"><span>Kropp:</span><span>${lastRoundHits.blue.body}</span></div>
+      <div class="stat-line"><span>Gam-jeom:</span><span>${livePenalties.blue}</span></div>
+    `;
+  }
+  
+  if (redStatsContent) {
+    redStatsContent.innerHTML = `
+      <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${liveScore.red}</span></div>
+      <div class="stat-line"><span>Slag:</span><span>${lastRoundHits.red.punch}</span></div>
+      <div class="stat-line"><span>Huvud:</span><span>${lastRoundHits.red.head}</span></div>
+      <div class="stat-line"><span>Kropp:</span><span>${lastRoundHits.red.body}</span></div>
+      <div class="stat-line"><span>Gam-jeom:</span><span>${livePenalties.red}</span></div>
+    `;
+  }
+  
+  if (blueStatsBox) blueStatsBox.classList.add("visible");
+  if (redStatsBox) redStatsBox.classList.add("visible");
+  
+  // Also display center message for operator
+  const statsMessage = `Rond ${roundNum} statistik:
 
 ${liveScoreNames.red}: ${liveScore.red} poäng
 Slag: ${lastRoundHits.red.punch} | Huvud: ${lastRoundHits.red.head} | Kropp: ${lastRoundHits.red.body} | GJ: ${livePenalties.red}
@@ -864,7 +912,10 @@ Slag: ${lastRoundHits.red.punch} | Huvud: ${lastRoundHits.red.head} | Kropp: ${l
 ${liveScoreNames.blue}: ${liveScore.blue} poäng
 Slag: ${lastRoundHits.blue.punch} | Huvud: ${lastRoundHits.blue.head} | Kropp: ${lastRoundHits.blue.body} | GJ: ${livePenalties.blue}`;
   
-  displayCenterMessage(statsMessage);
+  const overlay = document.getElementById("centerMessageOverlay");
+  const textEl = document.getElementById("centerMessageText");
+  if (textEl) textEl.textContent = statsMessage;
+  if (overlay) overlay.style.display = "flex";
 }
 
 function removePenalty(side) {
@@ -1204,6 +1255,16 @@ function startNextRound() {
   
   // Clear center message
   displayCenterMessage("");
+  
+  // Clear PTG message
+  const audPTGMessage = document.getElementById("audiencePTGMessage");
+  if (audPTGMessage) audPTGMessage.classList.remove("visible");
+  
+  // Hide statistics boxes
+  const blueStatsBox = document.getElementById("audienceBlueStats");
+  const redStatsBox = document.getElementById("audienceRedStats");
+  if (blueStatsBox) blueStatsBox.classList.remove("visible");
+  if (redStatsBox) redStatsBox.classList.remove("visible");
   
   // Reset scores and gam-jeom for next round
   liveScore.red = 0;

@@ -165,26 +165,26 @@
     .center-panel {
       background: #0b0b0f;
       border-radius: 20px;
-      padding: 2rem;
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 2rem;
+      gap: 1rem;
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
       border: 2px solid #2a2a34;
     }
 
     .match-title {
-      font-size: 3rem;
+      font-size: 2rem;
       font-weight: 800;
       color: #fff;
       text-align: center;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
     }
 
     .timer-display {
-      font-size: 10rem;
+      font-size: 7rem;
       font-weight: 900;
       letter-spacing: 3px;
       color: #ffe600;
@@ -214,7 +214,7 @@
     }
 
     .winner-display {
-      font-size: 5rem;
+      font-size: 3.5rem;
       font-weight: 900;
       color: #ffe600;
       text-align: center;
@@ -228,14 +228,11 @@
     }
     
     .audience-logo {
-      position: absolute;
-      top: 1.5rem;
-      right: 1.5rem;
-      z-index: 3050;
-      width: 80px;
-      height: 80px;
+      width: 60px;
+      height: 60px;
       opacity: 0.9;
       transition: opacity 0.3s ease;
+      margin: 0 auto 1rem;
     }
     
     .audience-logo:hover {
@@ -247,6 +244,44 @@
       height: 100%;
       object-fit: contain;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    }
+    
+    .ptg-message {
+      background: #ffe600;
+      color: #000;
+      font-size: 2.5rem;
+      font-weight: 800;
+      padding: 1rem 2rem;
+      border-radius: 15px;
+      text-align: center;
+      margin: 1rem 0;
+      box-shadow: 0 4px 12px rgba(255,230,0,0.5);
+      display: none;
+    }
+    
+    .ptg-message.visible {
+      display: block;
+    }
+    
+    .statistics-box {
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+      text-align: left;
+      display: none;
+    }
+    
+    .statistics-box.visible {
+      display: block;
+    }
+    
+    .stat-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.25rem 0;
     }
 
     /* Responsive adjustments */
@@ -296,10 +331,6 @@
 </head>
 <body>
 
-  <div class="audience-logo">
-    <img src="attached_assets/icon-512.png" alt="KickLab Logo" />
-  </div>
-  
   <div class="audience-container">
     <!-- Blue Panel (Left) -->
     <div class="audience-panel blue">
@@ -333,13 +364,21 @@
             <span class="icon-count" id="blueBodyCount">0</span>
           </div>
         </div>
+        <div class="statistics-box" id="blueStats">
+          <strong>Rond statistik:</strong>
+          <div id="blueStatsContent"></div>
+        </div>
       </div>
     </div>
 
     <!-- Center Panel (Black) -->
     <div class="center-panel">
+      <div class="audience-logo">
+        <img src="attached_assets/icon-512.png" alt="KickLab Logo" />
+      </div>
       <div class="match-title" id="matchTitle">Match</div>
       <div class="timer-display" id="timerDisplay">02:00</div>
+      <div class="ptg-message" id="ptgMessage"></div>
       <div class="round-info">
         <span>Rond <span id="currentRound">1</span></span>
       </div>
@@ -379,6 +418,10 @@
             <span class="icon-label">Kropp</span>
             <span class="icon-count" id="redBodyCount">0</span>
           </div>
+        </div>
+        <div class="statistics-box" id="redStats">
+          <strong>Rond statistik:</strong>
+          <div id="redStatsContent"></div>
         </div>
       </div>
     </div>
@@ -466,7 +509,24 @@
 
       // Update center message / winner display
       if (data.centerMessage !== undefined) {
-        document.getElementById('winnerDisplay').textContent = data.centerMessage || '';
+        const message = data.centerMessage || '';
+        const isPTG = message.includes("PTG") || message.includes("Point Gap");
+        
+        // Display PTG message in yellow box
+        const ptgMessage = document.getElementById('ptgMessage');
+        if (ptgMessage) {
+          if (isPTG) {
+            ptgMessage.textContent = message;
+            ptgMessage.classList.add("visible");
+          } else {
+            ptgMessage.classList.remove("visible");
+          }
+        }
+        
+        // Display other messages in winner area
+        if (!isPTG) {
+          document.getElementById('winnerDisplay').textContent = message;
+        }
       } else if (data.matchEnded && data.roundWins) {
         if (data.roundWins.red > data.roundWins.blue) {
           const winner = data.liveScoreNames?.red || 'Röd';
@@ -479,6 +539,45 @@
         }
       } else {
         document.getElementById('winnerDisplay').textContent = '';
+      }
+      
+      // Update statistics boxes
+      if (data.lastRoundHits && data.liveScore && data.livePenalties && data.currentRound > 1) {
+        const roundNum = data.currentRound - 1;
+        
+        // Blue statistics
+        const blueStatsContent = document.getElementById('blueStatsContent');
+        const blueStatsBox = document.getElementById('blueStats');
+        if (blueStatsContent) {
+          blueStatsContent.innerHTML = `
+            <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${data.liveScore.blue || 0}</span></div>
+            <div class="stat-line"><span>Slag:</span><span>${data.lastRoundHits.blue.punch || 0}</span></div>
+            <div class="stat-line"><span>Huvud:</span><span>${data.lastRoundHits.blue.head || 0}</span></div>
+            <div class="stat-line"><span>Kropp:</span><span>${data.lastRoundHits.blue.body || 0}</span></div>
+            <div class="stat-line"><span>Gam-jeom:</span><span>${data.livePenalties.blue || 0}</span></div>
+          `;
+          if (blueStatsBox) blueStatsBox.classList.add("visible");
+        }
+        
+        // Red statistics
+        const redStatsContent = document.getElementById('redStatsContent');
+        const redStatsBox = document.getElementById('redStats');
+        if (redStatsContent) {
+          redStatsContent.innerHTML = `
+            <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${data.liveScore.red || 0}</span></div>
+            <div class="stat-line"><span>Slag:</span><span>${data.lastRoundHits.red.punch || 0}</span></div>
+            <div class="stat-line"><span>Huvud:</span><span>${data.lastRoundHits.red.head || 0}</span></div>
+            <div class="stat-line"><span>Kropp:</span><span>${data.lastRoundHits.red.body || 0}</span></div>
+            <div class="stat-line"><span>Gam-jeom:</span><span>${data.livePenalties.red || 0}</span></div>
+          `;
+          if (redStatsBox) redStatsBox.classList.add("visible");
+        }
+      } else {
+        // Hide statistics boxes when not showing stats
+        const blueStatsBox = document.getElementById('blueStats');
+        const redStatsBox = document.getElementById('redStats');
+        if (blueStatsBox) blueStatsBox.classList.remove("visible");
+        if (redStatsBox) redStatsBox.classList.remove("visible");
       }
     }
 
