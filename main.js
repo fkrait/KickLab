@@ -1108,7 +1108,7 @@ function startRest() {
     if (restTimeLeft <= 0) {
       restTimeLeft = 0;
       clearInterval(restTimerId);
-      startLiveTimer();
+      // Do NOT auto-start timer - operator must explicitly click "Starta klockan"
     }
     updateLiveScoreDisplay();
     broadcastLiveData();
