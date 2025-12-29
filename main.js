@@ -40,6 +40,9 @@ let restTimeLeft = 0;
 let restTimerId = null;
 let currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 let lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+let totalScore = { red: 0, blue: 0 }; // Cumulative score across all rounds
+let totalHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } }; // Cumulative hits across all rounds
+let totalPenalties = { red: 0, blue: 0 }; // Cumulative penalties across all rounds
 let roundEndReason = "";
 let centerMessage = "";
 
@@ -698,6 +701,7 @@ function updateLiveScoreDisplay() {
 function addScore(side, value) {
   if (matchEnded) return;
   liveScore[side] += value;
+  totalScore[side] += value;
   lastAction = { type: "score", side, value };
   
   // Map score values to hit types based on Taekwondo scoring rules
@@ -708,14 +712,19 @@ function addScore(side, value) {
   // 5+ points = spinning head techniques
   if (value === 1) {
     currentHits[side].punch += 1;
+    totalHits[side].punch += 1;
   } else if (value === 2) {
     currentHits[side].body += 1;
+    totalHits[side].body += 1;
   } else if (value === 3) {
     currentHits[side].head += 1;
+    totalHits[side].head += 1;
   } else if (value === 4) {
     currentHits[side].body += 1;
+    totalHits[side].body += 1;
   } else if (value >= 5) {
     currentHits[side].head += 1;
+    totalHits[side].head += 1;
   }
   
   updateLiveMeta();
@@ -729,9 +738,11 @@ function addScore(side, value) {
 function addPenalty(side) {
   if (matchEnded) return;
   livePenalties[side] += 1;
+  totalPenalties[side] += 1;
   // Gam-jeom ger poäng till motståndaren
   const other = side === "red" ? "blue" : "red";
   liveScore[other] += 1;
+  totalScore[other] += 1;
   lastAction = { type: "penalty", side, value: 1 };
   updateLiveMeta();
   updateLiveScoreDisplay();
@@ -920,8 +931,10 @@ function displayRoundStatistics() {
 function removePenalty(side) {
   if (livePenalties[side] <= 0 || matchEnded) return;
   livePenalties[side] -= 1;
+  totalPenalties[side] = Math.max(0, totalPenalties[side] - 1);
   const other = side === "red" ? "blue" : "red";
   liveScore[other] = Math.max(0, liveScore[other] - 1);
+  totalScore[other] = Math.max(0, totalScore[other] - 1);
   lastAction = { type: "penalty", side, value: -1 };
   updateLiveMeta();
   updateLiveScoreDisplay();
@@ -933,24 +946,38 @@ function undoLastAction() {
   const { type, side, value } = lastAction;
   if (type === "score") {
     liveScore[side] = Math.max(0, liveScore[side] - value);
+    totalScore[side] = Math.max(0, totalScore[side] - value);
     
     // Also undo the hit counter
     if (value === 1) {
       currentHits[side].punch = Math.max(0, currentHits[side].punch - 1);
+      totalHits[side].punch = Math.max(0, totalHits[side].punch - 1);
     } else if (value === 2) {
       currentHits[side].body = Math.max(0, currentHits[side].body - 1);
-    } else if (value >= 3) {
+      totalHits[side].body = Math.max(0, totalHits[side].body - 1);
+    } else if (value === 3) {
       currentHits[side].head = Math.max(0, currentHits[side].head - 1);
+      totalHits[side].head = Math.max(0, totalHits[side].head - 1);
+    } else if (value === 4) {
+      currentHits[side].body = Math.max(0, currentHits[side].body - 1);
+      totalHits[side].body = Math.max(0, totalHits[side].body - 1);
+    } else if (value >= 5) {
+      currentHits[side].head = Math.max(0, currentHits[side].head - 1);
+      totalHits[side].head = Math.max(0, totalHits[side].head - 1);
     }
   } else if (type === "penalty") {
     // Om senaste var +1 penalty: ta bort penalty och dra av poäng från motståndaren
     const other = side === "red" ? "blue" : "red";
     if (value === 1) {
       livePenalties[side] = Math.max(0, livePenalties[side] - 1);
+      totalPenalties[side] = Math.max(0, totalPenalties[side] - 1);
       liveScore[other] = Math.max(0, liveScore[other] - 1);
+      totalScore[other] = Math.max(0, totalScore[other] - 1);
     } else if (value === -1) {
       livePenalties[side] += 1;
+      totalPenalties[side] += 1;
       liveScore[other] += 1;
+      totalScore[other] += 1;
     }
   }
   lastAction = null;
@@ -963,6 +990,9 @@ function resetLiveScore() {
   liveScore.red = 0; liveScore.blue = 0;
   livePenalties.red = 0; livePenalties.blue = 0;
   currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  totalScore = { red: 0, blue: 0 };
+  totalHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  totalPenalties = { red: 0, blue: 0 };
   roundWins = { red: 0, blue: 0 };
   currentRound = 1;
   liveTimeLeft = matchDurationSeconds;
@@ -1244,6 +1274,9 @@ function broadcastLiveData() {
     restTimeLeft,
     currentHits,
     lastRoundHits,
+    totalScore,
+    totalHits,
+    totalPenalties,
     matchTitle: getMatchTitle(),
     centerMessage,
   };
@@ -1342,6 +1375,9 @@ if (("BroadcastChannel" in window) && !broadcastChannel) {
       if (data.restTimeLeft !== undefined) restTimeLeft = data.restTimeLeft;
       if (data.currentHits) currentHits = JSON.parse(JSON.stringify(data.currentHits));
       if (data.lastRoundHits) lastRoundHits = JSON.parse(JSON.stringify(data.lastRoundHits));
+      if (data.totalScore) totalScore = JSON.parse(JSON.stringify(data.totalScore));
+      if (data.totalHits) totalHits = JSON.parse(JSON.stringify(data.totalHits));
+      if (data.totalPenalties) totalPenalties = JSON.parse(JSON.stringify(data.totalPenalties));
       if (data.centerMessage !== undefined) centerMessage = data.centerMessage;
       
       // Update display if we're in audience mode
