@@ -822,7 +822,7 @@ function displayCenterMessage(message) {
   centerMessage = message || "";
   
   // DO NOT display overlay in operator view - only show in status text
-  // This prevents PTG/Winner popups from appearing in operator view
+  // This prevents PTG (Point Gap)/Winner popups from appearing in operator view
   
   // Update status text in operator view
   const status = document.getElementById("liveScoreStatus");
@@ -898,7 +898,7 @@ function displayRoundStatistics() {
   // Operator can see status in liveScoreStatus element
   const status = document.getElementById("liveScoreStatus");
   if (status) {
-    status.textContent = `Rond ${roundNum} statistik visas i publikvyn`;
+    status.textContent = `Rond ${roundNum} statistik visas i publikvy`;
   }
 }
 
