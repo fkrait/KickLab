@@ -366,7 +366,7 @@
           </div>
         </div>
         <div class="statistics-box" id="blueStats">
-          <strong>Rond statistik:</strong>
+          <strong>Total statistik:</strong>
           <div id="blueStatsContent"></div>
         </div>
       </div>
@@ -421,7 +421,7 @@
           </div>
         </div>
         <div class="statistics-box" id="redStats">
-          <strong>Rond statistik:</strong>
+          <strong>Total statistik:</strong>
           <div id="redStatsContent"></div>
         </div>
       </div>
@@ -543,33 +543,31 @@
       }
       
       // Update statistics boxes
-      if (data.lastRoundHits && data.liveScore && data.livePenalties && data.currentRound > 1) {
-        const roundNum = data.currentRound - 1;
-        
-        // Blue statistics
+      if (data.totalScore && data.totalHits && data.totalPenalties && data.currentRound > 1) {
+        // Blue statistics - showing cumulative totals
         const blueStatsContent = document.getElementById('blueStatsContent');
         const blueStatsBox = document.getElementById('blueStats');
         if (blueStatsContent) {
           blueStatsContent.innerHTML = `
-            <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${data.liveScore.blue || 0}</span></div>
-            <div class="stat-line"><span>Slag:</span><span>${data.lastRoundHits.blue.punch || 0}</span></div>
-            <div class="stat-line"><span>Huvud:</span><span>${data.lastRoundHits.blue.head || 0}</span></div>
-            <div class="stat-line"><span>Kropp:</span><span>${data.lastRoundHits.blue.body || 0}</span></div>
-            <div class="stat-line"><span>Gam-jeom:</span><span>${data.livePenalties.blue || 0}</span></div>
+            <div class="stat-line"><span>Totalt poäng:</span><span>${data.totalScore.blue || 0}</span></div>
+            <div class="stat-line"><span>Slag:</span><span>${data.totalHits.blue.punch || 0}</span></div>
+            <div class="stat-line"><span>Huvud:</span><span>${data.totalHits.blue.head || 0}</span></div>
+            <div class="stat-line"><span>Kropp:</span><span>${data.totalHits.blue.body || 0}</span></div>
+            <div class="stat-line"><span>Gam-jeom:</span><span>${data.totalPenalties.blue || 0}</span></div>
           `;
           if (blueStatsBox) blueStatsBox.classList.add("visible");
         }
         
-        // Red statistics
+        // Red statistics - showing cumulative totals
         const redStatsContent = document.getElementById('redStatsContent');
         const redStatsBox = document.getElementById('redStats');
         if (redStatsContent) {
           redStatsContent.innerHTML = `
-            <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${data.liveScore.red || 0}</span></div>
-            <div class="stat-line"><span>Slag:</span><span>${data.lastRoundHits.red.punch || 0}</span></div>
-            <div class="stat-line"><span>Huvud:</span><span>${data.lastRoundHits.red.head || 0}</span></div>
-            <div class="stat-line"><span>Kropp:</span><span>${data.lastRoundHits.red.body || 0}</span></div>
-            <div class="stat-line"><span>Gam-jeom:</span><span>${data.livePenalties.red || 0}</span></div>
+            <div class="stat-line"><span>Totalt poäng:</span><span>${data.totalScore.red || 0}</span></div>
+            <div class="stat-line"><span>Slag:</span><span>${data.totalHits.red.punch || 0}</span></div>
+            <div class="stat-line"><span>Huvud:</span><span>${data.totalHits.red.head || 0}</span></div>
+            <div class="stat-line"><span>Kropp:</span><span>${data.totalHits.red.body || 0}</span></div>
+            <div class="stat-line"><span>Gam-jeom:</span><span>${data.totalPenalties.red || 0}</span></div>
           `;
           if (redStatsBox) redStatsBox.classList.add("visible");
         }
