@@ -59,7 +59,472 @@
     }
     label { font-weight: 600; display: block; margin-bottom: 0.35rem; }
 
-    /* Operatörsvyn: vi döljer de stora färgfälten och visar bara kontroller */
+    /* ========== NEW MOBILE-OPTIMIZED OPERATOR VIEW ========== */
+    .operator-view {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Sticky Top Bar */
+    .operator-top-bar {
+      background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
+      border-bottom: 2px solid #2a2a2a;
+      padding: 0.4rem 0.6rem;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.5rem;
+      align-items: center;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .top-bar-section {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .name-input {
+      flex: 1;
+      padding: 0.4rem 0.6rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      min-width: 60px;
+    }
+
+    .blue-input {
+      background: linear-gradient(180deg, #1e5fff, #0b2f8a);
+      color: white;
+    }
+
+    .red-input {
+      background: linear-gradient(180deg, #e34040, #8a0b0b);
+      color: white;
+    }
+
+    .top-bar-center {
+      text-align: center;
+      min-width: 140px;
+    }
+
+    .operator-timer-display {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ffe600;
+      letter-spacing: 2px;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 10px rgba(255,230,0,0.5);
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+
+    .round-info-compact {
+      font-size: 0.7rem;
+      color: #aaa;
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .round-wins {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .top-bar-controls {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: flex-end;
+    }
+
+    .control-btn {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #fff;
+      padding: 0.5rem 0.7rem;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn:active {
+      transform: scale(0.95);
+      background: #1a1a1a;
+    }
+
+    .start-btn:hover { background: #2a4a2a; color: #4eff4e; }
+    .pause-btn:hover { background: #4a4a2a; color: #ffff4e; }
+    .end-btn:hover { background: #4a2a2a; color: #ff4e4e; }
+    .menu-btn:hover { background: #2a3a4a; color: #4e9fff; }
+
+    /* Collapsible Menu */
+    .operator-menu {
+      background: #1a1a1a;
+      border-bottom: 2px solid #2a2a2a;
+      padding: 0.6rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .operator-menu.open {
+      max-height: 200px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .menu-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .menu-item label {
+      font-size: 0.7rem;
+      color: #888;
+      margin-bottom: 0.2rem;
+    }
+
+    .menu-item input {
+      padding: 0.4rem;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.85rem;
+    }
+
+    .menu-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .menu-action-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 0.5rem;
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .menu-action-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Status Message */
+    .operator-status {
+      background: #ffe600;
+      color: #000;
+      text-align: center;
+      padding: 0.5rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .operator-status.visible {
+      display: block;
+    }
+
+    /* Two-Column Layout */
+    .operator-columns {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .score-column {
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+
+    .blue-column {
+      background: linear-gradient(180deg, #163d9b, #0b214f);
+    }
+
+    .red-column {
+      background: linear-gradient(180deg, #b22626, #5c1111);
+    }
+
+    .column-header {
+      padding: 0.5rem;
+      text-align: center;
+      font-weight: 900;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .fighter-name {
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .score-display {
+      padding: 0.6rem;
+      text-align: center;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .main-score {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 4px 8px rgba(0,0,0,0.7);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .score-details {
+      display: flex;
+      justify-content: space-around;
+      gap: 0.3rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0,0,0,0.3);
+      padding: 0.3rem 0.4rem;
+      border-radius: 6px;
+      min-width: 36px;
+    }
+
+    .detail-item.penalty {
+      background: rgba(255,200,0,0.2);
+    }
+
+    .detail-icon {
+      font-size: 1rem;
+      margin-bottom: 0.1rem;
+    }
+
+    /* Scoring Buttons */
+    .scoring-buttons {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+      padding: 0.5rem;
+      align-content: start;
+    }
+
+    .score-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.8rem 0.4rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 60px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1);
+    }
+
+    .btn-icon {
+      font-size: 1.8rem;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+
+    .btn-label {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Blue buttons */
+    .blue-btn {
+      background: linear-gradient(180deg, #2a6fff, #1550cc);
+      color: #fff;
+    }
+
+    .blue-btn:hover {
+      background: linear-gradient(180deg, #3a7fff, #1560dd);
+    }
+
+    /* Red buttons */
+    .red-btn {
+      background: linear-gradient(180deg, #ff3a3a, #cc1515);
+      color: #fff;
+    }
+
+    .red-btn:hover {
+      background: linear-gradient(180deg, #ff4a4a, #dd2525);
+    }
+
+    /* Button type variations */
+    .penalty-btn {
+      grid-column: span 2;
+      background: linear-gradient(180deg, #ffa500, #ff8000) !important;
+      color: #000 !important;
+    }
+
+    .penalty-btn .btn-label {
+      color: #000;
+      text-shadow: none;
+    }
+
+    /* Bottom Action Bar */
+    .operator-bottom-bar {
+      background: linear-gradient(180deg, #0f0f0f, #1a1a1a);
+      border-top: 2px solid #2a2a2a;
+      padding: 0.5rem 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.5);
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1rem;
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(255,128,8,0.4);
+      white-space: nowrap;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .undo-btn .btn-icon {
+      font-size: 1.4rem;
+    }
+
+    .status-text {
+      flex: 1;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #888;
+      font-weight: 600;
+    }
+
+    .rest-indicator {
+      font-size: 0.85rem;
+      color: #ff8008;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    /* Landscape Mobile Optimization */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .operator-timer-display {
+        font-size: 1.5rem;
+      }
+      
+      .main-score {
+        font-size: 3rem;
+      }
+      
+      .score-btn {
+        min-height: 50px;
+        padding: 0.5rem 0.3rem;
+      }
+      
+      .btn-icon {
+        font-size: 1.4rem;
+      }
+      
+      .btn-label {
+        font-size: 0.9rem;
+      }
+      
+      .column-header {
+        padding: 0.4rem;
+        font-size: 0.9rem;
+      }
+      
+      .score-display {
+        padding: 0.4rem;
+      }
+    }
+
+    @media (orientation: landscape) and (min-height: 500px) and (max-height: 820px) {
+      /* Optimal for typical landscape mobile (640-820px height) */
+      .operator-top-bar {
+        padding: 0.5rem 0.8rem;
+      }
+      
+      .operator-timer-display {
+        font-size: 2.2rem;
+      }
+      
+      .main-score {
+        font-size: 4.5rem;
+      }
+    }
+
+    /* Desktop/Tablet Adjustments */
+    @media (min-width: 1024px) {
+      .operator-columns {
+        gap: 1rem;
+        padding: 1rem;
+      }
+      
+      .score-btn {
+        min-height: 70px;
+      }
+    }
+
+    /* ========== OLD OPERATOR STYLES (KEPT FOR COMPATIBILITY) ========== */
     .live-scoreboard { display: none; }
     .side-panel {
       border-radius: 18px; padding: 1.2rem; color: white;
@@ -346,111 +811,162 @@
     </div>
   </div>
 
-  <!-- Live sparring score (operatörsvy) -->
-  <div id="liveScorePage" class="page-container" style="display:none;">
-    <h2>Live sparring score</h2>
-    <p>Manuellt Daedo-inspirerat system: operatören registrerar poäng och straff, publikvyn speglas separat.</p>
-    <div class="operator-timer">Tid: <span id="operatorTimer">02:00</span></div>
-    <div class="operator-controls">
-      <button class="button" onclick="startLiveTimer()">Starta klocka</button>
-      <button class="button" onclick="pauseLiveTimer()">Pausa klocka</button>
-      <button class="button" onclick="endCurrentRound()">Avsluta rond</button>
-      <button class="button" onclick="startNextRound()">Nästa rond</button>
-      <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
-    </div>
-    <div class="score-name-inputs">
-      <div>
-        <label for="matchTitleInput">Matchtitel</label>
-        <input id="matchTitleInput" type="text" value="Match" oninput="updateMatchTitle()"/>
+  <!-- Live sparring score (operatörsvy) - New Mobile-Optimized Layout -->
+  <div id="liveScorePage" class="operator-view" style="display:none;">
+    <!-- Sticky Top Bar with Timer and Controls -->
+    <div class="operator-top-bar">
+      <div class="top-bar-section">
+        <input id="blueNameInput" type="text" value="Blå" class="name-input blue-input" oninput="setLiveScoreNames()" placeholder="Blå"/>
+        <input id="redNameInput" type="text" value="Röd" class="name-input red-input" oninput="setLiveScoreNames()" placeholder="Röd"/>
       </div>
-      <div>
-        <label for="redNameInput">Röd</label>
-        <input id="redNameInput" type="text" value="Röd" oninput="setLiveScoreNames()"/>
-      </div>
-      <div>
-        <label for="blueNameInput">Blå</label>
-        <input id="blueNameInput" type="text" value="Blå" oninput="setLiveScoreNames()"/>
-      </div>
-      <div>
-        <label for="matchNumberInput">Match #</label>
-        <input id="matchNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
-      </div>
-      <div>
-        <label for="roundNumberInput">Rond</label>
-        <input id="roundNumberInput" type="number" value="1" min="1" onchange="updateLiveMeta()"/>
-      </div>
-      <div>
-        <label for="totalRoundsInput">Antal ronder (max 3)</label>
-        <input id="totalRoundsInput" type="number" value="3" min="1" max="3" onchange="setTotalRounds()"/>
-      </div>
-      <div>
-        <label for="matchDurationInput">Rondtid (sek)</label>
-        <input id="matchDurationInput" type="number" value="120" min="10" onchange="setMatchDuration()"/>
-      </div>
-      <div>
-        <label for="restSeconds">Paustid (sek)</label>
-        <input id="restSeconds" type="number" value="30" min="10"/>
-      </div>
-    </div>
-
-    <div class="live-scoreboard">
-      <div class="side-panel blue">
-        <div class="side-header">
-          <span class="panel-label">BLÅ</span>
-          <span id="blueNameLabel">Blå</span>
+      <div class="top-bar-center">
+        <div class="operator-timer-display" id="operatorTimer">02:00</div>
+        <div class="round-info-compact">
+          <span>R<span id="liveRoundNumber">1</span>/<span id="liveTotalRounds">3</span></span>
+          <span class="round-wins">🔵<span id="blueRoundWins">0</span> 🔴<span id="redRoundWins">0</span></span>
         </div>
-        <div class="side-score" id="blueScore">0</div>
-        <div class="panel-label">GAM-JEOM: <span id="bluePenalty">0</span></div>
       </div>
-
-      <div class="center-panel">
-        <div class="meta-row">
-          <div class="meta-box">Match <span id="liveMatchNumber">1</span></div>
-          <div class="meta-box">Rond <span id="liveRoundNumber">1</span>/<span id="liveTotalRounds">3</span></div>
-        </div>
-        <div class="timer-display" id="liveTimer">02:00</div>
-        <div class="round-score" id="roundScore">Ronder: 0 – 0</div>
-        <p id="restStatus" style="margin:0;color:#e0e0e0;"></p>
-        <div class="button-group" style="margin:0;">
-          <button class="button" onclick="startLiveTimer()">Start</button>
-          <button class="button" onclick="pauseLiveTimer()">Paus</button>
-          <button class="button" onclick="endCurrentRound()">Avsluta rond</button>
-          <button class="button" onclick="startNextRound()">Nästa rond</button>
-        </div>
-        <p class="panel-label" id="liveScoreStatus"></p>
-      </div>
-
-      <div class="side-panel red">
-        <div class="side-header">
-          <span id="redNameLabel">Röd</span>
-          <span class="panel-label">RÖD</span>
-        </div>
-        <div class="side-score" id="redScore">0</div>
-        <div class="panel-label" style="text-align:right;">GAM-JEOM: <span id="redPenalty">0</span></div>
+      <div class="top-bar-controls">
+        <button class="control-btn start-btn" onclick="startLiveTimer()" title="Start">▶</button>
+        <button class="control-btn pause-btn" onclick="pauseLiveTimer()" title="Pause">⏸</button>
+        <button class="control-btn end-btn" onclick="endCurrentRound()" title="End Round">⏹</button>
+        <button class="control-btn menu-btn" onclick="toggleOperatorMenu()" title="Menu">☰</button>
       </div>
     </div>
 
-    <div class="score-actions">
-      <button class="button btn-blue" onclick="awardScore('blue', 1)">+1 Blå<span class="button-label">👊 Slag</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 2)">+2 Blå<span class="button-label">🦺 Kropp</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 3)">+3 Blå<span class="button-label">🪖 Huvud</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 4)">+4 Blå<span class="button-label">🌀 Snurr kropp</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 5)">+5 Blå<span class="button-label">🪖 Max</span></button>
-      <button class="button btn-blue" onclick="awardPenalty('blue')">Gam-jeom (Blå)</button>
-      <button class="button btn-red" onclick="awardPenalty('red')">Gam-jeom (Röd)</button>
-      <button class="button btn-red" onclick="awardScore('red', 1)">+1 Röd<span class="button-label">👊 Slag</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 2)">+2 Röd<span class="button-label">🦺 Kropp</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 3)">+3 Röd<span class="button-label">🪖 Huvud</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 4)">+4 Röd<span class="button-label">🌀 Snurr kropp</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 5)">+5 Röd<span class="button-label">🪖 Max</span></button>
+    <!-- Collapsible Settings Menu -->
+    <div id="operatorMenu" class="operator-menu" style="display:none;">
+      <div class="menu-grid">
+        <div class="menu-item">
+          <label>Match</label>
+          <input id="matchTitleInput" type="text" value="Match" oninput="updateMatchTitle()"/>
+        </div>
+        <div class="menu-item">
+          <label>Rondtid (s)</label>
+          <input id="matchDurationInput" type="number" value="120" min="10" onchange="setMatchDuration()"/>
+        </div>
+        <div class="menu-item">
+          <label>Paus (s)</label>
+          <input id="restSeconds" type="number" value="30" min="10"/>
+        </div>
+        <div class="menu-item">
+          <label>Max ronder</label>
+          <input id="totalRoundsInput" type="number" value="3" min="1" max="3" onchange="setTotalRounds()"/>
+        </div>
+      </div>
+      <div class="menu-actions">
+        <button class="menu-action-btn" onclick="startNextRound()">Nästa rond</button>
+        <button class="menu-action-btn" onclick="resetLiveMatch()">Nollställ</button>
+        <button class="menu-action-btn" onclick="openAudienceWindow()">Publikvy</button>
+        <button class="menu-action-btn" onclick="showStartPage()">Avsluta</button>
+      </div>
     </div>
 
-    <div class="button-group">
-      <button class="button" onclick="undoLastAction()">Ångra senaste</button>
-      <button class="button" onclick="resetLiveMatch()">Nollställ match</button>
-      <button class="button" onclick="openAudienceWindow()">Öppna publikvy i ny flik</button>
-      <button class="button" onclick="showStartPage()">Tillbaka</button>
+    <!-- Status Message Area (inline, no modal) -->
+    <div id="operatorStatus" class="operator-status"></div>
+
+    <!-- Two-Column Scoring Layout -->
+    <div class="operator-columns">
+      <!-- Blue Column (Left) -->
+      <div class="score-column blue-column">
+        <div class="column-header blue-header">
+          <span class="fighter-name" id="blueNameLabel">Blå</span>
+        </div>
+        <div class="score-display blue-score">
+          <div class="main-score" id="blueScore">0</div>
+          <div class="score-details">
+            <div class="detail-item"><span class="detail-icon">👊</span><span id="bluePunchCount">0</span></div>
+            <div class="detail-item"><span class="detail-icon">🦺</span><span id="blueBodyCount">0</span></div>
+            <div class="detail-item"><span class="detail-icon">🪖</span><span id="blueHeadCount">0</span></div>
+            <div class="detail-item penalty"><span class="detail-icon">⚠️</span><span id="bluePenalty">0</span></div>
+          </div>
+        </div>
+        <div class="scoring-buttons">
+          <button class="score-btn blue-btn punch-btn" onclick="awardScore('blue', 1)">
+            <span class="btn-icon">👊</span>
+            <span class="btn-label">+1</span>
+          </button>
+          <button class="score-btn blue-btn body-btn" onclick="awardScore('blue', 2)">
+            <span class="btn-icon">🦺</span>
+            <span class="btn-label">+2</span>
+          </button>
+          <button class="score-btn blue-btn head-btn" onclick="awardScore('blue', 3)">
+            <span class="btn-icon">🪖</span>
+            <span class="btn-label">+3</span>
+          </button>
+          <button class="score-btn blue-btn spin-body-btn" onclick="awardScore('blue', 4)">
+            <span class="btn-icon">🌀</span>
+            <span class="btn-label">+4</span>
+          </button>
+          <button class="score-btn blue-btn spin-head-btn" onclick="awardScore('blue', 5)">
+            <span class="btn-icon">⭐</span>
+            <span class="btn-label">+5</span>
+          </button>
+          <button class="score-btn blue-btn penalty-btn" onclick="awardPenalty('blue')">
+            <span class="btn-icon">⚠️</span>
+            <span class="btn-label">GJ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Red Column (Right) -->
+      <div class="score-column red-column">
+        <div class="column-header red-header">
+          <span class="fighter-name" id="redNameLabel">Röd</span>
+        </div>
+        <div class="score-display red-score">
+          <div class="main-score" id="redScore">0</div>
+          <div class="score-details">
+            <div class="detail-item"><span class="detail-icon">👊</span><span id="redPunchCount">0</span></div>
+            <div class="detail-item"><span class="detail-icon">🦺</span><span id="redBodyCount">0</span></div>
+            <div class="detail-item"><span class="detail-icon">🪖</span><span id="redHeadCount">0</span></div>
+            <div class="detail-item penalty"><span class="detail-icon">⚠️</span><span id="redPenalty">0</span></div>
+          </div>
+        </div>
+        <div class="scoring-buttons">
+          <button class="score-btn red-btn punch-btn" onclick="awardScore('red', 1)">
+            <span class="btn-icon">👊</span>
+            <span class="btn-label">+1</span>
+          </button>
+          <button class="score-btn red-btn body-btn" onclick="awardScore('red', 2)">
+            <span class="btn-icon">🦺</span>
+            <span class="btn-label">+2</span>
+          </button>
+          <button class="score-btn red-btn head-btn" onclick="awardScore('red', 3)">
+            <span class="btn-icon">🪖</span>
+            <span class="btn-label">+3</span>
+          </button>
+          <button class="score-btn red-btn spin-body-btn" onclick="awardScore('red', 4)">
+            <span class="btn-icon">🌀</span>
+            <span class="btn-label">+4</span>
+          </button>
+          <button class="score-btn red-btn spin-head-btn" onclick="awardScore('red', 5)">
+            <span class="btn-icon">⭐</span>
+            <span class="btn-label">+5</span>
+          </button>
+          <button class="score-btn red-btn penalty-btn" onclick="awardPenalty('red')">
+            <span class="btn-icon">⚠️</span>
+            <span class="btn-label">GJ</span>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <!-- Bottom Action Bar -->
+    <div class="operator-bottom-bar">
+      <button class="action-btn undo-btn" onclick="undoLastAction()">
+        <span class="btn-icon">↶</span>
+        <span class="btn-text">Ångra</span>
+      </button>
+      <div class="status-text" id="liveScoreStatus"></div>
+      <span id="restStatus" class="rest-indicator"></span>
+    </div>
+
+    <!-- Hidden elements for compatibility -->
+    <input id="matchNumberInput" type="hidden" value="1"/>
+    <input id="roundNumberInput" type="hidden" value="1"/>
+    <div id="liveTimer" style="display:none;">02:00</div>
+    <div id="roundScore" style="display:none;">Ronder: 0 – 0</div>
   </div>
 
   <!-- Competition setup -->
