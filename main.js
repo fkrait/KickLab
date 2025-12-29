@@ -841,8 +841,8 @@ function displayCenterMessage(message) {
   // Check if this is a PTG message
   const isPTG = message && (message.includes("PTG") || message.includes("Point Gap"));
   
-  // Display PTG message in yellow box in audience view
-  const audPTGMessage = document.getElementById("audiencePTGMessage");
+  // Display PTG message in yellow box in audience view (both embedded and standalone)
+  const audPTGMessage = document.getElementById("audiencePTGMessage") || document.getElementById("ptgMessage");
   if (audPTGMessage) {
     if (isPTG) {
       audPTGMessage.textContent = message;
@@ -874,11 +874,11 @@ function startRoundPause() {
 function displayRoundStatistics() {
   const roundNum = currentRound - 1;
   
-  // Display statistics in respective panels
-  const blueStatsBox = document.getElementById("audienceBlueStats");
-  const redStatsBox = document.getElementById("audienceRedStats");
-  const blueStatsContent = document.getElementById("audienceBlueStatsContent");
-  const redStatsContent = document.getElementById("audienceRedStatsContent");
+  // Display statistics in respective panels (handle both embedded and standalone views)
+  const blueStatsBox = document.getElementById("audienceBlueStats") || document.getElementById("blueStats");
+  const redStatsBox = document.getElementById("audienceRedStats") || document.getElementById("redStats");
+  const blueStatsContent = document.getElementById("audienceBlueStatsContent") || document.getElementById("blueStatsContent");
+  const redStatsContent = document.getElementById("audienceRedStatsContent") || document.getElementById("redStatsContent");
   
   if (blueStatsContent) {
     blueStatsContent.innerHTML = `
@@ -1256,13 +1256,13 @@ function startNextRound() {
   // Clear center message
   displayCenterMessage("");
   
-  // Clear PTG message
-  const audPTGMessage = document.getElementById("audiencePTGMessage");
+  // Clear PTG message (handle both embedded and standalone views)
+  const audPTGMessage = document.getElementById("audiencePTGMessage") || document.getElementById("ptgMessage");
   if (audPTGMessage) audPTGMessage.classList.remove("visible");
   
-  // Hide statistics boxes
-  const blueStatsBox = document.getElementById("audienceBlueStats");
-  const redStatsBox = document.getElementById("audienceRedStats");
+  // Hide statistics boxes (handle both embedded and standalone views)
+  const blueStatsBox = document.getElementById("audienceBlueStats") || document.getElementById("blueStats");
+  const redStatsBox = document.getElementById("audienceRedStats") || document.getElementById("redStats");
   if (blueStatsBox) blueStatsBox.classList.remove("visible");
   if (redStatsBox) redStatsBox.classList.remove("visible");
   
