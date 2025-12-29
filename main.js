@@ -41,6 +41,7 @@ let restTimerId = null;
 let currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 let lastRoundHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 let roundEndReason = "";
+let centerMessage = "";
 
 /* ---------- Generella sidväxlingar ---------- */
 function showStartPage() {
@@ -669,7 +670,15 @@ function updateLiveScoreDisplay() {
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
-  if (audWinner) audWinner.textContent = matchEnded ? `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}` : "";
+  if (audWinner) {
+    if (centerMessage) {
+      audWinner.textContent = centerMessage;
+    } else if (matchEnded) {
+      audWinner.textContent = `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}`;
+    } else {
+      audWinner.textContent = "";
+    }
+  }
   if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "";
   
   // Update hit counters with icons
@@ -690,18 +699,26 @@ function addScore(side, value) {
   // 1 point = punch
   // 2 points = body kick (vest)
   // 3 points = head kick
-  // 4+ points = advanced/spinning head techniques
+  // 4 points = spinning body kick
+  // 5+ points = spinning head techniques
   if (value === 1) {
     currentHits[side].punch += 1;
   } else if (value === 2) {
     currentHits[side].body += 1;
-  } else if (value >= 3) {
+  } else if (value === 3) {
+    currentHits[side].head += 1;
+  } else if (value === 4) {
+    currentHits[side].body += 1;
+  } else if (value >= 5) {
     currentHits[side].head += 1;
   }
   
   updateLiveMeta();
   updateLiveScoreDisplay();
   broadcastLiveData();
+  
+  // Check for 12-point gap (PTG - Point Gap)
+  checkPointGap();
 }
 
 function addPenalty(side) {
@@ -714,6 +731,140 @@ function addPenalty(side) {
   updateLiveMeta();
   updateLiveScoreDisplay();
   broadcastLiveData();
+  
+  // Check for 5 gam-jeom rule
+  if (livePenalties[side] >= 5) {
+    endRoundByGamJeom(side);
+  }
+}
+
+function checkPointGap() {
+  if (matchEnded) return;
+  const gap = Math.abs(liveScore.red - liveScore.blue);
+  if (gap >= 12) {
+    const leader = liveScore.red > liveScore.blue ? "red" : "blue";
+    endRoundByPointGap(leader);
+  }
+}
+
+function endRoundByGamJeom(loserSide) {
+  pauseLiveTimer();
+  const other = loserSide === "red" ? "blue" : "red";
+  const loserName = liveScoreNames[loserSide];
+  const winnerName = liveScoreNames[other];
+  
+  roundWins[other] += 1;
+  roundEndReason = `${loserName} fick 5 gam-jeom. ${winnerName} vinner ronden`;
+  
+  // Display center message
+  displayCenterMessage(`${loserName} fick 5 gam-jeom. ${winnerName} vinner ronden`);
+  
+  // Save hit statistics per round
+  lastRoundHits = JSON.parse(JSON.stringify(currentHits));
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  
+  // Check if match should end (best of 3)
+  if (shouldEndMatch()) {
+    matchEnded = true;
+    setTimeout(() => {
+      showWinner();
+    }, 3000);
+  } else {
+    currentRound++;
+    setTimeout(() => {
+      startRoundPause();
+    }, 3000);
+  }
+  
+  updateLiveMeta();
+  updateLiveScoreDisplay();
+  broadcastLiveData();
+}
+
+function endRoundByPointGap(leader) {
+  pauseLiveTimer();
+  const leaderName = liveScoreNames[leader];
+  
+  roundWins[leader] += 1;
+  roundEndReason = `PTG (Point Gap) - ${leaderName} vinner ronden`;
+  
+  // Display center message
+  displayCenterMessage(`PTG (Point Gap) - ${leaderName} vinner ronden`);
+  
+  // Save hit statistics per round
+  lastRoundHits = JSON.parse(JSON.stringify(currentHits));
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
+  
+  // Check if match should end (best of 3)
+  if (shouldEndMatch()) {
+    matchEnded = true;
+    setTimeout(() => {
+      showWinner();
+    }, 3000);
+  } else {
+    currentRound++;
+    setTimeout(() => {
+      startRoundPause();
+    }, 3000);
+  }
+  
+  updateLiveMeta();
+  updateLiveScoreDisplay();
+  broadcastLiveData();
+}
+
+function shouldEndMatch() {
+  // Best of 3: match ends if someone wins 2 rounds
+  return roundWins.red >= 2 || roundWins.blue >= 2;
+}
+
+function displayCenterMessage(message) {
+  centerMessage = message || "";
+  
+  // Display message in operator view overlay
+  const overlay = document.getElementById("centerMessageOverlay");
+  const textEl = document.getElementById("centerMessageText");
+  
+  if (message && message.trim() !== "") {
+    if (textEl) textEl.textContent = message;
+    if (overlay) {
+      overlay.style.display = "flex";
+    }
+  } else {
+    if (overlay) overlay.style.display = "none";
+  }
+  
+  // Also update status text
+  const status = document.getElementById("liveScoreStatus");
+  if (status && message) status.textContent = message;
+  
+  // Display message in audience view
+  const audWinner = document.getElementById("audienceWinner");
+  if (audWinner) audWinner.textContent = message;
+  
+  // Broadcast the message
+  broadcastLiveData();
+}
+
+function startRoundPause() {
+  // Display round statistics during pause
+  displayRoundStatistics();
+  
+  // Start rest timer
+  restTimeLeft = parseInt(document.getElementById("restSeconds")?.value, 10) || 30;
+  startRest();
+}
+
+function displayRoundStatistics() {
+  const statsMessage = `Rond ${currentRound - 1} statistik:
+
+${liveScoreNames.red}: ${liveScore.red} poäng
+Slag: ${lastRoundHits.red.punch} | Huvud: ${lastRoundHits.red.head} | Kropp: ${lastRoundHits.red.body} | GJ: ${livePenalties.red}
+
+${liveScoreNames.blue}: ${liveScore.blue} poäng
+Slag: ${lastRoundHits.blue.punch} | Huvud: ${lastRoundHits.blue.head} | Kropp: ${lastRoundHits.blue.body} | GJ: ${livePenalties.blue}`;
+  
+  displayCenterMessage(statsMessage);
 }
 
 function removePenalty(side) {
@@ -870,18 +1021,27 @@ function checkRoundEnd() {
     roundWins.blue += 1;
     roundEndReason = `${liveScoreNames.blue} vinner ronden`;
   }
+  
+  // Display round result in center
+  displayCenterMessage(roundEndReason);
+  
   // Spara träffstatistik per rond
   lastRoundHits = JSON.parse(JSON.stringify(currentHits));
   currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 
-  currentRound++;
-  if (currentRound > totalRounds) {
+  // Check if match should end (best of 3)
+  if (shouldEndMatch()) {
     matchEnded = true;
-    showWinner();
+    setTimeout(() => {
+      showWinner();
+    }, 3000);
   } else {
-    restTimeLeft = parseInt(document.getElementById("restSeconds")?.value, 10) || 30;
-    startRest();
+    currentRound++;
+    setTimeout(() => {
+      startRoundPause();
+    }, 3000);
   }
+  
   updateLiveMeta();
   updateLiveScoreDisplay();
   broadcastLiveData();
@@ -890,8 +1050,13 @@ function checkRoundEnd() {
 function showWinner() {
   pauseLiveTimer();
   const winner = roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue;
+  const winnerMessage = `Matchen slut! Vinnare: ${winner}`;
+  
+  // Display winner message in center overlay
+  displayCenterMessage(winnerMessage);
+  
   const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Matchen slut! Vinnare: ${winner}`;
+  if (status) status.textContent = winnerMessage;
   const audWinner = document.getElementById("audienceWinner");
   if (audWinner) audWinner.textContent = `Vinnare: ${winner}`;
   matchEnded = true;
@@ -1001,6 +1166,7 @@ function broadcastLiveData() {
     currentHits,
     lastRoundHits,
     matchTitle: getMatchTitle(),
+    centerMessage,
   };
   broadcastChannel.postMessage(data);
 }
@@ -1029,7 +1195,11 @@ function endCurrentRound() {
 
 function startNextRound() {
   if (matchEnded) return;
-  // Reset scores for next round
+  
+  // Clear center message
+  displayCenterMessage("");
+  
+  // Reset scores and gam-jeom for next round
   liveScore.red = 0;
   liveScore.blue = 0;
   livePenalties.red = 0;
@@ -1083,6 +1253,7 @@ if (("BroadcastChannel" in window) && !broadcastChannel) {
       if (data.restTimeLeft !== undefined) restTimeLeft = data.restTimeLeft;
       if (data.currentHits) currentHits = JSON.parse(JSON.stringify(data.currentHits));
       if (data.lastRoundHits) lastRoundHits = JSON.parse(JSON.stringify(data.lastRoundHits));
+      if (data.centerMessage !== undefined) centerMessage = data.centerMessage;
       
       // Update display if we're in audience mode
       if (audienceMode || isStandaloneAudienceView) {
