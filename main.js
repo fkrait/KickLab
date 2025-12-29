@@ -672,7 +672,7 @@ function updateLiveScoreDisplay() {
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
   
   // Only update winner and PTG messages if in audience mode
-  if (audienceMode || isStandaloneAudienceView) {
+  if (isAudienceViewActive()) {
     if (audWinner) {
       if (centerMessage) {
         audWinner.textContent = centerMessage;
@@ -823,6 +823,11 @@ function shouldEndMatch() {
   return roundWins.red >= 2 || roundWins.blue >= 2;
 }
 
+function isAudienceViewActive() {
+  // Helper function to check if we're in audience mode (embedded or standalone)
+  return audienceMode || isStandaloneAudienceView;
+}
+
 function displayCenterMessage(message) {
   centerMessage = message || "";
   
@@ -835,7 +840,7 @@ function displayCenterMessage(message) {
   
   // Only update audience view elements if we're in audience mode
   // This prevents popups from appearing in the operator view
-  if (audienceMode || isStandaloneAudienceView) {
+  if (isAudienceViewActive()) {
     // Check if this is a PTG message
     const isPTG = message && (message.includes("PTG") || message.includes("Point Gap"));
     
@@ -873,14 +878,8 @@ function startRoundPause() {
 function displayRoundStatistics() {
   const roundNum = currentRound - 1;
   
-  // Update operator view status text
-  const status = document.getElementById("liveScoreStatus");
-  if (status) {
-    status.textContent = `Rond ${roundNum} statistik visas i publikvy`;
-  }
-  
   // Only display statistics in audience view (not in operator view)
-  if (audienceMode || isStandaloneAudienceView) {
+  if (isAudienceViewActive()) {
     // Display statistics in respective panels (handle both embedded and standalone views)
     const blueStatsBox = document.getElementById("audienceBlueStats") || document.getElementById("blueStats");
     const redStatsBox = document.getElementById("audienceRedStats") || document.getElementById("redStats");
@@ -909,6 +908,12 @@ function displayRoundStatistics() {
     
     if (blueStatsBox) blueStatsBox.classList.add("visible");
     if (redStatsBox) redStatsBox.classList.add("visible");
+  } else {
+    // Update operator view status text (only when NOT in audience mode)
+    const status = document.getElementById("liveScoreStatus");
+    if (status) {
+      status.textContent = `Rond ${roundNum} statistik visas i publikvy`;
+    }
   }
 }
 
@@ -1320,7 +1325,7 @@ if (("BroadcastChannel" in window) && !broadcastChannel) {
       if (data.centerMessage !== undefined) centerMessage = data.centerMessage;
       
       // Update display if we're in audience mode
-      if (audienceMode || isStandaloneAudienceView) {
+      if (isAudienceViewActive()) {
         updateLiveScoreDisplay();
       }
     }
