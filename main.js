@@ -628,7 +628,7 @@ function updateLiveScoreDisplay() {
   }
   const roundScore = document.getElementById("roundScore");
   if (roundScore) {
-    roundScore.textContent = `Ronder: ${liveScoreNames.red} ${roundWins.red} – ${roundWins.blue} ${liveScoreNames.blue}`;
+    roundScore.textContent = `Ronder: ${roundWins.blue} – ${roundWins.red}`;
   }
   const restStatus = document.getElementById("restStatus");
   if (restStatus) {
@@ -672,7 +672,7 @@ function updateLiveScoreDisplay() {
   if (audMatchTitle) audMatchTitle.textContent = getMatchTitle();
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
-  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
+  if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.blue} – ${roundWins.red}`;
   
   // Only update winner and PTG messages if in audience mode
   if (isAudienceViewActive()) {
@@ -1331,7 +1331,7 @@ function startNextRound() {
   lastAction = null;
   updateLiveScoreDisplay();
   broadcastLiveData();
-  startLiveTimer();
+  // Do NOT auto-start timer - operator must explicitly click "Starta klockan"
 }
 
 function openAudienceWindow() {
