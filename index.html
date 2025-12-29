@@ -320,6 +320,10 @@
         <label for="matchDurationInput">Rondtid (sek)</label>
         <input id="matchDurationInput" type="number" value="120" min="10" onchange="setMatchDuration()"/>
       </div>
+      <div>
+        <label for="restSeconds">Paustid (sek)</label>
+        <input id="restSeconds" type="number" value="30" min="10"/>
+      </div>
     </div>
 
     <div class="live-scoreboard">
@@ -363,14 +367,14 @@
       <button class="button btn-blue" onclick="awardScore('blue', 1)">+1 Blå<span class="button-label">👊 Slag</span></button>
       <button class="button btn-blue" onclick="awardScore('blue', 2)">+2 Blå<span class="button-label">🦺 Kropp</span></button>
       <button class="button btn-blue" onclick="awardScore('blue', 3)">+3 Blå<span class="button-label">🪖 Huvud</span></button>
-      <button class="button btn-blue" onclick="awardScore('blue', 4)">+4 Blå<span class="button-label">🪖 Avancerad</span></button>
+      <button class="button btn-blue" onclick="awardScore('blue', 4)">+4 Blå<span class="button-label">🌀 Snurr kropp</span></button>
       <button class="button btn-blue" onclick="awardScore('blue', 5)">+5 Blå<span class="button-label">🪖 Max</span></button>
       <button class="button btn-blue" onclick="awardPenalty('blue')">Gam-jeom (Blå)</button>
       <button class="button btn-red" onclick="awardPenalty('red')">Gam-jeom (Röd)</button>
       <button class="button btn-red" onclick="awardScore('red', 1)">+1 Röd<span class="button-label">👊 Slag</span></button>
       <button class="button btn-red" onclick="awardScore('red', 2)">+2 Röd<span class="button-label">🦺 Kropp</span></button>
       <button class="button btn-red" onclick="awardScore('red', 3)">+3 Röd<span class="button-label">🪖 Huvud</span></button>
-      <button class="button btn-red" onclick="awardScore('red', 4)">+4 Röd<span class="button-label">🪖 Avancerad</span></button>
+      <button class="button btn-red" onclick="awardScore('red', 4)">+4 Röd<span class="button-label">🌀 Snurr kropp</span></button>
       <button class="button btn-red" onclick="awardScore('red', 5)">+5 Röd<span class="button-label">🪖 Max</span></button>
     </div>
 
@@ -416,6 +420,10 @@
   </div>
 
   <div id="countdownOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;z-index:1000;background:black;color:orange;font-size:8rem;font-weight:bold;"></div>
+
+  <div id="centerMessageOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;align-items:center;justify-content:center;z-index:1000;background:rgba(0,0,0,0.9);flex-direction:column;padding:2rem;">
+    <div id="centerMessageText" style="color:#ffe600;font-size:3rem;font-weight:bold;text-align:center;max-width:80%;line-height:1.4;white-space:pre-line;"></div>
+  </div>
 
   <audio id="cheerSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
 

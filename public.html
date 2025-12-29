@@ -418,8 +418,10 @@
         document.getElementById('matchTitle').textContent = data.matchTitle;
       }
 
-      // Update winner display
-      if (data.matchEnded && data.roundWins) {
+      // Update center message / winner display
+      if (data.centerMessage !== undefined) {
+        document.getElementById('winnerDisplay').textContent = data.centerMessage || '';
+      } else if (data.matchEnded && data.roundWins) {
         if (data.roundWins.red > data.roundWins.blue) {
           const winner = data.liveScoreNames?.red || 'Röd';
           document.getElementById('winnerDisplay').textContent = `Vinnare: ${winner}`;
