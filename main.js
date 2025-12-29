@@ -670,15 +670,20 @@ function updateLiveScoreDisplay() {
   if (audRedPen) audRedPen.textContent = livePenalties.red;
   if (audBluePen) audBluePen.textContent = livePenalties.blue;
   if (audRoundScore) audRoundScore.textContent = `Ronder: ${roundWins.red} – ${roundWins.blue}`;
-  if (audWinner) {
-    if (centerMessage) {
-      audWinner.textContent = centerMessage;
-    } else if (matchEnded) {
-      audWinner.textContent = `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}`;
-    } else {
-      audWinner.textContent = "";
+  
+  // Only update winner and PTG messages if in audience mode
+  if (audienceMode || isStandaloneAudienceView) {
+    if (audWinner) {
+      if (centerMessage) {
+        audWinner.textContent = centerMessage;
+      } else if (matchEnded) {
+        audWinner.textContent = `Vinnare: ${roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue}`;
+      } else {
+        audWinner.textContent = "";
+      }
     }
   }
+  
   if (audRest) audRest.textContent = restTimeLeft > 0 ? `Paus: ${formatLiveTime(restTimeLeft)}` : "";
   
   // Update hit counters with icons
@@ -828,24 +833,28 @@ function displayCenterMessage(message) {
   const status = document.getElementById("liveScoreStatus");
   if (status && message) status.textContent = message;
   
-  // Check if this is a PTG message
-  const isPTG = message && (message.includes("PTG") || message.includes("Point Gap"));
-  
-  // Display PTG message in yellow box in audience view (both embedded and standalone)
-  const audPTGMessage = document.getElementById("audiencePTGMessage") || document.getElementById("ptgMessage");
-  if (audPTGMessage) {
-    if (isPTG) {
-      audPTGMessage.textContent = message;
-      audPTGMessage.classList.add("visible");
-    } else {
-      audPTGMessage.classList.remove("visible");
+  // Only update audience view elements if we're in audience mode
+  // This prevents popups from appearing in the operator view
+  if (audienceMode || isStandaloneAudienceView) {
+    // Check if this is a PTG message
+    const isPTG = message && (message.includes("PTG") || message.includes("Point Gap"));
+    
+    // Display PTG message in yellow box in audience view (both embedded and standalone)
+    const audPTGMessage = document.getElementById("audiencePTGMessage") || document.getElementById("ptgMessage");
+    if (audPTGMessage) {
+      if (isPTG) {
+        audPTGMessage.textContent = message;
+        audPTGMessage.classList.add("visible");
+      } else {
+        audPTGMessage.classList.remove("visible");
+      }
     }
-  }
-  
-  // Display regular messages in winner area (audience view only)
-  const audWinner = document.getElementById("audienceWinner");
-  if (audWinner && !isPTG) {
-    audWinner.textContent = message;
+    
+    // Display regular messages in winner area (audience view only)
+    const audWinner = document.getElementById("audienceWinner");
+    if (audWinner && !isPTG) {
+      audWinner.textContent = message;
+    }
   }
   
   // Broadcast the message
@@ -864,41 +873,42 @@ function startRoundPause() {
 function displayRoundStatistics() {
   const roundNum = currentRound - 1;
   
-  // Display statistics in respective panels (handle both embedded and standalone views)
-  const blueStatsBox = document.getElementById("audienceBlueStats") || document.getElementById("blueStats");
-  const redStatsBox = document.getElementById("audienceRedStats") || document.getElementById("redStats");
-  const blueStatsContent = document.getElementById("audienceBlueStatsContent") || document.getElementById("blueStatsContent");
-  const redStatsContent = document.getElementById("audienceRedStatsContent") || document.getElementById("redStatsContent");
-  
-  if (blueStatsContent) {
-    blueStatsContent.innerHTML = `
-      <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${liveScore.blue}</span></div>
-      <div class="stat-line"><span>Slag:</span><span>${lastRoundHits.blue.punch}</span></div>
-      <div class="stat-line"><span>Huvud:</span><span>${lastRoundHits.blue.head}</span></div>
-      <div class="stat-line"><span>Kropp:</span><span>${lastRoundHits.blue.body}</span></div>
-      <div class="stat-line"><span>Gam-jeom:</span><span>${livePenalties.blue}</span></div>
-    `;
-  }
-  
-  if (redStatsContent) {
-    redStatsContent.innerHTML = `
-      <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${liveScore.red}</span></div>
-      <div class="stat-line"><span>Slag:</span><span>${lastRoundHits.red.punch}</span></div>
-      <div class="stat-line"><span>Huvud:</span><span>${lastRoundHits.red.head}</span></div>
-      <div class="stat-line"><span>Kropp:</span><span>${lastRoundHits.red.body}</span></div>
-      <div class="stat-line"><span>Gam-jeom:</span><span>${livePenalties.red}</span></div>
-    `;
-  }
-  
-  if (blueStatsBox) blueStatsBox.classList.add("visible");
-  if (redStatsBox) redStatsBox.classList.add("visible");
-  
-  // DO NOT display overlay in operator view
-  // Statistics are shown in the audience view panels only
-  // Operator can see status in liveScoreStatus element
+  // Update operator view status text
   const status = document.getElementById("liveScoreStatus");
   if (status) {
     status.textContent = `Rond ${roundNum} statistik visas i publikvy`;
+  }
+  
+  // Only display statistics in audience view (not in operator view)
+  if (audienceMode || isStandaloneAudienceView) {
+    // Display statistics in respective panels (handle both embedded and standalone views)
+    const blueStatsBox = document.getElementById("audienceBlueStats") || document.getElementById("blueStats");
+    const redStatsBox = document.getElementById("audienceRedStats") || document.getElementById("redStats");
+    const blueStatsContent = document.getElementById("audienceBlueStatsContent") || document.getElementById("blueStatsContent");
+    const redStatsContent = document.getElementById("audienceRedStatsContent") || document.getElementById("redStatsContent");
+    
+    if (blueStatsContent) {
+      blueStatsContent.innerHTML = `
+        <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${liveScore.blue}</span></div>
+        <div class="stat-line"><span>Slag:</span><span>${lastRoundHits.blue.punch}</span></div>
+        <div class="stat-line"><span>Huvud:</span><span>${lastRoundHits.blue.head}</span></div>
+        <div class="stat-line"><span>Kropp:</span><span>${lastRoundHits.blue.body}</span></div>
+        <div class="stat-line"><span>Gam-jeom:</span><span>${livePenalties.blue}</span></div>
+      `;
+    }
+    
+    if (redStatsContent) {
+      redStatsContent.innerHTML = `
+        <div class="stat-line"><span>Rond ${roundNum} poäng:</span><span>${liveScore.red}</span></div>
+        <div class="stat-line"><span>Slag:</span><span>${lastRoundHits.red.punch}</span></div>
+        <div class="stat-line"><span>Huvud:</span><span>${lastRoundHits.red.head}</span></div>
+        <div class="stat-line"><span>Kropp:</span><span>${lastRoundHits.red.body}</span></div>
+        <div class="stat-line"><span>Gam-jeom:</span><span>${livePenalties.red}</span></div>
+      `;
+    }
+    
+    if (blueStatsBox) blueStatsBox.classList.add("visible");
+    if (redStatsBox) redStatsBox.classList.add("visible");
   }
 }
 
@@ -1093,13 +1103,16 @@ function showWinner() {
   const winner = roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue;
   const winnerMessage = `Matchen slut! Vinnare: ${winner}`;
   
-  // Display winner message in center overlay
+  // Display winner message (will only update audience elements if in audience mode)
   displayCenterMessage(winnerMessage);
   
+  // Update operator view status text
   const status = document.getElementById("liveScoreStatus");
   if (status) status.textContent = winnerMessage;
-  const audWinner = document.getElementById("audienceWinner");
-  if (audWinner) audWinner.textContent = `Vinnare: ${winner}`;
+  
+  // Winner announcement is already handled by displayCenterMessage
+  // No need to directly update audWinner here as it would bypass the audience mode check
+  
   matchEnded = true;
 }
 
