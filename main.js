@@ -696,6 +696,55 @@ function updateLiveScoreDisplay() {
   if (audBluePunch) audBluePunch.textContent = currentHits.blue.punch;
   if (audBlueHead) audBlueHead.textContent = currentHits.blue.head;
   if (audBlueBody) audBlueBody.textContent = currentHits.blue.body;
+  
+  // Update new operator view elements
+  const blueRoundWinsEl = document.getElementById("blueRoundWins");
+  const redRoundWinsEl = document.getElementById("redRoundWins");
+  if (blueRoundWinsEl) blueRoundWinsEl.textContent = roundWins.blue;
+  if (redRoundWinsEl) redRoundWinsEl.textContent = roundWins.red;
+  
+  const bluePunchCountEl = document.getElementById("bluePunchCount");
+  const blueBodyCountEl = document.getElementById("blueBodyCount");
+  const blueHeadCountEl = document.getElementById("blueHeadCount");
+  const redPunchCountEl = document.getElementById("redPunchCount");
+  const redBodyCountEl = document.getElementById("redBodyCount");
+  const redHeadCountEl = document.getElementById("redHeadCount");
+  
+  if (bluePunchCountEl) bluePunchCountEl.textContent = currentHits.blue.punch;
+  if (blueBodyCountEl) blueBodyCountEl.textContent = currentHits.blue.body;
+  if (blueHeadCountEl) blueHeadCountEl.textContent = currentHits.blue.head;
+  if (redPunchCountEl) redPunchCountEl.textContent = currentHits.red.punch;
+  if (redBodyCountEl) redBodyCountEl.textContent = currentHits.red.body;
+  if (redHeadCountEl) redHeadCountEl.textContent = currentHits.red.head;
+  
+  // Update round number display
+  const liveRoundNumberEl = document.getElementById("liveRoundNumber");
+  if (liveRoundNumberEl) liveRoundNumberEl.textContent = currentRound;
+  
+  // Update status message
+  const operatorStatus = document.getElementById("operatorStatus");
+  if (operatorStatus && centerMessage) {
+    operatorStatus.textContent = centerMessage;
+    operatorStatus.classList.add("visible");
+  } else if (operatorStatus) {
+    operatorStatus.classList.remove("visible");
+  }
+}
+
+// Toggle operator menu
+function toggleOperatorMenu() {
+  const menu = document.getElementById("operatorMenu");
+  if (menu) {
+    if (menu.style.display === "none" || !menu.classList.contains("open")) {
+      menu.style.display = "block";
+      menu.classList.add("open");
+    } else {
+      menu.classList.remove("open");
+      setTimeout(() => {
+        menu.style.display = "none";
+      }, 300);
+    }
+  }
 }
 
 function addScore(side, value) {
