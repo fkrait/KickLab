@@ -802,10 +802,10 @@ function endRoundByPointGap(leader) {
   const leaderName = liveScoreNames[leader];
   
   roundWins[leader] += 1;
-  roundEndReason = `PTG (Point Gap) - ${leaderName} vinner ronden`;
+  roundEndReason = `PTG - ${leaderName} vinner ronden`;
   
   // Display center message
-  displayCenterMessage(`PTG (Point Gap) - ${leaderName} vinner ronden`);
+  displayCenterMessage(`PTG - ${leaderName} vinner ronden`);
   
   // Save hit statistics per round
   lastRoundHits = JSON.parse(JSON.stringify(currentHits));
@@ -853,7 +853,7 @@ function displayCenterMessage(message) {
   // This prevents popups from appearing in the operator view
   if (isAudienceViewActive()) {
     // Check if this is a PTG message
-    const isPTG = message && (message.includes("PTG") || message.includes("Point Gap"));
+    const isPTG = message && (message.includes("PTG") || message.includes());
     
     // Display PTG message in yellow box in audience view (both embedded and standalone)
     const audPTGMessage = document.getElementById("audiencePTGMessage") || document.getElementById("ptgMessage");
