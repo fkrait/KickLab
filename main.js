@@ -761,6 +761,7 @@ function endRoundByGamJeom(loserSide) {
   
   // Save hit statistics per round
   lastRoundHits = JSON.parse(JSON.stringify(currentHits));
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
   
   // Check if match should end (best of 3)
   if (shouldEndMatch()) {
@@ -792,6 +793,7 @@ function endRoundByPointGap(leader) {
   
   // Save hit statistics per round
   lastRoundHits = JSON.parse(JSON.stringify(currentHits));
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
   
   // Check if match should end (best of 3)
   if (shouldEndMatch()) {
@@ -1025,6 +1027,7 @@ function checkRoundEnd() {
   
   // Spara träffstatistik per rond
   lastRoundHits = JSON.parse(JSON.stringify(currentHits));
+  currentHits = { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } };
 
   // Check if match should end (best of 3)
   if (shouldEndMatch()) {
@@ -1047,8 +1050,13 @@ function checkRoundEnd() {
 function showWinner() {
   pauseLiveTimer();
   const winner = roundWins.red > roundWins.blue ? liveScoreNames.red : liveScoreNames.blue;
+  const winnerMessage = `Matchen slut! Vinnare: ${winner}`;
+  
+  // Display winner message in center overlay
+  displayCenterMessage(winnerMessage);
+  
   const status = document.getElementById("liveScoreStatus");
-  if (status) status.textContent = `Matchen slut! Vinnare: ${winner}`;
+  if (status) status.textContent = winnerMessage;
   const audWinner = document.getElementById("audienceWinner");
   if (audWinner) audWinner.textContent = `Vinnare: ${winner}`;
   matchEnded = true;
