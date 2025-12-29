@@ -687,10 +687,10 @@ function addScore(side, value) {
   lastAction = { type: "score", side, value };
   
   // Map score values to hit types based on Taekwondo scoring rules
-  // 1 point = punch or body kick (we'll count as punch for +1)
+  // 1 point = punch
   // 2 points = body kick (vest)
   // 3 points = head kick
-  // 4+ points = advanced/spinning techniques (counted as head for simplicity)
+  // 4+ points = advanced/spinning head techniques
   if (value === 1) {
     currentHits[side].punch += 1;
   } else if (value === 2) {
