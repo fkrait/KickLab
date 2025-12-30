@@ -150,15 +150,23 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #fff;
       background: linear-gradient(90deg, #00dddd, #ff8008);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      color: transparent;
       margin: 0;
       margin-top: auto;
       padding-top: 1rem;
       text-align: center;
+    }
+    
+    /* Fallback for browsers that don't support background-clip */
+    @supports not (background-clip: text) {
+      .tile-title {
+        color: #00dddd;
+        background: none;
+      }
     }
 
     /* Background images for tiles with fallback gradients */
