@@ -919,6 +919,138 @@
         font-size: 1rem;
       }
     }
+
+    /* ========== REACTION TEST STYLES ========== */
+    .reaction-test-container {
+      background: rgba(0,0,0,0.85);
+      border: 2px solid rgba(0, 220, 220, 0.6);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 0 30px rgba(0, 220, 220, 0.2);
+    }
+
+    .reaction-title {
+      font-size: 2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #00dddd, #ff8008);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .time-display {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 4px solid rgba(0, 220, 220, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 2rem auto;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: 0 0 30px rgba(0, 220, 220, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .time-display.hit {
+      border-color: #ff8008;
+      box-shadow: 0 0 50px rgba(255, 128, 8, 0.6);
+    }
+
+    .volume-meter {
+      width: 100%;
+      height: 20px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 1rem 0;
+      border: 1px solid rgba(0, 220, 220, 0.3);
+    }
+
+    .volume-meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00dddd, #ff8008);
+      border-radius: 10px;
+      transition: width 0.05s ease;
+      width: 0%;
+    }
+
+    .status-text {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #00dddd;
+      margin: 1rem 0;
+      font-weight: 600;
+      min-height: 1.5rem;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      margin: 1.5rem 0;
+      color: #fff;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #00dddd;
+    }
+
+    .reaction-btn {
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 30px;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255, 128, 8, 0.3);
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .reaction-btn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 25px rgba(255, 128, 8, 0.5);
+    }
+
+    .reaction-btn:active {
+      transform: scale(0.98);
+    }
+
+    .back-link {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      margin-top: 2rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .back-link:hover {
+      color: #00dddd;
+    }
   </style>
 </head>
 <body>
@@ -971,16 +1103,68 @@
     }
   </script>
 
+  <!-- Reaction test intro page -->
+  <div id="testIntroPage" class="page-container" style="display:none;">
+    <div class="reaction-test-container">
+      <h2 class="reaction-title">REAKTIONSTEST</h2>
+      <div style="text-align: left; margin: 2rem 0; color: #fff;">
+        <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem;">Testa din reaktionsförmåga!</p>
+        <ol style="font-size: 1rem; line-height: 2; padding-left: 1.5rem;">
+          <li>Gör dig redo vid spaden</li>
+          <li>Vänta på signalen</li>
+          <li>Sparka så snabbt du kan</li>
+        </ol>
+        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: rgba(255,255,255,0.8);">
+          Appen lyssnar efter ljudet från din träff och mäter din reaktionstid.
+        </p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+        <button class="reaction-btn" onclick="showReactionTestPage()">STARTA →</button>
+        <a class="back-link" onclick="showStartPage()">← Tillbaka</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Reaction test page -->
   <div id="testPage" class="page-container" style="display:none;">
-    <h2>Reaktionstest</h2>
-    <p id="command"></p><p id="status"></p><p id="result"></p>
-    <div id="history"></div><div id="highscore"></div>
-    <div class="button-group">
-      <button class="button" onclick="startTest()">Starta test</button>
-      <button class="button" onclick="stopTest()">Stoppa test</button>
-      <button class="button" onclick="resetStats()">Nollställ statistik</button>
-      <button class="button" onclick="showStartPage()">Tillbaka</button>
+    <div class="reaction-test-container">
+      <h2 class="reaction-title">REAKTIONSTEST</h2>
+      
+      <!-- Time display -->
+      <div class="time-display" id="timeDisplay">
+        <span id="timeValue">0.000</span>
+      </div>
+      
+      <!-- Status text -->
+      <div class="status-text" id="statusText">Väntar på start...</div>
+      
+      <!-- VU meter -->
+      <div style="margin: 1.5rem 0;">
+        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">Ljudnivå</div>
+        <div class="volume-meter">
+          <div class="volume-meter-fill" id="volumeMeterFill"></div>
+        </div>
+      </div>
+      
+      <!-- Statistics -->
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">Bästa tid</div>
+          <div class="stat-value" id="bestTimeDisplay">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Medeltid</div>
+          <div class="stat-value" id="avgTimeDisplay">-</div>
+        </div>
+      </div>
+      
+      <!-- Buttons -->
+      <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button class="reaction-btn" onclick="startReactionTest()" id="startBtn">STARTA</button>
+        <button class="reaction-btn" onclick="stopReactionTest()" id="stopBtn" style="opacity: 0.5;">STOPPA</button>
+      </div>
+      
+      <a class="back-link" onclick="showTestIntroPage()">← Tillbaka</a>
     </div>
   </div>
 
