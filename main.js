@@ -1775,6 +1775,7 @@ function updateMatchTitle() {
 
 /* ---------- Sparring träningslogik ---------- */
 // Old sparring training logic - kept for compatibility
+// TODO: Consider deprecating this old implementation in favor of the new Spark träning feature
 let sparringInterval = null;
 let sparringTimeout = null;
 const sparringCommands = ["Höger rak", "Vänster krok", "Front kick", "Roundhouse", "Blockera", "Kontring", "Låg spark", "Hög spark", "Sidosteg höger", "Sidosteg vänster"];
@@ -1805,7 +1806,8 @@ function speak(text) {
 }
 
 /* ---------- Kick Training (Spark träning) ---------- */
-// Kick definitions with Swedish and Korean names
+// Technique definitions with Swedish and Korean names
+// Includes both kicks and punches (Slag/Jirugi)
 const kicks = [
   { swedish: "Framspark", korean: "Ap Chagi" },
   { swedish: "Sidospark", korean: "Yop Chagi" },
