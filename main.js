@@ -113,6 +113,11 @@ function showTestIntroPage() {
   pauseLiveTimer();
 }
 
+// Alias for compatibility with HTML onclick
+function showTestPage() {
+  showTestIntroPage();
+}
+
 function showReactionTestPage() {
   document.getElementById("testIntroPage").style.display = "none";
   document.getElementById("testPage").style.display = "block";
