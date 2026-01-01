@@ -1931,21 +1931,12 @@ function stopCompetitionInternal() {
 
 /* ---------- Live sparring score ---------- */
 function showLiveScorePage() {
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "none";
-  document.getElementById("sparringPage").style.display = "none";
-  const compSetup = document.getElementById("competitionSetupPage");
-  const compRun = document.getElementById("competitionRunPage");
-  const compRound = document.getElementById("competitionRoundPage");
-  if (compSetup) compSetup.style.display = "none";
-  if (compRun) compRun.style.display = "none";
-  if (compRound) compRound.style.display = "none";
+  hideAllPages();
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "block";
-  stopTest();
-  stopKickTest();
-  stopSparringTraining();
+  
+  stopAllTests();
+  
   matchEnded = false;
   restTimeLeft = 0;
   setMatchDuration();
