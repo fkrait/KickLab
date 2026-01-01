@@ -935,7 +935,6 @@ let calibrationAnimationId = null;
 
 // Timer-variabler
 let competitionTimerInterval = null;
-let competitionStartTime = 0;
 
 // Competition kicks data
 const competitionKicks = [
