@@ -1038,6 +1038,31 @@
       transform: scale(0.98);
     }
 
+    /* Nollställ-knappen - mer synlig med orange gradient */
+    .reset-stats-btn {
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 30px;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255, 128, 8, 0.3);
+      margin-top: 0.5rem;
+    }
+
+    .reset-stats-btn:hover {
+      background: linear-gradient(90deg, #ffc837, #ff8008);
+      box-shadow: 0 0 25px rgba(255, 128, 8, 0.5);
+      transform: scale(1.03);
+    }
+
+    .reset-stats-btn:active {
+      transform: scale(0.98);
+    }
+
     .back-link {
       color: rgba(255,255,255,0.7);
       text-decoration: none;
@@ -1164,7 +1189,7 @@
           <button class="reaction-btn" onclick="startReactionTest()" id="startBtn">STARTA</button>
           <button class="reaction-btn" onclick="stopReactionTest()" id="stopBtn" style="opacity: 0.5;">STOPPA</button>
         </div>
-        <button class="reaction-btn" onclick="resetReactionStats()" style="background: linear-gradient(90deg, rgba(255,128,8,0.3), rgba(255,200,55,0.3)); font-size: 0.9rem;">Nollställ statistik</button>
+        <button class="reaction-btn reset-stats-btn" onclick="resetReactionStats()">Nollställ statistik</button>
       </div>
       
       <a class="back-link" onclick="showTestIntroPage()">← Tillbaka</a>
