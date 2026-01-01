@@ -47,7 +47,21 @@ function showStartPage() {
   document.getElementById("startPage").style.display = "block";
   document.getElementById("testIntroPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "none";
+  
+  // Hide old kick counter page (kept for compatibility)
+  const oldKickPage = document.getElementById("kickCounterPage");
+  if (oldKickPage) oldKickPage.style.display = "none";
+  
+  // Hide new kick counter pages
+  const kickIntro = document.getElementById("kickCounterIntroPage");
+  const kickCalib = document.getElementById("kickCalibrationPage");
+  const kickTime = document.getElementById("kickTimeSelectionPage");
+  const kickTest = document.getElementById("kickTestPage");
+  if (kickIntro) kickIntro.style.display = "none";
+  if (kickCalib) kickCalib.style.display = "none";
+  if (kickTime) kickTime.style.display = "none";
+  if (kickTest) kickTest.style.display = "none";
+  
   document.getElementById("sparringPage").style.display = "none";
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
@@ -448,168 +462,421 @@ function resetStats() {
   resetReactionStats();
 }
 
-/* ---------- Sparkräknare ---------- */
-let kickAudioCtx, kickMediaStream, kickMediaStreamSource, kickAnalyser, kickDataArray, kickAnimationId;
-let kickTestActive = false;
+/* ---------- Sparkräknare (Improved with Calibration) ---------- */
+let kickAudioContext, kickAnalyser, kickMicrophone, kickDataArray;
+let kickMediaStream = null; // Store stream for proper cleanup
+let kickCalibrationThreshold = 50;
 let kickCount = 0;
-let kickRecentResults = JSON.parse(localStorage.getItem("kickRecentResults")) || [];
-let bestKickCount = parseInt(localStorage.getItem("bestKickCount")) || 0;
+let kickCanRegisterKick = true;
+const KICK_COOLDOWN = 250; // ms between kicks
+let kickTestActive = false;
 let kickTestDuration = 15;
 let kickTimeRemaining = kickTestDuration;
 let kickTestInterval = null;
+let kickAnimationId = null;
+let kickCooldownTimer = null;
+let kickRecentResults = JSON.parse(localStorage.getItem("kickRecentResults")) || [];
+let bestKickCount = parseInt(localStorage.getItem("bestKickCount")) || 0;
+let kickSelectedTime = 15;
+let kickCalibrating = false;
 
+// Show intro page
 function showKickCounterPage() {
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "block";
-  const liveScorePage = document.getElementById("liveScorePage");
-  if (liveScorePage) liveScorePage.style.display = "none";
+  hideAllPages();
+  document.getElementById("kickCounterIntroPage").style.display = "block";
   stopReactionTest();
   pauseLiveTimer();
+}
+
+// Show calibration page
+function showKickCalibrationPage() {
+  hideAllPages();
+  document.getElementById("kickCalibrationPage").style.display = "block";
+  // Reset calibration status
+  const statusEl = document.getElementById("calibrationStatus");
+  const thresholdEl = document.getElementById("calibrationThreshold");
+  const calibrateBtn = document.getElementById("calibrateBtn");
+  if (statusEl) statusEl.textContent = "VÄNTAR...";
+  if (thresholdEl) thresholdEl.textContent = "";
+  if (calibrateBtn) {
+    calibrateBtn.disabled = false;
+    calibrateBtn.style.opacity = "1";
+  }
+}
+
+// Show time selection page
+function showKickTimeSelectionPage() {
+  hideAllPages();
+  document.getElementById("kickTimeSelectionPage").style.display = "block";
+  // Display threshold
+  const displayThreshold = document.getElementById("displayThreshold");
+  if (displayThreshold) {
+    displayThreshold.textContent = kickCalibrationThreshold.toFixed(1);
+  }
+  // Select default time (15s)
+  selectKickTime(kickSelectedTime);
+}
+
+// Show test page
+function showKickTestPage() {
+  hideAllPages();
+  document.getElementById("kickTestPage").style.display = "block";
+  // Load stats
   loadKickStats();
 }
 
-function updateTestDuration() {
-  const val = parseInt(document.getElementById("testDuration").value, 10);
-  if (!isNaN(val) && val > 0) {
-    kickTestDuration = val;
-    kickTimeRemaining = val;
-    document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
+// Show intro page from other pages
+function showKickCounterIntroPage() {
+  hideAllPages();
+  document.getElementById("kickCounterIntroPage").style.display = "block";
+}
+
+// Hide all kick counter pages
+function hideAllPages() {
+  document.getElementById("startPage").style.display = "none";
+  document.getElementById("testIntroPage").style.display = "none";
+  document.getElementById("testPage").style.display = "none";
+  document.getElementById("kickCounterIntroPage").style.display = "none";
+  document.getElementById("kickCalibrationPage").style.display = "none";
+  document.getElementById("kickTimeSelectionPage").style.display = "none";
+  document.getElementById("kickTestPage").style.display = "none";
+  const liveScorePage = document.getElementById("liveScorePage");
+  if (liveScorePage) liveScorePage.style.display = "none";
+}
+
+// Initialize audio for kick detection
+async function initKickAudio() {
+  // Clean up existing audio context if it exists
+  if (kickAudioContext && kickAudioContext.state !== 'closed') {
+    await kickAudioContext.close();
+  }
+  
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  kickMediaStream = stream; // Store for cleanup
+  kickAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  kickAnalyser = kickAudioContext.createAnalyser();
+  kickMicrophone = kickAudioContext.createMediaStreamSource(stream);
+  kickMicrophone.connect(kickAnalyser);
+  kickAnalyser.fftSize = 256;
+  const bufferLength = kickAnalyser.frequencyBinCount;
+  kickDataArray = new Uint8Array(bufferLength);
+}
+
+// Get current audio volume
+function getCurrentKickVolume() {
+  if (!kickAnalyser || !kickDataArray) return 0;
+  
+  kickAnalyser.getByteTimeDomainData(kickDataArray);
+  
+  let sum = 0;
+  for (let i = 0; i < kickDataArray.length; i++) {
+    sum += Math.abs(kickDataArray[i] - 128);
+  }
+  return sum / kickDataArray.length;
+}
+
+// Update volume meter
+function updateKickVolumeMeter(volume, elementId) {
+  const fillElement = document.getElementById(elementId);
+  if (fillElement) {
+    // Scale volume to percentage (0-100)
+    const percentage = Math.min((volume / kickCalibrationThreshold) * 50, 100);
+    fillElement.style.width = percentage + "%";
   }
 }
 
-function startKickTest() {
+// Start calibration
+async function startCalibration() {
+  const statusEl = document.getElementById("calibrationStatus");
+  const thresholdEl = document.getElementById("calibrationThreshold");
+  const calibrateBtn = document.getElementById("calibrateBtn");
+  
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    document.getElementById("kickStatus").textContent = "Mikrofon krävs för testet.";
+    if (statusEl) statusEl.textContent = "Mikrofon krävs för testet.";
     return;
   }
+  
+  try {
+    kickCalibrating = true;
+    if (calibrateBtn) {
+      calibrateBtn.disabled = true;
+      calibrateBtn.style.opacity = "0.5";
+    }
+    
+    if (statusEl) statusEl.textContent = "Sparka EN gång...";
+    if (thresholdEl) thresholdEl.textContent = "";
+    
+    // Initialize audio
+    await initKickAudio();
+    
+    let maxVolume = 0;
+    const startTime = Date.now();
+    
+    // Listen for 3 seconds to find max volume
+    while (Date.now() - startTime < 3000) {
+      const volume = getCurrentKickVolume();
+      updateKickVolumeMeter(volume, "calibrationVolumeMeter");
+      if (volume > maxVolume) {
+        maxVolume = volume;
+      }
+      await sleep(50);
+    }
+    
+    // Set threshold to 70% of calibration kick
+    kickCalibrationThreshold = Math.max(maxVolume * 0.7, 30); // Minimum threshold of 30
+    
+    // Show completion
+    if (statusEl) statusEl.textContent = "✓ Kalibrerad!";
+    if (thresholdEl) {
+      thresholdEl.textContent = `Tröskel: ${kickCalibrationThreshold.toFixed(1)}`;
+    }
+    
+    // Clean up audio
+    await cleanupKickAudio();
+    
+    kickCalibrating = false;
+    
+    // Auto-advance to time selection after 1 second
+    setTimeout(() => {
+      showKickTimeSelectionPage();
+    }, 1000);
+    
+  } catch (error) {
+    if (statusEl) statusEl.textContent = "Mikrofon behövs för kalibrering.";
+    kickCalibrating = false;
+    if (calibrateBtn) {
+      calibrateBtn.disabled = false;
+      calibrateBtn.style.opacity = "1";
+    }
+  }
+}
+
+// Select time for kick test
+function selectKickTime(seconds) {
+  kickSelectedTime = seconds;
+  kickTestDuration = seconds;
+  
+  // Update button states
+  const buttons = ['time15', 'time30', 'time60'];
+  buttons.forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.classList.remove('selected');
+    }
+  });
+  
+  const selectedBtn = document.getElementById(`time${seconds}`);
+  if (selectedBtn) {
+    selectedBtn.classList.add('selected');
+  }
+}
+
+// Start countdown before kick test
+async function startKickCountdown() {
+  showKickTestPage();
+  
+  // Reset display
   kickCount = 0;
   kickTimeRemaining = kickTestDuration;
-  document.getElementById("kickCount").textContent = `${kickCount} sparkar`;
-  document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
-  document.getElementById("kickStatus").textContent = "Lyssnar efter sparkar...";
-  kickTestActive = true;
-
-  if (!kickAudioCtx) kickAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    kickMediaStream = stream;
-    kickMediaStreamSource = kickAudioCtx.createMediaStreamSource(stream);
-    kickAnalyser = kickAudioCtx.createAnalyser();
-    kickAnalyser.fftSize = 2048;
-    const bufferLength = kickAnalyser.frequencyBinCount;
-    kickDataArray = new Uint8Array(bufferLength);
-    kickMediaStreamSource.connect(kickAnalyser);
-    listenForKickImpact();
-
-    // Starta timer
-    kickTestInterval = setInterval(() => {
-      kickTimeRemaining--;
-      if (kickTimeRemaining <= 0) {
-        endKickTest();
-      } else {
-        document.getElementById("kickTimer").textContent = `${kickTimeRemaining} sekunder`;
-      }
-    }, 1000);
-  }).catch(() => {
-    document.getElementById("kickStatus").textContent = "Mikrofon behövs för sparkräknaren.";
-    kickTestActive = false;
-  });
-}
-
-function listenForKickImpact() {
-  function checkKickVolume() {
-    if (!kickTestActive) return;
-    kickAnalyser.getByteTimeDomainData(kickDataArray);
-    let max = 0;
-    for (let i = 0; i < kickDataArray.length; i++) {
-      const value = Math.abs(kickDataArray[i] - 128);
-      if (value > max) max = value;
-    }
-    if (max > 40) {
-      kickCount++;
-      document.getElementById("kickCount").textContent = `${kickCount} sparkar`;
-    }
-    kickAnimationId = requestAnimationFrame(checkKickVolume);
+  const countDisplay = document.getElementById("kickCountDisplay");
+  const timerDisplay = document.getElementById("kickTimerDisplay");
+  
+  if (countDisplay) countDisplay.textContent = "0";
+  if (timerDisplay) timerDisplay.textContent = kickTestDuration.toString();
+  
+  try {
+    // Initialize audio
+    await initKickAudio();
+    
+    // Countdown: 3... 2... 1... GÅ!
+    if (countDisplay) countDisplay.textContent = "3";
+    playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+    await sleep(1000);
+    
+    if (countDisplay) countDisplay.textContent = "2";
+    playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+    await sleep(1000);
+    
+    if (countDisplay) countDisplay.textContent = "1";
+    playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+    await sleep(1000);
+    
+    if (countDisplay) countDisplay.textContent = "GÅ!";
+    playBeep(GO_FREQUENCY, GO_DURATION);
+    await sleep(500);
+    
+    // Reset count and start test
+    kickCount = 0;
+    if (countDisplay) countDisplay.textContent = "0";
+    
+    startActualKickTest();
+    
+  } catch (error) {
+    if (countDisplay) countDisplay.textContent = "Mikrofon krävs";
   }
-  checkKickVolume();
 }
 
-function endKickTest() {
-  kickTestActive = false;
-  clearInterval(kickTestInterval);
-  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
-  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
-
-  playEndBeep();
-
-  document.getElementById("kickStatus").textContent = `Test slutfört! ${kickCount} sparkar på ${kickTestDuration} sekunder`;
-  document.getElementById("kickTimer").textContent = "0 sekunder";
-
-  saveKickResult(kickCount);
+// Start the actual kick test
+function startActualKickTest() {
+  kickTestActive = true;
+  kickCanRegisterKick = true;
+  kickTimeRemaining = kickTestDuration;
+  
+  // Start kick detection
+  checkForKick();
+  
+  // Start timer countdown
+  kickTestInterval = setInterval(() => {
+    kickTimeRemaining--;
+    const timerDisplay = document.getElementById("kickTimerDisplay");
+    if (timerDisplay) {
+      timerDisplay.textContent = kickTimeRemaining.toString();
+    }
+    
+    if (kickTimeRemaining <= 0) {
+      endKickTest();
+    }
+  }, 1000);
 }
 
-// Ny funktion: stoppa kicktestet utan slutsignal.
-function stopKickTest() {
+// Check for kicks
+function checkForKick() {
   if (!kickTestActive) return;
+  
+  const volume = getCurrentKickVolume();
+  updateKickVolumeMeter(volume, "kickTestVolumeMeter");
+  
+  if (volume > kickCalibrationThreshold && kickCanRegisterKick) {
+    kickCount++;
+    const countDisplay = document.getElementById("kickCountDisplay");
+    if (countDisplay) countDisplay.textContent = kickCount.toString();
+    
+    kickCanRegisterKick = false;
+    kickCooldownTimer = setTimeout(() => {
+      kickCanRegisterKick = true;
+    }, KICK_COOLDOWN);
+  }
+  
+  if (kickTestActive) {
+    kickAnimationId = requestAnimationFrame(checkForKick);
+  }
+}
+
+// End kick test
+async function endKickTest() {
   kickTestActive = false;
   clearInterval(kickTestInterval);
-  if (kickAnimationId) cancelAnimationFrame(kickAnimationId);
-  if (kickMediaStream) kickMediaStream.getTracks().forEach((track) => track.stop());
-  // Avbryt mikrofon och uppdatera status utan att spela slutsignalen
-  document.getElementById("kickStatus").textContent = `Test stoppat! ${kickCount} sparkar på ${kickTestDuration - kickTimeRemaining} sekunder`;
-  document.getElementById("kickTimer").textContent = "0 sekunder";
+  if (kickAnimationId) {
+    cancelAnimationFrame(kickAnimationId);
+    kickAnimationId = null;
+  }
+  if (kickCooldownTimer) {
+    clearTimeout(kickCooldownTimer);
+    kickCooldownTimer = null;
+  }
+  
+  // Clean up audio
+  await cleanupKickAudio();
+  
+  // Play end beep
+  playEndBeep();
+  
+  // Save result
+  saveKickResult(kickCount);
+  
+  // Show final count for a moment
+  const countDisplay = document.getElementById("kickCountDisplay");
+  if (countDisplay) {
+    countDisplay.textContent = kickCount.toString();
+  }
+}
+
+// Stop kick test manually
+async function stopKickTest() {
+  if (!kickTestActive) return;
+  
+  kickTestActive = false;
+  clearInterval(kickTestInterval);
+  if (kickAnimationId) {
+    cancelAnimationFrame(kickAnimationId);
+    kickAnimationId = null;
+  }
+  if (kickCooldownTimer) {
+    clearTimeout(kickCooldownTimer);
+    kickCooldownTimer = null;
+  }
+  
+  // Clean up audio
+  await cleanupKickAudio();
+  
+  // Save result
   saveKickResult(kickCount);
 }
 
+// Clean up audio resources
+async function cleanupKickAudio() {
+  // Stop media stream
+  if (kickMediaStream) {
+    kickMediaStream.getTracks().forEach(track => track.stop());
+    kickMediaStream = null;
+  }
+  
+  // Close audio context
+  if (kickAudioContext && kickAudioContext.state !== 'closed') {
+    try {
+      await kickAudioContext.close();
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
+    kickAudioContext = null;
+  }
+}
+
+// Save kick result
 function saveKickResult(count) {
   kickRecentResults.unshift(count);
   if (kickRecentResults.length > 5) kickRecentResults.pop();
   localStorage.setItem("kickRecentResults", JSON.stringify(kickRecentResults));
-  let historyText = " Senaste resultat ";
-  for (let c of kickRecentResults) {
-    historyText += ` ${c} sparkar `;
-  }
-  historyText += " ";
-  if (kickRecentResults.length > 0) {
-    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
-    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
-  }
-  document.getElementById("kickHistory").innerHTML = historyText;
+  
   if (count > bestKickCount) {
     bestKickCount = count;
     localStorage.setItem("bestKickCount", bestKickCount);
-    document.getElementById("kickHighscore").innerHTML = ` 🎉 Nytt rekord! ${bestKickCount} sparkar! 🎉 `;
-    document.getElementById("cheerSound").play();
-  } else {
-    document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
+    const cheerSound = document.getElementById("cheerSound");
+    if (cheerSound) cheerSound.play().catch(() => {});
+  }
+  
+  loadKickStats();
+}
+
+// Load kick statistics
+function loadKickStats() {
+  const bestDisplay = document.getElementById("kickBestDisplay");
+  const avgDisplay = document.getElementById("kickAvgDisplay");
+  
+  if (bestDisplay) {
+    bestDisplay.textContent = bestKickCount > 0 ? bestKickCount.toString() : "-";
+  }
+  
+  if (avgDisplay && kickRecentResults.length > 0) {
+    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
+    avgDisplay.textContent = avg.toFixed(1);
+  } else if (avgDisplay) {
+    avgDisplay.textContent = "-";
   }
 }
 
+// Reset kick statistics
 function resetKickStats() {
   localStorage.removeItem("kickRecentResults");
   localStorage.removeItem("bestKickCount");
   kickRecentResults = [];
   bestKickCount = 0;
-  document.getElementById("kickHistory").innerHTML = "";
-  document.getElementById("kickHighscore").innerHTML = "";
-  document.getElementById("kickCount").textContent = "0 sparkar";
-  document.getElementById("kickTimer").textContent = `${kickTestDuration} sekunder`;
-  document.getElementById("kickStatus").textContent = "Statistik nollställd.";
-}
-
-function loadKickStats() {
-  if (kickRecentResults.length > 0) {
-    let historyText = " Senaste resultat ";
-    for (let c of kickRecentResults) {
-      historyText += ` ${c} sparkar `;
-    }
-    historyText += " ";
-    const avg = kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length;
-    historyText += ` Snitt: ${avg.toFixed(1)} sparkar `;
-    document.getElementById("kickHistory").innerHTML = historyText;
-  }
-  document.getElementById("kickHighscore").innerHTML = ` Bästa resultat ${bestKickCount} sparkar `;
+  
+  loadKickStats();
+  
+  // Reset displays
+  const countDisplay = document.getElementById("kickCountDisplay");
+  if (countDisplay) countDisplay.textContent = "0";
 }
 
 /* ---------- Tävlingsläge (reaktionstid) ---------- */
@@ -1632,8 +1899,9 @@ const urlParams = new URLSearchParams(window.location.search);
 const isStandaloneAudienceView = urlParams.get('audienceView') === 'true';
 
 // Page IDs for managing visibility in standalone audience view
-const NON_AUDIENCE_PAGES = ['startPage', 'testPage', 'kickCounterPage', 'sparringPage', 
-                            'liveScorePage', 'competitionSetupPage', 'competitionRunPage', 
+const NON_AUDIENCE_PAGES = ['startPage', 'testPage', 'testIntroPage', 'kickCounterPage', 
+                            'kickCounterIntroPage', 'kickCalibrationPage', 'kickTimeSelectionPage', 'kickTestPage',
+                            'sparringPage', 'liveScorePage', 'competitionSetupPage', 'competitionRunPage', 
                             'competitionRoundPage'];
 
 // Initialize BroadcastChannel for live synchronization

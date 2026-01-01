@@ -1106,6 +1106,174 @@
     .back-link:hover {
       color: #00dddd;
     }
+
+    /* ========== KICK COUNTER STYLES ========== */
+    .kick-counter-container {
+      background: rgba(0,0,0,0.85);
+      border: 2px solid rgba(0, 220, 220, 0.6);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 0 30px rgba(0, 220, 220, 0.2);
+    }
+
+    .kick-title {
+      font-size: 2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #00dddd, #ff8008);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    /* Fallback for browsers that don't support background-clip */
+    @supports not (background-clip: text) {
+      .kick-title {
+        color: #00dddd;
+        background: none;
+      }
+    }
+
+    .kick-display {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 4px solid rgba(0, 220, 220, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 2rem auto;
+      box-shadow: 0 0 30px rgba(0, 220, 220, 0.3);
+    }
+
+    .kick-count {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .kick-label {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.7);
+      margin-top: 0.5rem;
+    }
+
+    .time-select {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .time-btn {
+      background: transparent;
+      border: 2px solid rgba(0, 220, 220, 0.6);
+      color: #00dddd;
+      padding: 0.8rem 1.5rem;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .time-btn.selected,
+    .time-btn:hover {
+      background: rgba(0, 220, 220, 0.2);
+      border-color: #00dddd;
+      box-shadow: 0 0 15px rgba(0, 220, 220, 0.4);
+    }
+
+    .timer-display {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #00dddd;
+      text-align: center;
+      margin: 1rem 0;
+    }
+
+    .kick-btn {
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 30px;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255, 128, 8, 0.3);
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .kick-btn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 25px rgba(255, 128, 8, 0.5);
+    }
+
+    .kick-btn:active {
+      transform: scale(0.98);
+    }
+
+    .reset-btn {
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 30px;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .reset-btn:hover {
+      background: linear-gradient(90deg, #ffc837, #ff8008);
+      box-shadow: 0 0 25px rgba(255, 128, 8, 0.5);
+      transform: scale(1.03);
+    }
+
+    .reset-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Mobile styles for kick counter */
+    @media (max-width: 600px) {
+      .kick-counter-container {
+        max-width: 95vw;
+        padding: 1.5rem;
+      }
+
+      .kick-title {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .kick-display {
+        width: 180px;
+        height: 180px;
+      }
+
+      .kick-count {
+        font-size: 3.5rem;
+      }
+
+      .time-select {
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+
+      .time-btn {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1226,19 +1394,129 @@
     </div>
   </div>
 
-  <!-- Kick Counter page -->
-  <div id="kickCounterPage" class="page-container" style="display:none;">
-    <h2>Sparkräknare</h2>
-    <label for="testDuration">Varaktighet (sek):</label>
-    <input id="testDuration" type="number" value="15" min="1" onchange="updateTestDuration()"/>
-    <p id="kickCount">0 sparkar</p><p id="kickTimer">15 sekunder</p>
-    <p id="kickStatus">Klicka 'Starta test' för att börja</p>
-    <div id="kickHistory"></div><div id="kickHighscore"></div>
-    <div class="button-group">
-      <button class="button" onclick="startKickTest()">Starta test</button>
-      <button class="button" onclick="stopKickTest()">Stoppa test</button>
-      <button class="button" onclick="resetKickStats()">Nollställ statistik</button>
-      <button class="button" onclick="showStartPage()">Tillbaka</button>
+  <!-- Kick Counter - Step 1: Intro page -->
+  <div id="kickCounterIntroPage" class="page-container" style="display:none;">
+    <div class="kick-counter-container">
+      <h2 class="kick-title">SPARKRÄKNARE</h2>
+      <div style="text-align: left; margin: 2rem 0; color: #fff;">
+        <p style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; color: #00dddd;">Räkna dina sparkar!</p>
+        <ol style="font-size: 1.1rem; line-height: 2.2; padding-left: 1.5rem;">
+          <li>Kalibrera med en testspark</li>
+          <li>Välj tid (15, 30 eller 60 sek)</li>
+          <li>Sparka så många gånger du kan!</li>
+        </ol>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+        <button class="kick-btn" onclick="showKickCalibrationPage()">NÄSTA →</button>
+        <a class="back-link" onclick="showStartPage()">← Tillbaka</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kick Counter - Step 2: Calibration page -->
+  <div id="kickCalibrationPage" class="page-container" style="display:none;">
+    <div class="kick-counter-container">
+      <h2 class="kick-title">KALIBRERING</h2>
+      
+      <div style="margin: 2rem 0;">
+        <p style="font-size: 1.2rem; color: #fff; margin-bottom: 1rem; text-align: center;">
+          Sparka EN gång på spaden så hårt som du tänker sparka
+        </p>
+        
+        <!-- VU meter -->
+        <div style="margin: 1.5rem 0;">
+          <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">Ljudnivå</div>
+          <div class="volume-meter">
+            <div class="volume-meter-fill" id="calibrationVolumeMeter"></div>
+          </div>
+        </div>
+        
+        <!-- Status -->
+        <div style="text-align: center; margin: 2rem 0;">
+          <div id="calibrationStatus" style="font-size: 1.3rem; color: #00dddd; font-weight: 700;">
+            VÄNTAR...
+          </div>
+          <div id="calibrationThreshold" style="font-size: 1rem; color: rgba(255,255,255,0.7); margin-top: 1rem; min-height: 1.5rem;">
+          </div>
+        </div>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+        <button class="kick-btn" onclick="startCalibration()" id="calibrateBtn">STARTA KALIBRERING</button>
+        <a class="back-link" onclick="showKickCounterIntroPage()">← Tillbaka</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kick Counter - Step 3: Time selection page -->
+  <div id="kickTimeSelectionPage" class="page-container" style="display:none;">
+    <div class="kick-counter-container">
+      <h2 class="kick-title">VÄL TID</h2>
+      
+      <div style="text-align: center; margin: 2rem 0;">
+        <div style="font-size: 1.1rem; color: #00dddd; font-weight: 700; margin-bottom: 2rem;">
+          ✓ Kalibrerad! Tröskel: <span id="displayThreshold">--</span>
+        </div>
+        
+        <p style="font-size: 1rem; color: rgba(255,255,255,0.8); margin-bottom: 2rem;">
+          Välj hur länge du vill räkna sparkar:
+        </p>
+        
+        <!-- Time selection buttons -->
+        <div class="time-select">
+          <button class="time-btn" onclick="selectKickTime(15)" id="time15">15s</button>
+          <button class="time-btn" onclick="selectKickTime(30)" id="time30">30s</button>
+          <button class="time-btn" onclick="selectKickTime(60)" id="time60">60s</button>
+        </div>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+        <button class="kick-btn" onclick="startKickCountdown()" id="startKickTestBtn">STARTA →</button>
+        <a class="back-link" onclick="showKickCalibrationPage()">← Tillbaka</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kick Counter - Step 4: Test with countdown -->
+  <div id="kickTestPage" class="page-container" style="display:none;">
+    <div class="kick-counter-container">
+      <h2 class="kick-title">SPARKRÄKNARE</h2>
+      
+      <!-- Kick counter display -->
+      <div class="kick-display">
+        <div class="kick-count" id="kickCountDisplay">0</div>
+        <div class="kick-label">sparkar</div>
+      </div>
+      
+      <!-- Timer -->
+      <div class="timer-display" id="kickTimerDisplay">15</div>
+      
+      <!-- VU meter -->
+      <div style="margin: 1.5rem 0;">
+        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">Ljudnivå</div>
+        <div class="volume-meter">
+          <div class="volume-meter-fill" id="kickTestVolumeMeter"></div>
+        </div>
+      </div>
+      
+      <!-- Statistics -->
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">Bästa</div>
+          <div class="stat-value" id="kickBestDisplay">-</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Medel</div>
+          <div class="stat-value" id="kickAvgDisplay">-</div>
+        </div>
+      </div>
+      
+      <!-- Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+        <button class="kick-btn" onclick="stopKickTest()" id="stopKickBtn">STOPPA</button>
+        <button class="kick-btn reset-btn" onclick="resetKickStats()">Nollställ statistik</button>
+        <a class="back-link" onclick="showKickTimeSelectionPage()">← Tillbaka</a>
+      </div>
     </div>
   </div>
 
