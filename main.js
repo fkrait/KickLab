@@ -144,26 +144,31 @@ function sleep(ms) {
 
 // Play beep sound using Web Audio API
 function playBeep(frequency = 800, duration = 200, type = 'sine') {
-  // Reuse existing AudioContext or create new one if needed
-  if (!beepAudioContext || beepAudioContext.state === 'closed') {
-    beepAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    // Reuse existing AudioContext or create new one if needed
+    if (!beepAudioContext || beepAudioContext.state === 'closed') {
+      beepAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    const oscillator = beepAudioContext.createOscillator();
+    const gainNode = beepAudioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(beepAudioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(0.5, beepAudioContext.currentTime);
+    // Use 0.001 instead of 0.01 to avoid audio artifacts (exponentialRampToValueAtTime cannot ramp to zero)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, beepAudioContext.currentTime + duration / 1000);
+    
+    oscillator.start(beepAudioContext.currentTime);
+    oscillator.stop(beepAudioContext.currentTime + duration / 1000);
+  } catch (error) {
+    // Silently fail if audio context creation fails - countdown will continue without sound
+    console.warn('Failed to play beep sound:', error);
   }
-  
-  const oscillator = beepAudioContext.createOscillator();
-  const gainNode = beepAudioContext.createGain();
-  
-  oscillator.connect(gainNode);
-  gainNode.connect(beepAudioContext.destination);
-  
-  oscillator.frequency.value = frequency;
-  oscillator.type = type;
-  
-  gainNode.gain.setValueAtTime(0.5, beepAudioContext.currentTime);
-  // Use 0.001 instead of 0.01 to avoid audio artifacts (exponentialRampToValueAtTime cannot ramp to zero)
-  gainNode.gain.exponentialRampToValueAtTime(0.001, beepAudioContext.currentTime + duration / 1000);
-  
-  oscillator.start(beepAudioContext.currentTime);
-  oscillator.stop(beepAudioContext.currentTime + duration / 1000);
 }
 
 // Update status and time display with countdown styling
