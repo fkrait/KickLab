@@ -291,6 +291,17 @@ function loadReactionStats() {
   }
 }
 
+function resetReactionStats() {
+  localStorage.removeItem("reactionResults");
+  localStorage.removeItem("reactionBestTime");
+  reactionResults = [];
+  reactionBestTime = null;
+  loadReactionStats();
+  document.getElementById("timeValue").textContent = "0.000";
+  document.getElementById("statusText").textContent = "Statistik nollställd.";
+  document.getElementById("statusText").style.color = "#00dddd";
+}
+
 // Keep old functions for compatibility but make them call new ones
 function startTest() {
   startReactionTest();
@@ -301,14 +312,7 @@ function stopTest() {
 }
 
 function resetStats() {
-  localStorage.removeItem("reactionResults");
-  localStorage.removeItem("reactionBestTime");
-  reactionResults = [];
-  reactionBestTime = null;
-  loadReactionStats();
-  document.getElementById("timeValue").textContent = "0.000";
-  document.getElementById("statusText").textContent = "Statistik nollställd.";
-  document.getElementById("statusText").style.color = "#00dddd";
+  resetReactionStats();
 }
 
 /* ---------- Sparkräknare ---------- */
@@ -327,7 +331,7 @@ function showKickCounterPage() {
   document.getElementById("kickCounterPage").style.display = "block";
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
-  stopListening();
+  stopReactionTest();
   pauseLiveTimer();
   loadKickStats();
 }
