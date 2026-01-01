@@ -6,12 +6,8 @@
  * träningen avbryts.
  */
 
-// Variabler för reaktionstestet
-let audioCtx, mediaStream, mediaStreamSource, analyser, dataArray, animationId, startTime;
-let recentResults = JSON.parse(localStorage.getItem("recentResults")) || [];
-let bestTime = parseFloat(localStorage.getItem("bestTime")) || null;
-const commands = ["Vänster spark", "Höger spark", "Bakåt", "Blockera"];
-let testActive = false;
+// Variabler för reaktionstestet - now handled by new implementation below
+// Old variables kept for compatibility with other parts of the code
 
 // Variabler för tävlingsläget
 let competitionActive = false;
@@ -49,6 +45,7 @@ let centerMessage = "";
 /* ---------- Generella sidväxlingar ---------- */
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
+  document.getElementById("testIntroPage").style.display = "none";
   document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   document.getElementById("sparringPage").style.display = "none";
@@ -69,7 +66,7 @@ function showStartPage() {
   document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
 
   stopSparringTraining();
-  stopListening();
+  stopReactionTest();
   pauseLiveTimer();
   toggleAudienceView(false);
 }
@@ -95,122 +92,265 @@ function stopSparringTraining() {
 }
 
 /* ---------- Reaktionstest ---------- */
-function stopTest() {
-  testActive = false;
-  stopListening();
-  document.getElementById("status").textContent = "Test stoppat.";
-}
+// New Web Audio API-based reaction test variables
+let reactionAudioContext, reactionAnalyser, reactionMicrophone, reactionDataArray;
+let reactionMediaStream = null; // Store stream for proper cleanup
+let reactionTestActive = false;
+let reactionStartTime = null;
+let reactionCanRegisterHit = true;
+let reactionAnimationId = null;
+let reactionCooldownTimer = null; // Store cooldown timeout for cleanup
+const REACTION_THRESHOLD = 50; // Adjustable threshold for kick detection
+const REACTION_COOLDOWN = 300; // ms between hits
+const VOLUME_SCALE_FACTOR = 50; // Scale factor for VU meter display
+const VOLUME_MAX_PERCENTAGE = 100; // Maximum percentage for VU meter
+const WAIT_TIME_MIN = 2000; // Minimum wait time before "GO!" signal (ms)
+const WAIT_TIME_MAX = 5000; // Maximum wait time before "GO!" signal (ms)
+let reactionResults = JSON.parse(localStorage.getItem("reactionResults")) || [];
+let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || null;
 
-function showTestPage() {
+function showTestIntroPage() {
   document.getElementById("startPage").style.display = "none";
-  document.getElementById("testPage").style.display = "block";
+  document.getElementById("testIntroPage").style.display = "block";
+  document.getElementById("testPage").style.display = "none";
   document.getElementById("kickCounterPage").style.display = "none";
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
   pauseLiveTimer();
-  loadStats();
 }
 
-function startTest() {
+// Alias for compatibility with HTML onclick
+function showTestPage() {
+  showTestIntroPage();
+}
+
+function showReactionTestPage() {
+  document.getElementById("testIntroPage").style.display = "none";
+  document.getElementById("testPage").style.display = "block";
+  loadReactionStats();
+}
+
+async function startReactionTest() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    document.getElementById("status").textContent = "Mikrofon krävs för testet.";
+    document.getElementById("statusText").textContent = "Mikrofon krävs för testet.";
     return;
   }
-  const command = commands[Math.floor(Math.random() * commands.length)];
-  document.getElementById("command").textContent = `Gör: ${command}`;
-  document.getElementById("status").textContent = "Lyssnar...";
-  testActive = true;
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(stream => {
-      mediaStream = stream;
-      mediaStreamSource = audioCtx.createMediaStreamSource(stream);
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
-      const bufferLength = analyser.frequencyBinCount;
-      dataArray = new Uint8Array(bufferLength);
-      mediaStreamSource.connect(analyser);
-      startTime = performance.now();
-      listenForImpact();
-    })
-    .catch(() => {
-      document.getElementById("status").textContent = "Mikrofon behövs för testet.";
-      testActive = false;
-    });
+  
+  try {
+    // Initialize audio
+    await initReactionAudio();
+    
+    reactionTestActive = true;
+    reactionCanRegisterHit = true;
+    
+    // Update UI
+    document.getElementById("statusText").textContent = "Väntar på spark...";
+    document.getElementById("timeValue").textContent = "0.000";
+    document.getElementById("timeDisplay").classList.remove("hit");
+    document.getElementById("startBtn").style.opacity = "0.5";
+    document.getElementById("stopBtn").style.opacity = "1";
+    
+    // Wait random time before signaling GO
+    const waitTime = Math.random() * (WAIT_TIME_MAX - WAIT_TIME_MIN) + WAIT_TIME_MIN;
+    setTimeout(() => {
+      if (reactionTestActive) {
+        document.getElementById("statusText").textContent = "GÅ!";
+        document.getElementById("statusText").style.color = "#ff8008";
+        reactionStartTime = performance.now();
+        checkReactionVolume();
+      }
+    }, waitTime);
+    
+  } catch (error) {
+    document.getElementById("statusText").textContent = "Mikrofon behövs för testet.";
+    reactionTestActive = false;
+  }
 }
 
-function listenForImpact() {
-  function checkVolume() {
-    if (!testActive) return;
-    analyser.getByteTimeDomainData(dataArray);
-    let max = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      const value = Math.abs(dataArray[i] - 128);
-      if (value > max) max = value;
+async function initReactionAudio() {
+  // Clean up existing audio context if it exists
+  if (reactionAudioContext && reactionAudioContext.state !== 'closed') {
+    await reactionAudioContext.close();
+  }
+  
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  reactionMediaStream = stream; // Store for cleanup
+  reactionAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  reactionAnalyser = reactionAudioContext.createAnalyser();
+  reactionMicrophone = reactionAudioContext.createMediaStreamSource(stream);
+  reactionMicrophone.connect(reactionAnalyser);
+  reactionAnalyser.fftSize = 256;
+  const bufferLength = reactionAnalyser.frequencyBinCount;
+  reactionDataArray = new Uint8Array(bufferLength);
+}
+
+function checkReactionVolume() {
+  if (!reactionTestActive) return;
+  
+  reactionAnalyser.getByteTimeDomainData(reactionDataArray);
+  
+  let sum = 0;
+  for (let i = 0; i < reactionDataArray.length; i++) {
+    sum += Math.abs(reactionDataArray[i] - 128);
+  }
+  const volume = sum / reactionDataArray.length;
+  
+  // Update VU-meter visually
+  updateReactionVolumeMeter(volume);
+  
+  // Check if sound is above threshold and cooldown has passed
+  if (volume > REACTION_THRESHOLD && reactionCanRegisterHit && reactionStartTime) {
+    registerReactionHit();
+    reactionCanRegisterHit = false;
+    reactionCooldownTimer = setTimeout(() => {
+      reactionCanRegisterHit = true;
+    }, REACTION_COOLDOWN);
+  }
+  
+  if (reactionTestActive) {
+    reactionAnimationId = requestAnimationFrame(checkReactionVolume);
+  }
+}
+
+function updateReactionVolumeMeter(volume) {
+  const fillElement = document.getElementById("volumeMeterFill");
+  if (fillElement) {
+    // Scale volume to percentage (0-100)
+    const percentage = Math.min((volume / REACTION_THRESHOLD) * VOLUME_SCALE_FACTOR, VOLUME_MAX_PERCENTAGE);
+    fillElement.style.width = percentage + "%";
+  }
+}
+
+function registerReactionHit() {
+  if (!reactionStartTime) return;
+  
+  const reactionTime = performance.now() - reactionStartTime;
+  
+  // Update UI
+  const timeValue = document.getElementById("timeValue");
+  const timeDisplay = document.getElementById("timeDisplay");
+  const statusText = document.getElementById("statusText");
+  
+  if (timeValue) timeValue.textContent = (reactionTime / 1000).toFixed(3);
+  if (timeDisplay) timeDisplay.classList.add("hit");
+  if (statusText) {
+    statusText.textContent = "TRÄFF!";
+    statusText.style.color = "#ff8008";
+  }
+  
+  // Save result
+  saveReactionResult(reactionTime);
+  
+  // Stop test (async but don't await to allow UI updates to happen)
+  stopReactionTest();
+}
+
+async function stopReactionTest() {
+  reactionTestActive = false;
+  
+  if (reactionAnimationId) {
+    cancelAnimationFrame(reactionAnimationId);
+    reactionAnimationId = null;
+  }
+  
+  // Cancel cooldown timer if active
+  if (reactionCooldownTimer) {
+    clearTimeout(reactionCooldownTimer);
+    reactionCooldownTimer = null;
+  }
+  
+  // Properly clean up media stream
+  if (reactionMediaStream) {
+    reactionMediaStream.getTracks().forEach(track => track.stop());
+    reactionMediaStream = null;
+  }
+  
+  // Close audio context to free resources (await to prevent timing issues)
+  if (reactionAudioContext && reactionAudioContext.state !== 'closed') {
+    try {
+      await reactionAudioContext.close();
+    } catch (e) {
+      // Ignore errors during cleanup
     }
-    if (max > 40) {
-      const reactionTime = performance.now() - startTime;
-      saveResult(reactionTime);
-    } else {
-      animationId = requestAnimationFrame(checkVolume);
+    reactionAudioContext = null;
+  }
+  
+  // Update UI
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  if (startBtn) startBtn.style.opacity = "1";
+  if (stopBtn) stopBtn.style.opacity = "0.5";
+  
+  if (!reactionStartTime) {
+    const statusText = document.getElementById("statusText");
+    if (statusText) {
+      statusText.textContent = "Test stoppad.";
+      statusText.style.color = "#00dddd";
     }
   }
-  animationId = requestAnimationFrame(checkVolume);
+  
+  reactionStartTime = null;
 }
 
-function stopListening() {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach((track) => track.stop());
+function saveReactionResult(time) {
+  reactionResults.unshift(time);
+  if (reactionResults.length > 5) reactionResults.pop();
+  localStorage.setItem("reactionResults", JSON.stringify(reactionResults));
+  
+  if (!reactionBestTime || time < reactionBestTime) {
+    reactionBestTime = time;
+    localStorage.setItem("reactionBestTime", reactionBestTime);
   }
-  if (animationId) cancelAnimationFrame(animationId);
-  animationId = null;
-  mediaStream = null;
+  
+  loadReactionStats();
 }
 
-function saveResult(time) {
-  testActive = false;
-  stopListening();
-  recentResults.unshift(time);
-  if (recentResults.length > 5) recentResults.pop();
-  localStorage.setItem("recentResults", JSON.stringify(recentResults));
-  let historyText = " Senaste resultat ";
-  for (let t of recentResults) {
-    historyText += ` ${(t / 1000).toFixed(2)}s `;
+function loadReactionStats() {
+  // Update best time
+  const bestTimeEl = document.getElementById("bestTimeDisplay");
+  if (bestTimeEl) {
+    bestTimeEl.textContent = reactionBestTime ? (reactionBestTime / 1000).toFixed(3) + "s" : "-";
   }
-  document.getElementById("history").innerHTML = historyText;
-  if (!bestTime || time < bestTime) {
-    bestTime = time;
-    localStorage.setItem("bestTime", bestTime);
-    document.getElementById("highscore").innerHTML = ` 🎉 Nytt rekord! ${(bestTime / 1000).toFixed(2)} s `;
-  } else {
-    document.getElementById("highscore").innerHTML = ` Bästa tid ${(bestTime / 1000).toFixed(2)} s `;
+  
+  // Update average time
+  const avgTimeEl = document.getElementById("avgTimeDisplay");
+  if (avgTimeEl && reactionResults.length > 0) {
+    const avg = reactionResults.reduce((a, b) => a + b, 0) / reactionResults.length;
+    avgTimeEl.textContent = (avg / 1000).toFixed(3) + "s";
+  } else if (avgTimeEl) {
+    avgTimeEl.textContent = "-";
   }
-  document.getElementById("result").textContent = `Tid: ${(time / 1000).toFixed(2)} sekunder`;
-  document.getElementById("status").textContent = "Klart!";
+}
+
+function resetReactionStats() {
+  localStorage.removeItem("reactionResults");
+  localStorage.removeItem("reactionBestTime");
+  reactionResults = [];
+  reactionBestTime = null;
+  loadReactionStats();
+  
+  // Update UI with null checks
+  const timeValue = document.getElementById("timeValue");
+  const statusText = document.getElementById("statusText");
+  
+  if (timeValue) timeValue.textContent = "0.000";
+  if (statusText) {
+    statusText.textContent = "Statistik nollställd.";
+    statusText.style.color = "#00dddd";
+  }
+}
+
+// Keep old functions for compatibility but make them call new ones
+function startTest() {
+  startReactionTest();
+}
+
+function stopTest() {
+  stopReactionTest();
 }
 
 function resetStats() {
-  localStorage.removeItem("recentResults");
-  localStorage.removeItem("bestTime");
-  recentResults = [];
-  bestTime = null;
-  document.getElementById("history").innerHTML = "";
-  document.getElementById("highscore").innerHTML = "";
-  document.getElementById("result").textContent = "";
-  document.getElementById("status").textContent = "Statistik nollställd.";
-}
-
-function loadStats() {
-  if (recentResults.length > 0) {
-    let historyText = " Senaste resultat ";
-    for (let t of recentResults) {
-      historyText += ` ${(t / 1000).toFixed(2)}s `;
-    }
-    document.getElementById("history").innerHTML = historyText;
-  }
-  if (bestTime) {
-    document.getElementById("highscore").innerHTML = ` Bästa tid ${(bestTime / 1000).toFixed(2)} s `;
-  }
+  resetReactionStats();
 }
 
 /* ---------- Sparkräknare ---------- */
@@ -229,7 +369,7 @@ function showKickCounterPage() {
   document.getElementById("kickCounterPage").style.display = "block";
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
-  stopListening();
+  stopReactionTest();
   pauseLiveTimer();
   loadKickStats();
 }
