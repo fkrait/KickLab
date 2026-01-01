@@ -224,19 +224,25 @@ function registerReactionHit() {
   const reactionTime = performance.now() - reactionStartTime;
   
   // Update UI
-  document.getElementById("timeValue").textContent = (reactionTime / 1000).toFixed(3);
-  document.getElementById("timeDisplay").classList.add("hit");
-  document.getElementById("statusText").textContent = "TRÄFF!";
-  document.getElementById("statusText").style.color = "#ff8008";
+  const timeValue = document.getElementById("timeValue");
+  const timeDisplay = document.getElementById("timeDisplay");
+  const statusText = document.getElementById("statusText");
+  
+  if (timeValue) timeValue.textContent = (reactionTime / 1000).toFixed(3);
+  if (timeDisplay) timeDisplay.classList.add("hit");
+  if (statusText) {
+    statusText.textContent = "TRÄFF!";
+    statusText.style.color = "#ff8008";
+  }
   
   // Save result
   saveReactionResult(reactionTime);
   
-  // Stop test
+  // Stop test (async but don't await to allow UI updates to happen)
   stopReactionTest();
 }
 
-function stopReactionTest() {
+async function stopReactionTest() {
   reactionTestActive = false;
   
   if (reactionAnimationId) {
@@ -256,19 +262,28 @@ function stopReactionTest() {
     reactionMediaStream = null;
   }
   
-  // Close audio context to free resources
+  // Close audio context to free resources (await to prevent timing issues)
   if (reactionAudioContext && reactionAudioContext.state !== 'closed') {
-    reactionAudioContext.close();
+    try {
+      await reactionAudioContext.close();
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
     reactionAudioContext = null;
   }
   
   // Update UI
-  document.getElementById("startBtn").style.opacity = "1";
-  document.getElementById("stopBtn").style.opacity = "0.5";
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  if (startBtn) startBtn.style.opacity = "1";
+  if (stopBtn) stopBtn.style.opacity = "0.5";
   
   if (!reactionStartTime) {
-    document.getElementById("statusText").textContent = "Test stoppad.";
-    document.getElementById("statusText").style.color = "#00dddd";
+    const statusText = document.getElementById("statusText");
+    if (statusText) {
+      statusText.textContent = "Test stoppad.";
+      statusText.style.color = "#00dddd";
+    }
   }
   
   reactionStartTime = null;
