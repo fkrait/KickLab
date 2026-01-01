@@ -2837,6 +2837,12 @@
 
     <!-- Collapsible Settings Menu -->
     <div id="operatorMenu" class="operator-menu" style="display:none;">
+      <!-- Session Code Display -->
+      <div id="sessionCodeDisplay" style="background: linear-gradient(90deg, #00dddd, #ff8008); color: #000; padding: 0.8rem; border-radius: 8px; text-align: center; margin-bottom: 0.8rem; font-weight: 800; font-size: 1.1rem; display: none;">
+        📱 Session-kod: <span id="displayedSessionCode" style="letter-spacing: 3px;">------</span>
+        <button onclick="copySessionCode()" style="background: rgba(0,0,0,0.2); border: none; color: #000; padding: 0.3rem 0.6rem; border-radius: 5px; margin-left: 0.5rem; cursor: pointer; font-weight: 700;">Kopiera</button>
+      </div>
+      
       <div class="menu-grid">
         <div class="menu-item">
           <label>Match</label>

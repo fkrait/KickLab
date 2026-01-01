@@ -2030,7 +2030,34 @@ function showSessionCodeMessage() {
     console.log('LIVE SESSION KOD:', liveSessionCode);
     console.log('Dela denna kod med publik för att synka');
     console.log('═══════════════════════════════════════');
+    
+    // Also display in UI
+    const displayEl = document.getElementById('displayedSessionCode');
+    const containerEl = document.getElementById('sessionCodeDisplay');
+    if (displayEl) displayEl.textContent = liveSessionCode;
+    if (containerEl) containerEl.style.display = 'block';
   }
+}
+
+// Copy session code to clipboard
+function copySessionCode() {
+  if (!liveSessionCode) return;
+  
+  navigator.clipboard.writeText(liveSessionCode)
+    .then(() => {
+      const statusEl = document.getElementById("liveScoreStatus");
+      if (statusEl) {
+        const oldText = statusEl.textContent;
+        statusEl.textContent = `✓ Session-kod ${liveSessionCode} kopierad!`;
+        setTimeout(() => {
+          statusEl.textContent = oldText;
+        }, 2000);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to copy session code:', err);
+      alert(`Session-kod: ${liveSessionCode}`);
+    });
 }
 
 function updateLiveScoreDisplay() {
