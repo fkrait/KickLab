@@ -74,14 +74,9 @@ function showStartPage() {
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
 
-  // Dölj även tävlingssidorna om de är aktiva (både setup och run)
-  const compSetup = document.getElementById("competitionSetupPage");
-  const compRun = document.getElementById("competitionRunPage");
-  const compRound = document.getElementById("competitionRoundPage");
+  // Hide all competition pages
+  hideAllCompetitionPages();
   const overlay = document.getElementById("countdownOverlay");
-  if (compSetup) compSetup.style.display = "none";
-  if (compRun) compRun.style.display = "none";
-  if (compRound) compRound.style.display = "none";
   if (overlay) overlay.style.display = "none";
 
   // Stop all tests and training properly
@@ -91,6 +86,13 @@ function showStartPage() {
   stopKickTest();
   pauseLiveTimer();
   toggleAudienceView(false);
+  
+  // Stop competition if active
+  competitionActive = false;
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+    competitionMediaStream = null;
+  }
 }
 
 /* ---------- Sparringträning ---------- */
@@ -912,98 +914,288 @@ function resetKickStats() {
   if (countDisplay) countDisplay.textContent = "0";
 }
 
-/* ---------- Tävlingsläge (reaktionstid) ---------- */
-function updateCompetitionNameInputs() {
+/* ---------- Tävlingsläge (New Competition Mode) ---------- */
+// Competition variables
+let competitionType = 'random'; // 'random' or 'selected'
+let selectedCompetitionKicks = []; // For random type
+let selectedCompetitionKick = null; // For selected kick type
+let currentRoundKick = null;
+let competitionRound = 1;
+const TOTAL_COMPETITION_ROUNDS = 3;
+
+// Competition kicks data
+const competitionKicks = [
+  { name: "Framspark" },
+  { name: "Sidospark" },
+  { name: "Rundspark" },
+  { name: "Bakspark" },
+  { name: "Snurrspark" },
+  { name: "Yxspark" },
+  { name: "Krokspark" },
+  { name: "Hoppspark" },
+  { name: "Flygande sidospark" },
+  { name: "An Chagi" },
+  { name: "Saxspark" },
+  { name: "Snurrande bakspark" },
+  { name: "Slag" }
+];
+
+// Navigation functions
+function showCompetitionIntroPage() {
+  hideAllCompetitionPages();
+  document.getElementById("competitionIntroPage").style.display = "block";
+  document.getElementById("startPage").style.display = "none";
+}
+
+function showCompetitionParticipantsPage() {
+  hideAllCompetitionPages();
+  document.getElementById("competitionParticipantsPage").style.display = "block";
+  updateCompetitionNameInputs();
+}
+
+function showCompetitionTypePage() {
+  hideAllCompetitionPages();
+  // Validate participants
   const count = parseInt(document.getElementById("competitionCount").value, 10) || 0;
+  if (count < 1 || count > 10) {
+    alert("Välj mellan 1 och 10 deltagare.");
+    showCompetitionParticipantsPage();
+    return;
+  }
+  
+  // Collect participant names
+  competitionParticipants = [];
+  for (let i = 0; i < count; i++) {
+    const nameInput = document.getElementById(`participant-${i}`);
+    const name = nameInput ? nameInput.value.trim() || `Deltagare ${i + 1}` : `Deltagare ${i + 1}`;
+    competitionParticipants.push({ 
+      name, 
+      times: [], 
+      total: 0, 
+      previousRank: i,
+      roundTimes: [[],[],[]] // Track times per round
+    });
+  }
+  
+  document.getElementById("competitionTypePage").style.display = "block";
+  // Select default type
+  selectCompetitionType('random');
+}
+
+function showCompetitionKickSelectionPage() {
+  if (competitionType === 'random') {
+    hideAllCompetitionPages();
+    document.getElementById("competitionKickSelectionPage").style.display = "block";
+    // Ensure all kicks are checked by default
+    for (let i = 0; i < competitionKicks.length; i++) {
+      const checkbox = document.getElementById(`compKick${i}`);
+      if (checkbox) checkbox.checked = true;
+    }
+  } else if (competitionType === 'selected') {
+    hideAllCompetitionPages();
+    document.getElementById("competitionSingleKickPage").style.display = "block";
+  }
+}
+
+function hideAllCompetitionPages() {
+  const pages = [
+    'competitionIntroPage', 'competitionParticipantsPage', 'competitionTypePage',
+    'competitionKickSelectionPage', 'competitionSingleKickPage', 'competitionRoundPage',
+    'competitionLeaderboardPage', 'competitionResultsPage'
+  ];
+  pages.forEach(pageId => {
+    const page = document.getElementById(pageId);
+    if (page) page.style.display = "none";
+  });
+}
+
+function selectCompetitionType(type) {
+  competitionType = type;
+  
+  // Update button states
+  const randomBtn = document.getElementById('type-random');
+  const selectedBtn = document.getElementById('type-selected');
+  
+  if (randomBtn && selectedBtn) {
+    if (type === 'random') {
+      randomBtn.classList.add('selected');
+      selectedBtn.classList.remove('selected');
+    } else {
+      selectedBtn.classList.add('selected');
+      randomBtn.classList.remove('selected');
+    }
+  }
+}
+
+function updateCompetitionNameInputs() {
+  const count = parseInt(document.getElementById("competitionCount").value, 10) || 2;
   const container = document.getElementById("competitionNames");
   container.innerHTML = "";
+  
   for (let i = 0; i < count; i++) {
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = `Deltagare ${i + 1}`;
     input.id = `participant-${i}`;
-    input.style.marginBottom = "0.5rem";
+    input.style.width = "100%";
+    input.style.padding = "0.8rem";
+    input.style.borderRadius = "10px";
+    input.style.border = "1px solid rgba(0,220,220,0.4)";
+    input.style.background = "rgba(0,0,0,0.5)";
+    input.style.color = "#fff";
+    input.style.fontSize = "1rem";
+    input.style.textAlign = "center";
     container.appendChild(input);
   }
 }
 
-function startCompetition() {
-  const count = parseInt(document.getElementById("competitionCount").value, 10) || 0;
-  competitionParticipants = [];
-  for (let i = 0; i < count; i++) {
-    const nameInput = document.getElementById(`participant-${i}`);
-    const name = nameInput ? nameInput.value.trim() || `Deltagare ${i + 1}` : `Deltagare ${i + 1}`;
-    competitionParticipants.push({ name, times: [], best: Infinity, avg: Infinity });
-  }
-  if (competitionParticipants.length === 0) {
-    alert("Ange minst en deltagare.");
-    return;
-  }
-  currentParticipantIndex = 0;
-  currentKickIndex = 0;
-  const statusEl = document.getElementById("competitionStatus");
-  const listEl = document.getElementById("competitionNamesList");
-  if (statusEl) statusEl.textContent = "Tävling startad!";
-  if (listEl) listEl.innerHTML = competitionParticipants.map(p => `<li>${p.name}</li>`).join("");
-  document.getElementById("competitionSetupPage").style.display = "none";
-  document.getElementById("competitionRunPage").style.display = "block";
-  competitionActive = true;
-  showNextRoundStartPage();
-}
-
-function showCompetitionSetupPage() {
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("competitionSetupPage").style.display = "block";
-}
-
-function showNextRoundStartPage() {
-  if (currentParticipantIndex >= competitionParticipants.length) return;
-  const participant = competitionParticipants[currentParticipantIndex];
-  const overlay = document.getElementById("countdownOverlay");
-  const countdownEl = document.getElementById("countdownNumber");
-  const infoEl = document.getElementById("overlayInfo");
-  const titleEl = document.getElementById("overlayTitle");
-  if (!overlay || !countdownEl || !infoEl || !titleEl) return;
-  overlay.style.display = "flex";
-  titleEl.textContent = `${participant.name}, spark ${currentKickIndex + 1} av 3`;
-  infoEl.textContent = "Gör dig redo. Start om 3...";
-  let count = 3;
-  countdownEl.textContent = count;
-  const interval = setInterval(() => {
-    count--;
-    countdownEl.textContent = count;
-    if (count <= 0) {
-      clearInterval(interval);
-      overlay.style.display = "none";
-      startCompetitionRound();
+function startCompetitionFromKickSelection() {
+  // Collect selected kicks
+  if (competitionType === 'random') {
+    selectedCompetitionKicks = [];
+    for (let i = 0; i < competitionKicks.length; i++) {
+      const checkbox = document.getElementById(`compKick${i}`);
+      if (checkbox && checkbox.checked) {
+        selectedCompetitionKicks.push(competitionKicks[i]);
+      }
     }
-  }, 1000);
+    
+    if (selectedCompetitionKicks.length === 0) {
+      alert("Välj minst en spark!");
+      return;
+    }
+  } else {
+    // Get selected kick for 'selected' type
+    for (let i = 0; i < competitionKicks.length; i++) {
+      const radio = document.getElementById(`singleKick${i}`);
+      if (radio && radio.checked) {
+        selectedCompetitionKick = competitionKicks[i];
+        break;
+      }
+    }
+  }
+  
+  // Reset competition state
+  competitionRound = 1;
+  currentParticipantIndex = 0;
+  competitionActive = true;
+  
+  // Start first round
+  startCompetitionRound();
 }
 
-async function startCompetitionRound() {
+function startCompetitionRound() {
   if (!competitionActive) return;
-  // Stoppa tidigare stream om den finns
-  if (competitionMediaStream) {
-    competitionMediaStream.getTracks().forEach((track) => track.stop());
+  
+  // Select kick for this round
+  if (competitionType === 'random') {
+    currentRoundKick = selectedCompetitionKicks[
+      Math.floor(Math.random() * selectedCompetitionKicks.length)
+    ];
+  } else {
+    currentRoundKick = selectedCompetitionKick;
   }
-  // Förbered mikrofonen i förväg så att nedräkning och start hänger ihop
-  try {
-    await prepareCompetitionMicrophone();
-  } catch (err) {
-    const statusEl = document.getElementById("competitionStatus");
-    if (statusEl) statusEl.textContent = "Mikrofon krävs för att använda tävlingsläget.";
-    competitionActive = false;
+  
+  // Show round page for current participant
+  showParticipantRoundPage();
+}
+
+function showParticipantRoundPage() {
+  if (currentParticipantIndex >= competitionParticipants.length) {
+    // Round complete - show leaderboard
+    showCompetitionLeaderboard();
     return;
   }
-  // Säkerställ att start sker efter en minimal fördröjning så att analys hinner initieras
-  setTimeout(() => {
-    if (!competitionActive) return;
+  
+  hideAllCompetitionPages();
+  document.getElementById("competitionRoundPage").style.display = "block";
+  
+  const participant = competitionParticipants[currentParticipantIndex];
+  const nameEl = document.getElementById("roundParticipantName");
+  const roundInfoEl = document.getElementById("roundInfo");
+  const kickEl = document.getElementById("kickToPerform");
+  
+  if (nameEl) nameEl.textContent = participant.name;
+  if (roundInfoEl) roundInfoEl.textContent = `Omgång ${competitionRound} av ${TOTAL_COMPETITION_ROUNDS}`;
+  if (kickEl) kickEl.textContent = currentRoundKick.name;
+}
+
+async function beginCompetitionRound() {
+  hideAllCompetitionPages();
+  
+  // Show countdown overlay
+  const overlay = document.getElementById("countdownOverlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    
+    // Countdown with voice
+    await performCountdownWithVoice(currentRoundKick.name);
+    
+    overlay.style.display = "none";
+  }
+  
+  // Measure reaction time
+  await measureCompetitionReactionTime();
+}
+
+async function performCountdownWithVoice(kickName) {
+  const overlay = document.getElementById("countdownOverlay");
+  
+  // Voice announcement
+  speakCompetition(kickName);
+  await sleep(1000);
+  
+  // 3... 2... 1... GÅ!
+  if (overlay) overlay.textContent = "3";
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+  await sleep(1000);
+  
+  if (overlay) overlay.textContent = "2";
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+  await sleep(1000);
+  
+  if (overlay) overlay.textContent = "1";
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+  await sleep(1000);
+  
+  if (overlay) overlay.textContent = "GÅ!";
+  playBeep(GO_FREQUENCY, GO_DURATION);
+  await sleep(500);
+}
+
+function speakCompetition(text) {
+  if (!('speechSynthesis' in window)) return;
+  
+  speechSynthesis.cancel();
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'sv-SE';
+  utterance.rate = 1.0;
+  speechSynthesis.speak(utterance);
+}
+
+async function measureCompetitionReactionTime() {
+  try {
+    // Initialize audio
+    await prepareCompetitionMicrophone();
+    
+    // Start timing
     competitionStartTime = performance.now();
-    listenForImpactCompetition();
-  }, 120);
+    
+    // Listen for kick
+    await listenForCompetitionKick();
+    
+  } catch (err) {
+    alert("Mikrofon krävs för tävlingsläget.");
+    competitionActive = false;
+  }
 }
 
 async function prepareCompetitionMicrophone() {
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach((track) => track.stop());
+  }
+  
   competitionAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   competitionMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   competitionMediaStreamSource = competitionAudioCtx.createMediaStreamSource(competitionMediaStream);
@@ -1014,102 +1206,221 @@ async function prepareCompetitionMicrophone() {
   competitionMediaStreamSource.connect(competitionAnalyser);
 }
 
-function listenForImpactCompetition() {
-  function checkVolume() {
-    if (!competitionActive) return;
-    competitionAnalyser.getByteTimeDomainData(competitionDataArray);
-    let max = 0;
-    for (let i = 0; i < competitionDataArray.length; i++) {
-      const value = Math.abs(competitionDataArray[i] - 128);
-      if (value > max) max = value;
+function listenForCompetitionKick() {
+  return new Promise((resolve) => {
+    function checkVolume() {
+      if (!competitionActive) {
+        resolve();
+        return;
+      }
+      
+      competitionAnalyser.getByteTimeDomainData(competitionDataArray);
+      let max = 0;
+      for (let i = 0; i < competitionDataArray.length; i++) {
+        const value = Math.abs(competitionDataArray[i] - 128);
+        if (value > max) max = value;
+      }
+      
+      if (max > 40) {
+        const reactionTime = performance.now() - competitionStartTime;
+        saveCompetitionTime(reactionTime);
+        resolve();
+      } else {
+        requestAnimationFrame(checkVolume);
+      }
     }
-    if (max > 40) {
-      const reactionTime = performance.now() - competitionStartTime;
-      saveCompetitionResult(reactionTime);
-    } else {
-      requestAnimationFrame(checkVolume);
-    }
-  }
-  checkVolume();
+    checkVolume();
+  });
 }
 
-function saveCompetitionResult(time) {
-  // Stoppa mikrofonen
+function saveCompetitionTime(time) {
+  // Stop microphone
   if (competitionMediaStream) {
     competitionMediaStream.getTracks().forEach((track) => track.stop());
     competitionMediaStream = null;
   }
+  
   const participant = competitionParticipants[currentParticipantIndex];
   participant.times.push(time);
-  if (participant.times.length === 3) {
-    // Beräkna bästa och snitt
-    participant.best = Math.min(...participant.times);
-    participant.avg = participant.times.reduce((a, b) => a + b, 0) / participant.times.length;
-    // Gå vidare till nästa deltagare
-    currentParticipantIndex++;
-    currentKickIndex = 0;
-  } else {
-    // Fler sparkar kvar för samma deltagare
-    currentKickIndex++;
-  }
-  // Vänta kort innan nästa runda startar för att ge användaren feedback
+  participant.roundTimes[competitionRound - 1].push(time);
+  participant.total += time;
+  
+  // Move to next participant
+  currentParticipantIndex++;
+  
+  // Brief pause before next participant
   setTimeout(() => {
-    if (currentParticipantIndex < competitionParticipants.length) {
-      showNextRoundStartPage();
-    } else {
-      competitionActive = false;
-      finishCompetition();
-    }
-  }, 800);
+    startCompetitionRound();
+  }, 500);
 }
 
-function finishCompetition() {
-  // Avbryt pågående lyssning
-  if (competitionMediaStream) {
-    competitionMediaStream.getTracks().forEach((track) => track.stop());
-    competitionMediaStream = null;
+function showCompetitionLeaderboard() {
+  hideAllCompetitionPages();
+  document.getElementById("competitionLeaderboardPage").style.display = "block";
+  
+  // Sort by total time
+  competitionParticipants.sort((a, b) => a.total - b.total);
+  
+  // Update title
+  const titleEl = document.getElementById("leaderboardTitle");
+  if (titleEl) {
+    titleEl.textContent = `📊 STÄLLNING EFTER OMGÅNG ${competitionRound}`;
   }
-  competitionActive = false;
-  if (competitionParticipants.length === 0) return;
-  let bestKickTime = Infinity;
-  let bestKickWinner = null;
-  let bestAvgTime = Infinity;
-  let bestAvgWinner = null;
-  // Beräkna vinnare
-  competitionParticipants.forEach((p) => {
-    if (p.best < bestKickTime) {
-      bestKickTime = p.best;
-      bestKickWinner = p.name;
+  
+  // Build leaderboard
+  const container = document.getElementById("leaderboardContainer");
+  if (container) {
+    let html = '';
+    
+    competitionParticipants.forEach((p, index) => {
+      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '  ';
+      const lastTime = p.times[p.times.length - 1];
+      const arrow = getRankChangeArrow(p, index);
+      const rowClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : '';
+      
+      html += `
+        <div class="leaderboard-row ${rowClass}">
+          <span>${medal} ${p.name}</span>
+          <span>${p.total.toFixed(0)} ms <span style="color: rgba(255,255,255,0.7);">(+${lastTime.toFixed(0)})</span> ${arrow}</span>
+        </div>
+      `;
+      
+      p.previousRank = index;
+    });
+    
+    container.innerHTML = html;
+  }
+  
+  // Update continue button
+  const continueBtn = document.getElementById("continueBtn");
+  if (continueBtn) {
+    if (competitionRound < TOTAL_COMPETITION_ROUNDS) {
+      continueBtn.textContent = `OMGÅNG ${competitionRound + 1} →`;
+      continueBtn.onclick = continueCompetition;
+    } else {
+      continueBtn.textContent = 'SE RESULTAT →';
+      continueBtn.onclick = showFinalResults;
     }
-    if (p.avg < bestAvgTime) {
-      bestAvgTime = p.avg;
-      bestAvgWinner = p.name;
-    }
-  });
-  let resultHtml = "";
-  resultHtml += `<p>Vinnare snabbaste spark: ${bestKickWinner} (${bestKickTime.toFixed(0)} ms)</p>`;
-  resultHtml += `<p>Vinnare bästa snitt: ${bestAvgWinner} (${bestAvgTime.toFixed(0)} ms)</p>`;
-  resultHtml += "<h3>Resultat:</h3><ul>";
-  competitionParticipants.forEach((p) => {
-    const timesStr = p.times.map((t) => t.toFixed(0)).join(", ");
-    resultHtml += `<li>${p.name}: tider = ${timesStr} ms, bästa = ${p.best.toFixed(0)} ms, snitt = ${p.avg.toFixed(0)} ms</li>`;
-  });
-  resultHtml += "</ul>";
-  const resultsEl = document.getElementById("competitionResults");
-  if (resultsEl) resultsEl.innerHTML = resultHtml;
-  const statusEl = document.getElementById("competitionStatus");
-  if (statusEl) statusEl.textContent = "Tävlingen är avslutad!";
+  }
+}
 
-  // När tävlingen är klar ska vi se till att rätt sida visas.
-  // Döljer inställningssidan och rundsidan och visar resultatsidan
-  const setupPage = document.getElementById("competitionSetupPage");
-  const runPage = document.getElementById("competitionRunPage");
-  const roundPage = document.getElementById("competitionRoundPage");
-  const overlay = document.getElementById("countdownOverlay");
-  if (setupPage) setupPage.style.display = "none";
-  if (roundPage) roundPage.style.display = "none";
-  if (overlay) overlay.style.display = "none";
-  if (runPage) runPage.style.display = "block";
+function getRankChangeArrow(participant, currentIndex) {
+  if (competitionRound === 1) return ''; // No change in first round
+  
+  if (participant.previousRank > currentIndex) {
+    return '<span class="rank-change rank-up">↑</span>';
+  } else if (participant.previousRank < currentIndex) {
+    return '<span class="rank-change rank-down">↓</span>';
+  }
+  return '';
+}
+
+function continueCompetition() {
+  competitionRound++;
+  currentParticipantIndex = 0;
+  startCompetitionRound();
+}
+
+function showFinalResults() {
+  hideAllCompetitionPages();
+  document.getElementById("competitionResultsPage").style.display = "block";
+  
+  // Sort by total time (already sorted from leaderboard)
+  competitionParticipants.sort((a, b) => a.total - b.total);
+  
+  // Show confetti
+  showConfetti();
+  
+  // Winner announcement
+  const winner = competitionParticipants[0];
+  const winnerEl = document.getElementById("winnerAnnouncement");
+  if (winnerEl) {
+    winnerEl.textContent = `🎉🎉🎉 GRATTIS ${winner.name}! 🎉🎉🎉`;
+  }
+  
+  // Build podium
+  buildPodium();
+  
+  // Detailed statistics
+  buildDetailedStats();
+}
+
+function buildPodium() {
+  const container = document.getElementById("podiumContainer");
+  if (!container) return;
+  
+  let html = '';
+  
+  // Top 3
+  const top3 = competitionParticipants.slice(0, 3);
+  
+  if (top3.length >= 2) {
+    // Second place
+    html += `
+      <div class="podium-place podium-second">
+        <div class="podium-medal">🥈</div>
+        <div class="podium-name">${top3[1].name}</div>
+        <div class="podium-time">${top3[1].total.toFixed(0)} ms</div>
+      </div>
+    `;
+  }
+  
+  if (top3.length >= 1) {
+    // First place
+    html += `
+      <div class="podium-place podium-first">
+        <div class="podium-medal">🥇</div>
+        <div class="podium-name">${top3[0].name}</div>
+        <div class="podium-time">${top3[0].total.toFixed(0)} ms</div>
+      </div>
+    `;
+  }
+  
+  if (top3.length >= 3) {
+    // Third place
+    html += `
+      <div class="podium-place podium-third">
+        <div class="podium-medal">🥉</div>
+        <div class="podium-name">${top3[2].name}</div>
+        <div class="podium-time">${top3[2].total.toFixed(0)} ms</div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+}
+
+function buildDetailedStats() {
+  const container = document.getElementById("detailedStats");
+  if (!container) return;
+  
+  let html = '';
+  
+  competitionParticipants.forEach(p => {
+    const timesStr = p.times.map(t => t.toFixed(0)).join(' + ');
+    html += `${p.name}: ${timesStr} = ${p.total.toFixed(0)} ms<br/>`;
+  });
+  
+  container.innerHTML = html;
+}
+
+function showConfetti() {
+  const container = document.createElement('div');
+  container.className = 'confetti';
+  document.body.appendChild(container);
+  
+  const colors = ['#ff8008', '#ffc837', '#00dddd', '#ff4444', '#44ff44'];
+  
+  for (let i = 0; i < 100; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = Math.random() * 2 + 's';
+    container.appendChild(piece);
+  }
+  
+  setTimeout(() => container.remove(), 5000);
 }
 
 /* ---------- Live sparring score ---------- */
@@ -2350,8 +2661,10 @@ const isStandaloneAudienceView = urlParams.get('audienceView') === 'true';
 const NON_AUDIENCE_PAGES = ['startPage', 'testPage', 'testIntroPage', 'kickCounterPage', 
                             'kickCounterIntroPage', 'kickCalibrationPage', 'kickTimeSelectionPage', 'kickTestPage',
                             'sparringPage', 'kickTrainingIntroPage', 'kickSelectionPage', 'trainingModeSelectionPage',
-                            'trainingSettingsPage', 'kickTrainingPage', 'liveScorePage', 'competitionSetupPage', 
-                            'competitionRunPage', 'competitionRoundPage'];
+                            'trainingSettingsPage', 'kickTrainingPage', 'liveScorePage', 
+                            'competitionIntroPage', 'competitionParticipantsPage', 'competitionTypePage',
+                            'competitionKickSelectionPage', 'competitionSingleKickPage', 'competitionRoundPage',
+                            'competitionLeaderboardPage', 'competitionResultsPage'];
 
 // Initialize BroadcastChannel for live synchronization
 // Only create one instance and set up message listener
