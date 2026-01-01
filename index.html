@@ -57,27 +57,19 @@
     .kicklab-title {
       font-size: 4rem;
       font-weight: 900;
-      text-transform: uppercase;
-      background: linear-gradient(90deg, #00dddd, #ff8008);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      color: transparent;
-      text-shadow: none;
-      letter-spacing: 6px;
-      margin-bottom: 2.5rem;
       text-align: center;
+      margin-bottom: 2.5rem;
+      letter-spacing: 2px;
     }
 
-    /* Fallback for browsers that don't support background-clip */
-    @supports not (background-clip: text) {
-      .kicklab-title {
-        color: #00dddd;
-        background: none;
-        background-clip: initial;
-        -webkit-background-clip: initial;
-        -webkit-text-fill-color: initial;
-      }
+    .kicklab-title .kick {
+      color: #ff8008;
+      text-shadow: 0 0 20px rgba(255, 128, 8, 0.6);
+    }
+
+    .kicklab-title .lab {
+      color: #00dddd;
+      text-shadow: 0 0 20px rgba(0, 220, 220, 0.6);
     }
 
     .hero-tiles-container {
@@ -918,7 +910,7 @@
       .kicklab-title {
         font-size: 2.5rem;
         margin-bottom: 2rem;
-        letter-spacing: 3px;
+        letter-spacing: 1px;
       }
       
       .hero-tiles-container {
@@ -1947,7 +1939,9 @@
   </div>
 
   <div id="startPage" class="page-container">
-    <h1 class="kicklab-title">KICKLAB</h1>
+    <h1 class="kicklab-title" aria-label="Kick Lab">
+      <span class="kick">Kick</span><span class="lab">Lab</span>
+    </h1>
     <div class="hero-tiles-container">
       <div class="hero-tile reaktionstest" onclick="showTestPage()">
         <h2 class="tile-title">Reaktionstest</h2>
