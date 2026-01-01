@@ -94,6 +94,7 @@ function stopSparringTraining() {
 /* ---------- Reaktionstest ---------- */
 // New Web Audio API-based reaction test variables
 let reactionAudioContext, reactionAnalyser, reactionMicrophone, reactionDataArray;
+let reactionMediaStream = null; // Store stream for proper cleanup
 let reactionTestActive = false;
 let reactionStartTime = null;
 let reactionCanRegisterHit = true;
@@ -163,12 +164,14 @@ async function startReactionTest() {
 
 async function initReactionAudio() {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  reactionMediaStream = stream; // Store for cleanup
   reactionAudioContext = new (window.AudioContext || window.webkitAudioContext)();
   reactionAnalyser = reactionAudioContext.createAnalyser();
   reactionMicrophone = reactionAudioContext.createMediaStreamSource(stream);
   reactionMicrophone.connect(reactionAnalyser);
   reactionAnalyser.fftSize = 256;
-  reactionDataArray = new Uint8Array(reactionAnalyser.fftSize);
+  const bufferLength = reactionAnalyser.frequencyBinCount;
+  reactionDataArray = new Uint8Array(bufferLength);
 }
 
 function checkReactionVolume() {
@@ -234,8 +237,16 @@ function stopReactionTest() {
     reactionAnimationId = null;
   }
   
-  if (reactionMicrophone && reactionMicrophone.mediaStream) {
-    reactionMicrophone.mediaStream.getTracks().forEach(track => track.stop());
+  // Properly clean up media stream
+  if (reactionMediaStream) {
+    reactionMediaStream.getTracks().forEach(track => track.stop());
+    reactionMediaStream = null;
+  }
+  
+  // Close audio context to free resources
+  if (reactionAudioContext && reactionAudioContext.state !== 'closed') {
+    reactionAudioContext.close();
+    reactionAudioContext = null;
   }
   
   // Update UI
