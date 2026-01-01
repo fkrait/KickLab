@@ -42,57 +42,82 @@ let totalPenalties = { red: 0, blue: 0 }; // Cumulative penalties across all rou
 let roundEndReason = "";
 let centerMessage = "";
 
-/* ---------- Generella sidväxlingar ---------- */
-function showStartPage() {
-  document.getElementById("startPage").style.display = "block";
-  
-  const testIntroPage = document.getElementById("testIntroPage");
-  const testPage = document.getElementById("testPage");
-  if (testIntroPage) testIntroPage.style.display = "none";
-  if (testPage) testPage.style.display = "none";
-  
-  // Hide old kick counter page (kept for compatibility)
-  const oldKickPage = document.getElementById("kickCounterPage");
-  if (oldKickPage) oldKickPage.style.display = "none";
-  
-  // Hide new kick counter pages
-  const kickIntro = document.getElementById("kickCounterIntroPage");
-  const kickCalib = document.getElementById("kickCalibrationPage");
-  const kickTime = document.getElementById("kickTimeSelectionPage");
-  const kickTest = document.getElementById("kickTestPage");
-  if (kickIntro) kickIntro.style.display = "none";
-  if (kickCalib) kickCalib.style.display = "none";
-  if (kickTime) kickTime.style.display = "none";
-  if (kickTest) kickTest.style.display = "none";
-  
-  const sparringPage = document.getElementById("sparringPage");
-  if (sparringPage) sparringPage.style.display = "none";
-  
-  // Hide kick training pages
-  hideAllTrainingPages();
-  
-  const liveScorePage = document.getElementById("liveScorePage");
-  if (liveScorePage) liveScorePage.style.display = "none";
-
-  // Hide all competition pages
-  hideAllCompetitionPages();
-  const overlay = document.getElementById("countdownOverlay");
-  if (overlay) overlay.style.display = "none";
-
-  // Stop all tests and training properly
-  stopSparringTraining();
-  stopKickTraining();
+/* ---------- Centraliserad cleanup-funktion ---------- */
+// Stoppa ALLT - används vid alla sidbyten
+function stopAllTests() {
+  // Stoppa reaktionstest
   stopReactionTest();
+  
+  // Stoppa reaktionstest kalibrering
+  stopReactionCalibration();
+  
+  // Stoppa sparkräknare
   stopKickTest();
+  
+  // Stoppa spark träning
+  stopKickTraining();
+  
+  // Stoppa tävlingsläge
+  stopCompetitionInternal();
+  
+  // Stoppa sparring träning
+  stopSparringTraining();
+  
+  // Stoppa live score timer
   pauseLiveTimer();
   toggleAudienceView(false);
   
-  // Stop competition if active
-  competitionActive = false;
+  // Stoppa talsyntes
+  if (speechSynthesis && speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+  }
+  
+  // Stäng alla mikrofoner
+  closeAllMicrophones();
+}
+
+function closeAllMicrophones() {
+  // Reaktionstest
+  if (reactionMediaStream) {
+    reactionMediaStream.getTracks().forEach(track => track.stop());
+    reactionMediaStream = null;
+  }
+  
+  // Reaktionstest kalibrering
+  if (reactionCalibrationMediaStream) {
+    reactionCalibrationMediaStream.getTracks().forEach(track => track.stop());
+    reactionCalibrationMediaStream = null;
+  }
+  
+  // Sparkräknare
+  if (kickMediaStream) {
+    kickMediaStream.getTracks().forEach(track => track.stop());
+    kickMediaStream = null;
+  }
+  
+  // Tävling
   if (competitionMediaStream) {
-    competitionMediaStream.getTracks().forEach((track) => track.stop());
+    competitionMediaStream.getTracks().forEach(track => track.stop());
     competitionMediaStream = null;
   }
+  
+  // Kalibrering
+  if (calibrationMediaStream) {
+    calibrationMediaStream.getTracks().forEach(track => track.stop());
+    calibrationMediaStream = null;
+  }
+}
+
+/* ---------- Generella sidväxlingar ---------- */
+function showStartPage() {
+  // Stoppa ALLT först
+  stopAllTests();
+  
+  // Dölj alla sidor
+  hideAllPages();
+  
+  // Visa huvudmenyn
+  document.getElementById("startPage").style.display = "block";
 }
 
 /* ---------- Sparringträning ---------- */
@@ -140,6 +165,16 @@ let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || n
 // Shared AudioContext for beep sounds to avoid creating too many contexts
 let beepAudioContext = null;
 
+// Reaktionstest kalibrering variables
+let reactionCalibrationAudioCtx = null;
+let reactionCalibrationMediaStream = null;
+let reactionCalibrationAnalyser = null;
+let reactionCalibrationDataArray = null;
+let reactionBackgroundNoiseLevel = 0;
+let reactionSoundThreshold = 40;
+let isReactionCalibrating = false;
+let reactionCalibrationAnimationId = null;
+
 function showTestIntroPage() {
   const startPage = document.getElementById("startPage");
   const testIntroPage = document.getElementById("testIntroPage");
@@ -162,8 +197,142 @@ function showTestPage() {
 }
 
 function showReactionTestPage() {
-  document.getElementById("testIntroPage").style.display = "none";
-  document.getElementById("testPage").style.display = "block";
+  startReactionCalibration();
+}
+
+// Starta kalibrering för reaktionstest
+async function startReactionCalibration() {
+  hideAllPages();
+  document.getElementById('reactionCalibrationPage').style.display = 'block';
+  
+  document.getElementById('reactionCalibrationTitle').textContent = '🎤 KALIBRERAR...';
+  document.getElementById('reactionCalibrationStatus').textContent = 'Mäter bakgrundsljud... Var tyst!';
+  document.getElementById('reactionManualCalibration').style.display = 'none';
+  document.getElementById('reactionCalibrationCountdown').style.display = 'block';
+  
+  try {
+    // Starta mikrofon
+    reactionCalibrationAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    reactionCalibrationMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const source = reactionCalibrationAudioCtx.createMediaStreamSource(reactionCalibrationMediaStream);
+    reactionCalibrationAnalyser = reactionCalibrationAudioCtx.createAnalyser();
+    reactionCalibrationAnalyser.fftSize = 2048;
+    reactionCalibrationDataArray = new Uint8Array(reactionCalibrationAnalyser.frequencyBinCount);
+    source.connect(reactionCalibrationAnalyser);
+    
+    isReactionCalibrating = true;
+    let maxLevel = 0;
+    let countdown = 3;
+    
+    // Visa ljudnivå i realtid
+    function updateReactionCalibrationMeter() {
+      if (!isReactionCalibrating) return;
+      
+      reactionCalibrationAnalyser.getByteTimeDomainData(reactionCalibrationDataArray);
+      let max = 0;
+      for (let i = 0; i < reactionCalibrationDataArray.length; i++) {
+        const value = Math.abs(reactionCalibrationDataArray[i] - 128);
+        if (value > max) max = value;
+      }
+      
+      // Uppdatera max-nivå
+      if (max > maxLevel) maxLevel = max;
+      
+      // Uppdatera ljudmätare (0-100%)
+      const percentage = Math.min(100, (max / 128) * 100);
+      document.getElementById('reactionCalibrationSoundLevel').style.width = percentage + '%';
+      
+      reactionCalibrationAnimationId = requestAnimationFrame(updateReactionCalibrationMeter);
+    }
+    updateReactionCalibrationMeter();
+    
+    // Countdown
+    document.getElementById('reactionCalibrationCountdown').textContent = countdown;
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      document.getElementById('reactionCalibrationCountdown').textContent = countdown;
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        finishReactionCalibration(maxLevel);
+      }
+    }, 1000);
+    
+  } catch (err) {
+    document.getElementById('reactionCalibrationStatus').textContent = 'Mikrofon krävs för reaktionstestet.';
+  }
+}
+
+function finishReactionCalibration(maxLevel) {
+  reactionBackgroundNoiseLevel = maxLevel;
+  
+  // Sätt tröskel till bakgrund + marginal
+  reactionSoundThreshold = Math.max(40, reactionBackgroundNoiseLevel + 25);
+  
+  document.getElementById('reactionCalibrationTitle').textContent = '✅ KALIBRERING KLAR';
+  document.getElementById('reactionCalibrationStatus').textContent = '';
+  document.getElementById('reactionCalibrationCountdown').style.display = 'none';
+  document.getElementById('reactionBackgroundLevel').textContent = reactionBackgroundNoiseLevel;
+  document.getElementById('reactionSensitivitySlider').value = reactionSoundThreshold;
+  document.getElementById('reactionThresholdDisplay').textContent = reactionSoundThreshold;
+  document.getElementById('reactionManualCalibration').style.display = 'block';
+  
+  // Fortsätt visa ljudmätare för test
+  function updateTestMeter() {
+    if (!isReactionCalibrating) return;
+    
+    reactionCalibrationAnalyser.getByteTimeDomainData(reactionCalibrationDataArray);
+    let max = 0;
+    for (let i = 0; i < reactionCalibrationDataArray.length; i++) {
+      const value = Math.abs(reactionCalibrationDataArray[i] - 128);
+      if (value > max) max = value;
+    }
+    
+    const percentage = Math.min(100, (max / 128) * 100);
+    document.getElementById('reactionCalibrationSoundLevel').style.width = percentage + '%';
+    
+    // Flash om över tröskel
+    const soundLevel = document.getElementById('reactionCalibrationSoundLevel');
+    if (soundLevel && max > reactionSoundThreshold) {
+      soundLevel.parentElement.classList.add('hit');
+      setTimeout(() => soundLevel.parentElement.classList.remove('hit'), 300);
+    }
+    
+    reactionCalibrationAnimationId = requestAnimationFrame(updateTestMeter);
+  }
+  updateTestMeter();
+}
+
+// Stoppa kalibrering
+function stopReactionCalibration() {
+  isReactionCalibrating = false;
+  if (reactionCalibrationAnimationId) cancelAnimationFrame(reactionCalibrationAnimationId);
+  if (reactionCalibrationMediaStream) {
+    reactionCalibrationMediaStream.getTracks().forEach(track => track.stop());
+    reactionCalibrationMediaStream = null;
+  }
+}
+
+// Navigate back from calibration
+function cancelReactionCalibration() {
+  stopReactionCalibration();
+  showTestIntroPage();
+}
+
+// Starta reaktionstest efter kalibrering
+function startReactionTestAfterCalibration() {
+  isReactionCalibrating = false;
+  if (reactionCalibrationAnimationId) cancelAnimationFrame(reactionCalibrationAnimationId);
+  
+  // Stäng kalibrerings-mikrofon (vi öppnar en ny i testet)
+  if (reactionCalibrationMediaStream) {
+    reactionCalibrationMediaStream.getTracks().forEach(track => track.stop());
+    reactionCalibrationMediaStream = null;
+  }
+  
+  // Gå till testsidan
+  hideAllPages();
+  document.getElementById('testPage').style.display = 'block';
   loadReactionStats();
 }
 
@@ -323,8 +492,8 @@ function checkReactionVolume() {
   // Update VU-meter visually
   updateReactionVolumeMeter(volume);
   
-  // Check if sound is above threshold and cooldown has passed
-  if (volume > REACTION_THRESHOLD && reactionCanRegisterHit && reactionStartTime) {
+  // Check if sound is above calibrated threshold and cooldown has passed
+  if (volume > reactionSoundThreshold && reactionCanRegisterHit && reactionStartTime) {
     registerReactionHit();
     reactionCanRegisterHit = false;
     reactionCooldownTimer = setTimeout(() => {
@@ -340,8 +509,8 @@ function checkReactionVolume() {
 function updateReactionVolumeMeter(volume) {
   const fillElement = document.getElementById("volumeMeterFill");
   if (fillElement) {
-    // Scale volume to percentage (0-100)
-    const percentage = Math.min((volume / REACTION_THRESHOLD) * VOLUME_SCALE_FACTOR, VOLUME_MAX_PERCENTAGE);
+    // Scale volume to percentage (0-100) using calibrated threshold
+    const percentage = Math.min((volume / reactionSoundThreshold) * VOLUME_SCALE_FACTOR, VOLUME_MAX_PERCENTAGE);
     fillElement.style.width = percentage + "%";
   }
 }
@@ -556,13 +725,52 @@ function showKickCounterIntroPage() {
 
 // Hide all kick counter pages
 function hideAllPages() {
-  const pages = [
-    "startPage", "testIntroPage", "testPage",
-    "kickCounterIntroPage", "kickCalibrationPage",
-    "kickTimeSelectionPage", "kickTestPage", "liveScorePage"
+  const allPages = [
+    // Huvudmeny
+    "startPage",
+    
+    // Reaktionstest
+    "testIntroPage",
+    "reactionCalibrationPage",
+    "testPage",
+    
+    // Sparkräknare
+    "kickCounterIntroPage",
+    "kickCalibrationPage",
+    "kickTimeSelectionPage",
+    "kickTestPage",
+    "kickCounterPage", // Gammal, för kompatibilitet
+    
+    // Spark träning
+    "kickTrainingIntroPage",
+    "kickSelectionPage",
+    "trainingModeSelectionPage",
+    "trainingSettingsPage",
+    "kickTrainingPage",
+    
+    // Tävlingsläge
+    "competitionIntroPage",
+    "competitionParticipantsPage",
+    "competitionTypePage",
+    "competitionKickSelectionPage",
+    "competitionSingleKickPage",
+    "competitionCalibrationPage",
+    "competitionRoundPage",
+    "competitionActivePage",
+    "competitionLeaderboardPage",
+    "competitionResultsPage",
+    
+    // Live score
+    "liveScorePage",
+    
+    // Sparring (gammal)
+    "sparringPage",
+    
+    // Overlays
+    "countdownOverlay"
   ];
   
-  pages.forEach(pageId => {
+  allPages.forEach(pageId => {
     const page = document.getElementById(pageId);
     if (page) page.style.display = "none";
   });
@@ -1209,6 +1417,15 @@ document.addEventListener('DOMContentLoaded', () => {
     sensitivitySlider.addEventListener('input', (e) => {
       soundThreshold = parseInt(e.target.value);
       document.getElementById('thresholdDisplay').textContent = soundThreshold.toFixed(1);
+    });
+  }
+  
+  // Reaction test sensitivity slider
+  const reactionSensitivitySlider = document.getElementById('reactionSensitivitySlider');
+  if (reactionSensitivitySlider) {
+    reactionSensitivitySlider.addEventListener('input', (e) => {
+      reactionSoundThreshold = parseInt(e.target.value);
+      document.getElementById('reactionThresholdDisplay').textContent = reactionSoundThreshold;
     });
   }
 });
