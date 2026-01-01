@@ -106,8 +106,15 @@ const VOLUME_SCALE_FACTOR = 50; // Scale factor for VU meter display
 const VOLUME_MAX_PERCENTAGE = 100; // Maximum percentage for VU meter
 const WAIT_TIME_MIN = 2000; // Minimum wait time before "GO!" signal (ms)
 const WAIT_TIME_MAX = 5000; // Maximum wait time before "GO!" signal (ms)
+// Countdown beep sound constants
+const COUNTDOWN_FREQUENCY = 400; // Hz - Low tone for countdown numbers
+const GO_FREQUENCY = 800; // Hz - High tone for GO signal
+const COUNTDOWN_DURATION = 150; // ms - Duration of countdown beeps
+const GO_DURATION = 300; // ms - Duration of GO beep
 let reactionResults = JSON.parse(localStorage.getItem("reactionResults")) || [];
 let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || null;
+// Shared AudioContext for beep sounds to avoid creating too many contexts
+let beepAudioContext = null;
 
 function showTestIntroPage() {
   document.getElementById("startPage").style.display = "none";
@@ -130,6 +137,103 @@ function showReactionTestPage() {
   loadReactionStats();
 }
 
+// Helper function for async delays
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Play beep sound using Web Audio API
+function playBeep(frequency = 800, duration = 200, type = 'sine') {
+  try {
+    // Reuse existing AudioContext or create new one if needed
+    if (!beepAudioContext || beepAudioContext.state === 'closed') {
+      beepAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    const oscillator = beepAudioContext.createOscillator();
+    const gainNode = beepAudioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(beepAudioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(0.5, beepAudioContext.currentTime);
+    // Use 0.001 instead of 0.01 to avoid audio artifacts (exponentialRampToValueAtTime cannot ramp to zero)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, beepAudioContext.currentTime + duration / 1000);
+    
+    oscillator.start(beepAudioContext.currentTime);
+    oscillator.stop(beepAudioContext.currentTime + duration / 1000);
+  } catch (error) {
+    // Silently fail if audio context creation fails - countdown will continue without sound
+    console.warn('Failed to play beep sound:', error);
+  }
+}
+
+// Update status and time display with countdown styling
+function updateStatus(text, color = "#00dddd") {
+  const statusText = document.getElementById("statusText");
+  const timeValue = document.getElementById("timeValue");
+  const timeDisplay = document.getElementById("timeDisplay");
+  
+  if (statusText) {
+    statusText.textContent = text;
+    statusText.style.color = color;
+  }
+  
+  // Show countdown in the time display circle
+  if (timeValue) {
+    timeValue.textContent = text;
+  }
+  
+  // Apply special styling for countdown
+  if (timeDisplay) {
+    if (text === "3" || text === "2" || text === "1") {
+      timeDisplay.style.color = "#00dddd";
+      timeDisplay.style.fontSize = "5rem";
+    } else if (text === "GÅ!") {
+      timeDisplay.style.color = "#ff8008";
+      timeDisplay.style.fontSize = "3rem";
+    } else {
+      timeDisplay.style.color = "#fff";
+      timeDisplay.style.fontSize = "3rem";
+    }
+  }
+}
+
+// Countdown function with sound
+async function startCountdown() {
+  // Visa "3"
+  updateStatus("3", "#00dddd");
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION); // Låg ton
+  await sleep(1000);
+  
+  if (!reactionTestActive) return;
+  
+  // Visa "2"
+  updateStatus("2", "#00dddd");
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION); // Låg ton
+  await sleep(1000);
+  
+  if (!reactionTestActive) return;
+  
+  // Visa "1"
+  updateStatus("1", "#00dddd");
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION); // Låg ton
+  await sleep(1000);
+  
+  if (!reactionTestActive) return;
+  
+  // Visa "GÅ!" + hög beep
+  updateStatus("GÅ!", "#ff8008");
+  playBeep(GO_FREQUENCY, GO_DURATION); // Hög ton - signalen att sparka!
+  
+  // Starta tidtagning
+  reactionStartTime = performance.now();
+  checkReactionVolume();
+}
+
 async function startReactionTest() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     document.getElementById("statusText").textContent = "Mikrofon krävs för testet.";
@@ -144,22 +248,13 @@ async function startReactionTest() {
     reactionCanRegisterHit = true;
     
     // Update UI
-    document.getElementById("statusText").textContent = "Väntar på spark...";
     document.getElementById("timeValue").textContent = "0.000";
     document.getElementById("timeDisplay").classList.remove("hit");
     document.getElementById("startBtn").style.opacity = "0.5";
     document.getElementById("stopBtn").style.opacity = "1";
     
-    // Wait random time before signaling GO
-    const waitTime = Math.random() * (WAIT_TIME_MAX - WAIT_TIME_MIN) + WAIT_TIME_MIN;
-    setTimeout(() => {
-      if (reactionTestActive) {
-        document.getElementById("statusText").textContent = "GÅ!";
-        document.getElementById("statusText").style.color = "#ff8008";
-        reactionStartTime = performance.now();
-        checkReactionVolume();
-      }
-    }, waitTime);
+    // Start countdown with sound
+    await startCountdown();
     
   } catch (error) {
     document.getElementById("statusText").textContent = "Mikrofon behövs för testet.";
