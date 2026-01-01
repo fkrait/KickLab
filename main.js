@@ -1087,13 +1087,15 @@ function startCompetitionFromKickSelection() {
 function startCompetitionRound() {
   if (!competitionActive) return;
   
-  // Select kick for this round
-  if (competitionType === 'random') {
-    currentRoundKick = selectedCompetitionKicks[
-      Math.floor(Math.random() * selectedCompetitionKicks.length)
-    ];
-  } else {
-    currentRoundKick = selectedCompetitionKick;
+  // Select kick ONCE per round (only when starting the round with first participant)
+  if (currentParticipantIndex === 0) {
+    if (competitionType === 'random') {
+      currentRoundKick = selectedCompetitionKicks[
+        Math.floor(Math.random() * selectedCompetitionKicks.length)
+      ];
+    } else {
+      currentRoundKick = selectedCompetitionKick;
+    }
   }
   
   // Show round page for current participant
@@ -1421,6 +1423,55 @@ function showConfetti() {
   }
   
   setTimeout(() => container.remove(), 5000);
+}
+
+// Stop competition
+function stopCompetition() {
+  // Stop microphone
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach(track => track.stop());
+    competitionMediaStream = null;
+  }
+  
+  // Stop speech synthesis
+  if (speechSynthesis) {
+    speechSynthesis.cancel();
+  }
+  
+  // Clear timers and mark as inactive
+  competitionActive = false;
+  
+  // Show message
+  alert('Tävlingen avbruten');
+  
+  // Go back to setup page
+  showCompetitionParticipantsPage();
+}
+
+// Exit competition to main menu
+function exitCompetitionToMenu() {
+  // Stop everything
+  stopCompetitionInternal();
+  
+  // Go to main menu
+  showStartPage();
+}
+
+// Internal stop function (without alert and navigation)
+function stopCompetitionInternal() {
+  // Stop microphone
+  if (competitionMediaStream) {
+    competitionMediaStream.getTracks().forEach(track => track.stop());
+    competitionMediaStream = null;
+  }
+  
+  // Stop speech synthesis
+  if (speechSynthesis) {
+    speechSynthesis.cancel();
+  }
+  
+  // Clear timers and mark as inactive
+  competitionActive = false;
 }
 
 /* ---------- Live sparring score ---------- */

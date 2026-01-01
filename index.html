@@ -1774,6 +1774,32 @@
       transform: scale(0.98);
     }
 
+    .competition-buttons-fixed {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding: 1rem;
+    }
+
+    .competition-btn-secondary {
+      background: transparent;
+      color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 25px;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .competition-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #00dddd;
+      color: #00dddd;
+    }
+
     /* Mobile styles for competition mode */
     @media (max-width: 600px) {
       .competition-container {
@@ -2425,6 +2451,10 @@
         <button class="competition-btn" onclick="showCompetitionTypePage()">NÄSTA →</button>
         <a class="back-link" onclick="showCompetitionIntroPage()">← Tillbaka</a>
       </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
+      </div>
     </div>
   </div>
 
@@ -2447,6 +2477,10 @@
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
         <button class="competition-btn" onclick="showCompetitionKickSelectionPage()" id="nextFromTypeBtn">NÄSTA →</button>
         <a class="back-link" onclick="showCompetitionParticipantsPage()">← Tillbaka</a>
+      </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
       </div>
     </div>
   </div>
@@ -2516,6 +2550,10 @@
         <button class="competition-btn" onclick="startCompetitionFromKickSelection()">STARTA TÄVLING →</button>
         <a class="back-link" onclick="showCompetitionTypePage()">← Tillbaka</a>
       </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
+      </div>
     </div>
   </div>
 
@@ -2584,6 +2622,10 @@
         <button class="competition-btn" onclick="startCompetitionFromKickSelection()">STARTA TÄVLING →</button>
         <a class="back-link" onclick="showCompetitionTypePage()">← Tillbaka</a>
       </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
+      </div>
     </div>
   </div>
 
@@ -2598,6 +2640,10 @@
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
         <button class="competition-btn" style="font-size: 1.5rem; padding: 1.2rem 2rem;" onclick="beginCompetitionRound()">STARTA</button>
       </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
+      </div>
     </div>
   </div>
 
@@ -2610,6 +2656,10 @@
       </div>
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
         <button class="competition-btn" onclick="continueCompetition()" id="continueBtn">OMGÅNG 2 →</button>
+      </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
       </div>
     </div>
   </div>
@@ -2638,6 +2688,10 @@
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
         <button class="competition-btn" onclick="showCompetitionIntroPage()">NY TÄVLING</button>
         <a class="back-link" onclick="showStartPage()">← Tillbaka till start</a>
+      </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
       </div>
     </div>
   </div>
