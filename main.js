@@ -99,8 +99,10 @@ let reactionTestActive = false;
 let reactionStartTime = null;
 let reactionCanRegisterHit = true;
 let reactionAnimationId = null;
+let reactionCooldownTimer = null; // Store cooldown timeout for cleanup
 const REACTION_THRESHOLD = 50; // Adjustable threshold for kick detection
 const REACTION_COOLDOWN = 300; // ms between hits
+const VOLUME_SCALE_FACTOR = 50; // Scale factor for VU meter display
 let reactionResults = JSON.parse(localStorage.getItem("reactionResults")) || [];
 let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || null;
 
@@ -163,6 +165,11 @@ async function startReactionTest() {
 }
 
 async function initReactionAudio() {
+  // Clean up existing audio context if it exists
+  if (reactionAudioContext && reactionAudioContext.state !== 'closed') {
+    await reactionAudioContext.close();
+  }
+  
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   reactionMediaStream = stream; // Store for cleanup
   reactionAudioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -192,7 +199,7 @@ function checkReactionVolume() {
   if (volume > REACTION_THRESHOLD && reactionCanRegisterHit && reactionStartTime) {
     registerReactionHit();
     reactionCanRegisterHit = false;
-    setTimeout(() => {
+    reactionCooldownTimer = setTimeout(() => {
       reactionCanRegisterHit = true;
     }, REACTION_COOLDOWN);
   }
@@ -206,7 +213,7 @@ function updateReactionVolumeMeter(volume) {
   const fillElement = document.getElementById("volumeMeterFill");
   if (fillElement) {
     // Scale volume to percentage (0-100)
-    const percentage = Math.min((volume / REACTION_THRESHOLD) * 50, 100);
+    const percentage = Math.min((volume / REACTION_THRESHOLD) * VOLUME_SCALE_FACTOR, 100);
     fillElement.style.width = percentage + "%";
   }
 }
@@ -235,6 +242,12 @@ function stopReactionTest() {
   if (reactionAnimationId) {
     cancelAnimationFrame(reactionAnimationId);
     reactionAnimationId = null;
+  }
+  
+  // Cancel cooldown timer if active
+  if (reactionCooldownTimer) {
+    clearTimeout(reactionCooldownTimer);
+    reactionCooldownTimer = null;
   }
   
   // Properly clean up media stream
