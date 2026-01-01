@@ -1800,6 +1800,101 @@
       color: #00dddd;
     }
 
+    /* Ljudmätare (Sound Meter) */
+    .sound-meter {
+      width: 100%;
+      height: 30px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(0, 220, 220, 0.4);
+      border-radius: 15px;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    .sound-level {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00ff00, #88ff00, #ffff00, #ff8800, #ff0000);
+      border-radius: 15px;
+      transition: width 0.05s ease;
+    }
+
+    /* Flash vid träff */
+    .sound-meter.hit {
+      border-color: #00ff00;
+      box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+      animation: hit-flash 0.3s ease;
+    }
+
+    @keyframes hit-flash {
+      0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.8); }
+      50% { box-shadow: 0 0 50px rgba(0, 255, 0, 1); }
+    }
+
+    /* Timer */
+    .competition-timer {
+      font-size: 2.5rem;
+      font-weight: bold;
+      font-family: monospace;
+      color: #00dddd;
+      text-shadow: 0 0 10px rgba(0, 220, 220, 0.5);
+      margin: 1rem 0;
+    }
+
+    /* Känslighets-slider */
+    .sensitivity-control {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .slider-container input[type="range"] {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(0, 220, 220, 0.3);
+      -webkit-appearance: none;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 128, 8, 0.5);
+    }
+
+    .slider-container input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 128, 8, 0.5);
+      border: none;
+    }
+
+    .calibration-hint {
+      color: #aaa;
+      font-style: italic;
+    }
+
+    .listening-status {
+      color: #00dddd;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+    }
+
     /* Mobile styles for competition mode */
     @media (max-width: 600px) {
       .competition-container {
@@ -2629,6 +2724,44 @@
     </div>
   </div>
 
+  <!-- Competition Mode - Step 4.5: Calibration -->
+  <div id="competitionCalibrationPage" class="page-container" style="display:none;">
+    <div class="competition-container">
+      <h2 class="competition-title" id="calibrationTitle">🎤 KALIBRERAR...</h2>
+      <p id="calibrationStatus" style="text-align: center; color: #fff; font-size: 1.2rem; margin: 1rem 0;">Mäter bakgrundsljud... Var tyst!</p>
+      <p id="calibrationCountdown" style="text-align: center; color: #ff8008; font-size: 3rem; font-weight: 900; margin: 1rem 0;">3</p>
+      
+      <!-- Ljudmätare -->
+      <div class="sound-meter">
+        <div class="sound-level" id="calibrationSoundLevel"></div>
+      </div>
+      
+      <!-- Manuell justering (dold under auto-kalibrering) -->
+      <div id="manualCalibration" style="display:none;">
+        <p style="text-align: center; color: #fff; margin: 1rem 0;">Bakgrundsnivå: <span id="backgroundLevel">-</span></p>
+        
+        <div class="sensitivity-control">
+          <label style="display: block; text-align: center; margin-bottom: 1rem;">⚙️ JUSTERA KÄNSLIGHET (valfritt)</label>
+          <div class="slider-container">
+            <span>Låg 🔇</span>
+            <input type="range" id="sensitivitySlider" min="20" max="80" value="40">
+            <span>🔊 Hög</span>
+          </div>
+          <p style="text-align: center; margin-top: 0.5rem;">Tröskel: <span id="thresholdDisplay">40</span></p>
+        </div>
+        
+        <p class="calibration-hint" style="text-align: center; margin: 1rem 0;">Testa med en spark!</p>
+        
+        <button class="competition-btn" onclick="startCompetitionAfterCalibration()">STARTA →</button>
+      </div>
+      
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Competition Mode - Step 5: Competition Round -->
   <div id="competitionRoundPage" class="page-container" style="display:none;">
     <div class="competition-container">
@@ -2640,6 +2773,32 @@
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
         <button class="competition-btn" style="font-size: 1.5rem; padding: 1.2rem 2rem;" onclick="beginCompetitionRound()">STARTA</button>
       </div>
+      <div class="competition-buttons-fixed">
+        <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
+        <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Competition Mode - Step 5.5: Active Competition (with timer and sound meter) -->
+  <div id="competitionActivePage" class="page-container" style="display:none;">
+    <div class="competition-container">
+      <h2 id="activeParticipantName" class="competition-title"></h2>
+      <div style="text-align: center; margin: 1rem 0; color: #fff;">
+        <div id="activeRoundInfo" style="font-size: 1.1rem; font-weight: 700; color: #00dddd;"></div>
+        <div id="activeKickName" style="font-size: 1.8rem; font-weight: 900; margin: 0.5rem 0; color: #ff8008;"></div>
+      </div>
+      
+      <!-- Timer som tickar -->
+      <div class="competition-timer" id="competitionTimer">0.000 s</div>
+      
+      <!-- Ljudmätare -->
+      <div class="sound-meter" id="competitionSoundMeter">
+        <div class="sound-level" id="competitionSoundLevel"></div>
+      </div>
+      <p class="listening-status" style="text-align: center;">🎤 Lyssnar...</p>
+      
+      <!-- Knappar alltid synliga -->
       <div class="competition-buttons-fixed">
         <button class="competition-btn-secondary" onclick="stopCompetition()">STOPPA</button>
         <button class="competition-btn-secondary" onclick="exitCompetitionToMenu()">← TILLBAKA MENY</button>
