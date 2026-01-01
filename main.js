@@ -469,6 +469,7 @@ const THRESHOLD_PERCENTAGE = 0.7; // 70% of calibration kick
 const MIN_THRESHOLD = 30; // Minimum threshold value
 const CALIBRATION_DURATION = 3000; // 3 seconds calibration period
 const VOLUME_METER_SCALE = 50; // Scale factor for VU meter display
+const MAX_VOLUME_PERCENTAGE = 100; // Maximum percentage for VU meter
 
 let kickAudioContext, kickAnalyser, kickMicrophone, kickDataArray;
 let kickMediaStream = null; // Store stream for proper cleanup
@@ -585,8 +586,8 @@ function getCurrentKickVolume() {
 function updateKickVolumeMeter(volume, elementId) {
   const fillElement = document.getElementById(elementId);
   if (fillElement) {
-    // Scale volume to percentage (0-100) using VOLUME_METER_SCALE
-    const percentage = Math.min((volume / kickCalibrationThreshold) * VOLUME_METER_SCALE, 100);
+    // Scale volume to percentage (0-MAX_VOLUME_PERCENTAGE) using VOLUME_METER_SCALE
+    const percentage = Math.min((volume / kickCalibrationThreshold) * VOLUME_METER_SCALE, MAX_VOLUME_PERCENTAGE);
     fillElement.style.width = percentage + "%";
   }
 }
