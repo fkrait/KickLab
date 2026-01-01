@@ -106,8 +106,15 @@ const VOLUME_SCALE_FACTOR = 50; // Scale factor for VU meter display
 const VOLUME_MAX_PERCENTAGE = 100; // Maximum percentage for VU meter
 const WAIT_TIME_MIN = 2000; // Minimum wait time before "GO!" signal (ms)
 const WAIT_TIME_MAX = 5000; // Maximum wait time before "GO!" signal (ms)
+// Countdown beep sound constants
+const COUNTDOWN_FREQUENCY = 400; // Hz - Low tone for countdown numbers
+const GO_FREQUENCY = 800; // Hz - High tone for GO signal
+const COUNTDOWN_DURATION = 150; // ms - Duration of countdown beeps
+const GO_DURATION = 300; // ms - Duration of GO beep
 let reactionResults = JSON.parse(localStorage.getItem("reactionResults")) || [];
 let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || null;
+// Shared AudioContext for beep sounds to avoid creating too many contexts
+let beepAudioContext = null;
 
 function showTestIntroPage() {
   document.getElementById("startPage").style.display = "none";
@@ -137,21 +144,26 @@ function sleep(ms) {
 
 // Play beep sound using Web Audio API
 function playBeep(frequency = 800, duration = 200, type = 'sine') {
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
+  // Reuse existing AudioContext or create new one if needed
+  if (!beepAudioContext || beepAudioContext.state === 'closed') {
+    beepAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  
+  const oscillator = beepAudioContext.createOscillator();
+  const gainNode = beepAudioContext.createGain();
   
   oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
+  gainNode.connect(beepAudioContext.destination);
   
   oscillator.frequency.value = frequency;
   oscillator.type = type;
   
-  gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
+  gainNode.gain.setValueAtTime(0.5, beepAudioContext.currentTime);
+  // Use 0.001 instead of 0.01 to avoid audio artifacts (exponentialRampToValueAtTime cannot ramp to zero)
+  gainNode.gain.exponentialRampToValueAtTime(0.001, beepAudioContext.currentTime + duration / 1000);
   
-  oscillator.start(audioCtx.currentTime);
-  oscillator.stop(audioCtx.currentTime + duration / 1000);
+  oscillator.start(beepAudioContext.currentTime);
+  oscillator.stop(beepAudioContext.currentTime + duration / 1000);
 }
 
 // Update status and time display with countdown styling
@@ -189,28 +201,28 @@ function updateStatus(text, color = "#00dddd") {
 async function startCountdown() {
   // Visa "3"
   updateStatus("3", "#00dddd");
-  playBeep(400, 150); // Låg ton
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION); // Låg ton
   await sleep(1000);
   
   if (!reactionTestActive) return;
   
   // Visa "2"
   updateStatus("2", "#00dddd");
-  playBeep(400, 150); // Låg ton
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION); // Låg ton
   await sleep(1000);
   
   if (!reactionTestActive) return;
   
   // Visa "1"
   updateStatus("1", "#00dddd");
-  playBeep(400, 150); // Låg ton
+  playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION); // Låg ton
   await sleep(1000);
   
   if (!reactionTestActive) return;
   
   // Visa "GÅ!" + hög beep
   updateStatus("GÅ!", "#ff8008");
-  playBeep(800, 300); // Hög ton - signalen att sparka!
+  playBeep(GO_FREQUENCY, GO_DURATION); // Hög ton - signalen att sparka!
   
   // Starta tidtagning
   reactionStartTime = performance.now();
