@@ -923,6 +923,19 @@ let currentRoundKick = null;
 let competitionRound = 1;
 const TOTAL_COMPETITION_ROUNDS = 3;
 
+// Kalibrerings-variabler
+let calibrationAudioCtx = null;
+let calibrationMediaStream = null;
+let calibrationAnalyser = null;
+let calibrationDataArray = null;
+let backgroundNoiseLevel = 0;
+let soundThreshold = 40;
+let isCalibrating = false;
+let calibrationAnimationId = null;
+
+// Timer-variabler
+let competitionTimerInterval = null;
+
 // Competition kicks data
 const competitionKicks = [
   { name: "Framspark" },
@@ -1000,8 +1013,8 @@ function showCompetitionKickSelectionPage() {
 function hideAllCompetitionPages() {
   const pages = [
     'competitionIntroPage', 'competitionParticipantsPage', 'competitionTypePage',
-    'competitionKickSelectionPage', 'competitionSingleKickPage', 'competitionRoundPage',
-    'competitionLeaderboardPage', 'competitionResultsPage'
+    'competitionKickSelectionPage', 'competitionSingleKickPage', 'competitionCalibrationPage',
+    'competitionRoundPage', 'competitionActivePage', 'competitionLeaderboardPage', 'competitionResultsPage'
   ];
   pages.forEach(pageId => {
     const page = document.getElementById(pageId);
@@ -1080,7 +1093,140 @@ function startCompetitionFromKickSelection() {
   currentParticipantIndex = 0;
   competitionActive = true;
   
-  // Start first round
+  // Start calibration before first round
+  startCalibration();
+}
+
+// Starta kalibrering
+async function startCalibration() {
+  hideAllCompetitionPages();
+  document.getElementById('competitionCalibrationPage').style.display = 'block';
+  
+  document.getElementById('calibrationTitle').textContent = '🎤 KALIBRERAR...';
+  document.getElementById('calibrationStatus').textContent = 'Mäter bakgrundsljud... Var tyst!';
+  document.getElementById('manualCalibration').style.display = 'none';
+  
+  try {
+    // Starta mikrofon
+    calibrationAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    calibrationMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const source = calibrationAudioCtx.createMediaStreamSource(calibrationMediaStream);
+    calibrationAnalyser = calibrationAudioCtx.createAnalyser();
+    calibrationAnalyser.fftSize = 2048;
+    calibrationDataArray = new Uint8Array(calibrationAnalyser.frequencyBinCount);
+    source.connect(calibrationAnalyser);
+    
+    isCalibrating = true;
+    let maxLevel = 0;
+    let countdown = 3;
+    
+    // Visa ljudnivå i realtid
+    function updateCalibrationMeter() {
+      if (!isCalibrating) return;
+      
+      calibrationAnalyser.getByteTimeDomainData(calibrationDataArray);
+      let max = 0;
+      for (let i = 0; i < calibrationDataArray.length; i++) {
+        const value = Math.abs(calibrationDataArray[i] - 128);
+        if (value > max) max = value;
+      }
+      
+      // Uppdatera max-nivå
+      if (max > maxLevel) maxLevel = max;
+      
+      // Uppdatera ljudmätare (0-100%)
+      const percentage = Math.min(100, (max / 128) * 100);
+      document.getElementById('calibrationSoundLevel').style.width = percentage + '%';
+      
+      calibrationAnimationId = requestAnimationFrame(updateCalibrationMeter);
+    }
+    updateCalibrationMeter();
+    
+    // Countdown
+    document.getElementById('calibrationCountdown').textContent = countdown;
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      document.getElementById('calibrationCountdown').textContent = countdown;
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        finishCalibration(maxLevel);
+      }
+    }, 1000);
+    
+  } catch (err) {
+    document.getElementById('calibrationStatus').textContent = 'Mikrofon krävs för tävlingsläget.';
+    competitionActive = false;
+  }
+}
+
+function finishCalibration(maxLevel) {
+  isCalibrating = false;
+  backgroundNoiseLevel = maxLevel;
+  
+  // Sätt tröskel till bakgrund + marginal
+  soundThreshold = Math.max(40, backgroundNoiseLevel + 25);
+  
+  document.getElementById('calibrationTitle').textContent = '✅ KALIBRERING KLAR';
+  document.getElementById('calibrationStatus').textContent = '';
+  document.getElementById('calibrationCountdown').textContent = '';
+  document.getElementById('backgroundLevel').textContent = backgroundNoiseLevel.toFixed(1);
+  document.getElementById('sensitivitySlider').value = soundThreshold;
+  document.getElementById('thresholdDisplay').textContent = soundThreshold.toFixed(1);
+  document.getElementById('manualCalibration').style.display = 'block';
+  
+  // Fortsätt visa ljudmätare för test
+  isCalibrating = true;
+  function updateTestMeter() {
+    if (!isCalibrating) return;
+    
+    calibrationAnalyser.getByteTimeDomainData(calibrationDataArray);
+    let max = 0;
+    for (let i = 0; i < calibrationDataArray.length; i++) {
+      const value = Math.abs(calibrationDataArray[i] - 128);
+      if (value > max) max = value;
+    }
+    
+    const percentage = Math.min(100, (max / 128) * 100);
+    document.getElementById('calibrationSoundLevel').style.width = percentage + '%';
+    
+    // Flash om över tröskel
+    const meter = document.querySelector('#competitionCalibrationPage .sound-meter');
+    if (max > soundThreshold) {
+      meter.classList.add('hit');
+      setTimeout(() => meter.classList.remove('hit'), 300);
+    }
+    
+    calibrationAnimationId = requestAnimationFrame(updateTestMeter);
+  }
+  updateTestMeter();
+}
+
+// Uppdatera tröskel från slider
+document.addEventListener('DOMContentLoaded', () => {
+  const sensitivitySlider = document.getElementById('sensitivitySlider');
+  if (sensitivitySlider) {
+    sensitivitySlider.addEventListener('input', (e) => {
+      soundThreshold = parseInt(e.target.value);
+      document.getElementById('thresholdDisplay').textContent = soundThreshold.toFixed(1);
+    });
+  }
+});
+
+// Starta tävling efter kalibrering
+function startCompetitionAfterCalibration() {
+  isCalibrating = false;
+  if (calibrationAnimationId) cancelAnimationFrame(calibrationAnimationId);
+  
+  // Använd samma mikrofon för tävlingen
+  competitionAudioCtx = calibrationAudioCtx;
+  competitionMediaStream = calibrationMediaStream;
+  competitionAnalyser = calibrationAnalyser;
+  competitionDataArray = calibrationDataArray;
+  
+  // Starta första omgången
+  competitionRound = 1;
+  currentParticipantIndex = 0;
   startCompetitionRound();
 }
 
@@ -1136,8 +1282,37 @@ async function beginCompetitionRound() {
     overlay.style.display = "none";
   }
   
+  // Show active competition page with timer and sound meter
+  showActiveCompetitionPage();
+  
   // Measure reaction time
   await measureCompetitionReactionTime();
+}
+
+function showActiveCompetitionPage() {
+  hideAllCompetitionPages();
+  document.getElementById('competitionActivePage').style.display = 'block';
+  
+  const participant = competitionParticipants[currentParticipantIndex];
+  const nameEl = document.getElementById('activeParticipantName');
+  const roundInfoEl = document.getElementById('activeRoundInfo');
+  const kickNameEl = document.getElementById('activeKickName');
+  
+  if (nameEl) nameEl.textContent = participant.name.toUpperCase() + ' - OMGÅNG ' + competitionRound;
+  if (roundInfoEl) roundInfoEl.textContent = `Omgång ${competitionRound} av ${TOTAL_COMPETITION_ROUNDS}`;
+  if (kickNameEl) kickNameEl.textContent = currentRoundKick.name;
+  
+  // Reset timer display
+  const timerEl = document.getElementById('competitionTimer');
+  if (timerEl) timerEl.textContent = '0.000 s';
+  
+  // Reset sound meter
+  const soundLevelEl = document.getElementById('competitionSoundLevel');
+  if (soundLevelEl) soundLevelEl.style.width = '0%';
+  
+  // Remove hit class if present
+  const soundMeterEl = document.getElementById('competitionSoundMeter');
+  if (soundMeterEl) soundMeterEl.classList.remove('hit');
 }
 
 async function performCountdownWithVoice(kickName) {
@@ -1178,11 +1353,21 @@ function speakCompetition(text) {
 
 async function measureCompetitionReactionTime() {
   try {
-    // Initialize audio
-    await prepareCompetitionMicrophone();
+    // Audio should already be initialized from calibration
+    // If not (shouldn't happen), initialize it
+    if (!competitionAudioCtx || !competitionAnalyser) {
+      await prepareCompetitionMicrophone();
+    }
     
     // Start timing
     competitionStartTime = performance.now();
+    
+    // Start timer display
+    competitionTimerInterval = setInterval(() => {
+      const elapsed = (performance.now() - competitionStartTime) / 1000;
+      const timerEl = document.getElementById('competitionTimer');
+      if (timerEl) timerEl.textContent = elapsed.toFixed(3) + ' s';
+    }, 10);
     
     // Listen for kick
     await listenForCompetitionKick();
@@ -1223,8 +1408,29 @@ function listenForCompetitionKick() {
         if (value > max) max = value;
       }
       
-      if (max > 40) {
+      // Uppdatera ljudmätare (0-100%)
+      const percentage = Math.min(100, (max / 128) * 100);
+      const soundLevelEl = document.getElementById('competitionSoundLevel');
+      if (soundLevelEl) soundLevelEl.style.width = percentage + '%';
+      
+      // Kolla om över tröskel (använd kalibrerad tröskel)
+      if (max > soundThreshold) {
         const reactionTime = performance.now() - competitionStartTime;
+        
+        // Flash ljudmätare
+        const soundMeterEl = document.getElementById('competitionSoundMeter');
+        if (soundMeterEl) {
+          soundMeterEl.classList.add('hit');
+          setTimeout(() => soundMeterEl.classList.remove('hit'), 300);
+        }
+        
+        // Stoppa timer
+        if (competitionTimerInterval) {
+          clearInterval(competitionTimerInterval);
+          competitionTimerInterval = null;
+        }
+        
+        // Spara resultat
         saveCompetitionTime(reactionTime);
         resolve();
       } else {
@@ -1427,24 +1633,40 @@ function showConfetti() {
 
 // Stop competition
 function stopCompetition() {
-  // Stop microphone
+  competitionActive = false;
+  isCalibrating = false;
+  
+  // Stoppa timer
+  if (competitionTimerInterval) {
+    clearInterval(competitionTimerInterval);
+    competitionTimerInterval = null;
+  }
+  
+  // Stoppa animationer
+  if (calibrationAnimationId) {
+    cancelAnimationFrame(calibrationAnimationId);
+    calibrationAnimationId = null;
+  }
+  
+  // Stoppa mikrofon
   if (competitionMediaStream) {
     competitionMediaStream.getTracks().forEach(track => track.stop());
     competitionMediaStream = null;
   }
+  if (calibrationMediaStream) {
+    calibrationMediaStream.getTracks().forEach(track => track.stop());
+    calibrationMediaStream = null;
+  }
   
-  // Stop speech synthesis
+  // Stoppa talsyntes
   if (speechSynthesis) {
     speechSynthesis.cancel();
   }
   
-  // Clear timers and mark as inactive
-  competitionActive = false;
-  
   // Show message
   alert('Tävlingen avbruten');
   
-  // Go back to setup page
+  // Visa setup-sidan igen
   showCompetitionParticipantsPage();
 }
 
@@ -1459,19 +1681,35 @@ function exitCompetitionToMenu() {
 
 // Internal stop function (without alert and navigation)
 function stopCompetitionInternal() {
-  // Stop microphone
+  competitionActive = false;
+  isCalibrating = false;
+  
+  // Stoppa timer
+  if (competitionTimerInterval) {
+    clearInterval(competitionTimerInterval);
+    competitionTimerInterval = null;
+  }
+  
+  // Stoppa animationer
+  if (calibrationAnimationId) {
+    cancelAnimationFrame(calibrationAnimationId);
+    calibrationAnimationId = null;
+  }
+  
+  // Stoppa mikrofon
   if (competitionMediaStream) {
     competitionMediaStream.getTracks().forEach(track => track.stop());
     competitionMediaStream = null;
   }
+  if (calibrationMediaStream) {
+    calibrationMediaStream.getTracks().forEach(track => track.stop());
+    calibrationMediaStream = null;
+  }
   
-  // Stop speech synthesis
+  // Stoppa talsyntes
   if (speechSynthesis) {
     speechSynthesis.cancel();
   }
-  
-  // Clear timers and mark as inactive
-  competitionActive = false;
 }
 
 /* ---------- Live sparring score ---------- */
