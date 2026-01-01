@@ -139,10 +139,16 @@ let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || n
 let beepAudioContext = null;
 
 function showTestIntroPage() {
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testIntroPage").style.display = "block";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterPage").style.display = "none";
+  const startPage = document.getElementById("startPage");
+  const testIntroPage = document.getElementById("testIntroPage");
+  const testPage = document.getElementById("testPage");
+  const kickCounterPage = document.getElementById("kickCounterPage");
+  
+  if (startPage) startPage.style.display = "none";
+  if (testIntroPage) testIntroPage.style.display = "block";
+  if (testPage) testPage.style.display = "none";
+  if (kickCounterPage) kickCounterPage.style.display = "none";
+  
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
   pauseLiveTimer();
@@ -548,15 +554,16 @@ function showKickCounterIntroPage() {
 
 // Hide all kick counter pages
 function hideAllPages() {
-  document.getElementById("startPage").style.display = "none";
-  document.getElementById("testIntroPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
-  document.getElementById("kickCounterIntroPage").style.display = "none";
-  document.getElementById("kickCalibrationPage").style.display = "none";
-  document.getElementById("kickTimeSelectionPage").style.display = "none";
-  document.getElementById("kickTestPage").style.display = "none";
-  const liveScorePage = document.getElementById("liveScorePage");
-  if (liveScorePage) liveScorePage.style.display = "none";
+  const pages = [
+    "startPage", "testIntroPage", "testPage",
+    "kickCounterIntroPage", "kickCalibrationPage",
+    "kickTimeSelectionPage", "kickTestPage", "liveScorePage"
+  ];
+  
+  pages.forEach(pageId => {
+    const page = document.getElementById(pageId);
+    if (page) page.style.display = "none";
+  });
 }
 
 // Initialize audio for kick detection
