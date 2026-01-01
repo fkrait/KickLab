@@ -7,6 +7,11 @@
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="icon-512.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
     html, body {
       margin: 0; padding: 0;
@@ -1930,9 +1935,220 @@
         min-height: 80px !important;
       }
     }
+    
+    /* ========== LOGIN MODAL STYLES ========== */
+    #loginModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+      animation: fadein 0.3s;
+    }
+    
+    #loginModal.show {
+      display: flex;
+    }
+    
+    .login-container {
+      background: rgba(0,0,0,0.95);
+      border: 2px solid rgba(0, 220, 220, 0.6);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      max-width: 450px;
+      width: 90%;
+      box-shadow: 0 0 30px rgba(0, 220, 220, 0.3);
+      text-align: center;
+    }
+    
+    .login-title {
+      font-size: 2rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #00dddd, #ff8008);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+    }
+    
+    @supports not (background-clip: text) {
+      .login-title {
+        color: #00dddd;
+        background: none;
+      }
+    }
+    
+    .login-subtitle {
+      color: rgba(255,255,255,0.8);
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+    
+    .login-input {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 2px solid rgba(0, 220, 220, 0.4);
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    .login-input:focus {
+      border-color: rgba(0, 220, 220, 0.8);
+    }
+    
+    .login-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .login-btn {
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      border: none;
+      border-radius: 30px;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(255, 128, 8, 0.3);
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    
+    .login-btn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 25px rgba(255, 128, 8, 0.5);
+    }
+    
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .login-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .login-message {
+      color: #00dddd;
+      font-size: 0.95rem;
+      margin-top: 1rem;
+      min-height: 1.5rem;
+    }
+    
+    .login-message.error {
+      color: #ff4444;
+    }
+    
+    .login-message.success {
+      color: #4eff4e;
+    }
+    
+    .admin-bypass-info {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.85rem;
+      margin-top: 1.5rem;
+      font-style: italic;
+    }
+    
+    /* User info display in top right */
+    #userInfo {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0,0,0,0.8);
+      border: 1px solid rgba(0, 220, 220, 0.4);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 4000;
+      backdrop-filter: blur(5px);
+    }
+    
+    #userInfo.show {
+      display: flex;
+    }
+    
+    .user-email {
+      color: #00dddd;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    
+    .user-admin-badge {
+      background: linear-gradient(90deg, #ff8008, #ffc837);
+      color: #222;
+      padding: 0.25rem 0.5rem;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .logout-btn {
+      background: rgba(255, 68, 68, 0.2);
+      border: 1px solid rgba(255, 68, 68, 0.4);
+      color: #ff4444;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+    
+    .logout-btn:hover {
+      background: rgba(255, 68, 68, 0.3);
+      border-color: rgba(255, 68, 68, 0.6);
+    }
   </style>
 </head>
 <body>
+
+  <!-- User Info Display (top right) -->
+  <div id="userInfo">
+    <span class="user-email" id="userEmail"></span>
+    <span class="user-admin-badge" id="adminBadge" style="display:none;">ADMIN</span>
+    <button class="logout-btn" onclick="handleLogout()">Logga ut</button>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal">
+    <div class="login-container">
+      <h2 class="login-title">KickLab Inloggning</h2>
+      <p class="login-subtitle">
+        Ange din e-postadress för att få en inloggningslänk skickad till dig.
+      </p>
+      <input 
+        type="email" 
+        id="loginEmail" 
+        class="login-input" 
+        placeholder="din.email@exempel.se"
+        autocomplete="email"
+      />
+      <button class="login-btn" onclick="handleSendLoginEmail()" id="sendLoginBtn">
+        Skicka inloggningslänk
+      </button>
+      <div class="login-message" id="loginMessage"></div>
+      <p class="admin-bypass-info">
+        Admin kan bypassa med ?admin=kicklab5522 i URL:en
+      </p>
+    </div>
+  </div>
+
 
   <div id="loaderOverlay">
     <div class="spinner"></div>
@@ -1963,6 +2179,10 @@
 
   <audio id="clickSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
 
+  <!-- Firebase Configuration -->
+  <script src="firebase-config.js"></script>
+  
+  <!-- Main Application Script -->
   <script src="main.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -1982,6 +2202,187 @@
         .then(reg => console.log('ServiceWorker registrerad:', reg))
         .catch(err => console.error('ServiceWorker fel:', err));
     }
+    
+    /* ==================== FIREBASE AUTHENTICATION INITIALIZATION ==================== */
+    
+    // Initialize Firebase on page load
+    window.addEventListener('load', () => {
+      if (window.FirebaseHelper) {
+        const initialized = window.FirebaseHelper.initializeFirebase();
+        
+        if (initialized) {
+          // Check for admin bypass in URL
+          const hasAdminBypass = window.FirebaseHelper.checkAdminBypass();
+          
+          // Check if we're completing an email sign-in
+          const url = window.location.href;
+          const urlParams = new URLSearchParams(window.location.search);
+          
+          if (urlParams.get('emailSignIn') === 'true') {
+            // Handle email link sign-in
+            window.FirebaseHelper.completeEmailSignIn(url)
+              .then(user => {
+                console.log('Email sign-in successful:', user.email);
+                showMessage('Inloggning lyckades!', 'success');
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+              })
+              .catch(error => {
+                console.error('Email sign-in error:', error);
+                showMessage('Inloggning misslyckades: ' + error.message, 'error');
+              });
+          }
+          
+          // Setup auth state observer
+          window.FirebaseHelper.setupAuthObserver((user) => {
+            if (user || hasAdminBypass) {
+              // User is signed in or has admin bypass
+              hideLoginModal();
+              updateUserInfo(user);
+              console.log('User authenticated:', user ? user.email : 'Admin bypass');
+            } else {
+              // No user signed in
+              showLoginModal();
+              hideUserInfo();
+            }
+          });
+        } else {
+          console.warn('Firebase initialization failed, running in offline mode');
+        }
+      } else {
+        console.error('FirebaseHelper not loaded');
+      }
+    });
+    
+    // Login/Logout handlers
+    async function handleSendLoginEmail() {
+      const emailInput = document.getElementById('loginEmail');
+      const email = emailInput.value.trim();
+      const messageEl = document.getElementById('loginMessage');
+      const btn = document.getElementById('sendLoginBtn');
+      
+      if (!email) {
+        showMessage('Vänligen ange en e-postadress', 'error');
+        return;
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showMessage('Vänligen ange en giltig e-postadress', 'error');
+        return;
+      }
+      
+      try {
+        btn.disabled = true;
+        showMessage('Skickar e-post...', '');
+        
+        await window.FirebaseHelper.sendLoginEmail(email);
+        
+        showMessage('✓ Kolla din e-post! Klicka på länken för att logga in.', 'success');
+        emailInput.value = '';
+      } catch (error) {
+        console.error('Login email error:', error);
+        let errorMsg = 'Kunde inte skicka e-post. ';
+        
+        if (error.code === 'auth/invalid-email') {
+          errorMsg += 'Ogiltig e-postadress.';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorMsg += 'För många försök. Försök igen senare.';
+        } else {
+          errorMsg += error.message;
+        }
+        
+        showMessage(errorMsg, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+    
+    async function handleLogout() {
+      try {
+        await window.FirebaseHelper.signOut();
+        showMessage('Du har loggat ut', 'success');
+        showLoginModal();
+      } catch (error) {
+        console.error('Logout error:', error);
+        showMessage('Kunde inte logga ut', 'error');
+      }
+    }
+    
+    // UI helper functions
+    function showLoginModal() {
+      const modal = document.getElementById('loginModal');
+      if (modal) modal.classList.add('show');
+    }
+    
+    function hideLoginModal() {
+      const modal = document.getElementById('loginModal');
+      if (modal) modal.classList.remove('show');
+    }
+    
+    function showUserInfo() {
+      const userInfo = document.getElementById('userInfo');
+      if (userInfo) userInfo.classList.add('show');
+    }
+    
+    function hideUserInfo() {
+      const userInfo = document.getElementById('userInfo');
+      if (userInfo) userInfo.classList.remove('show');
+    }
+    
+    function updateUserInfo(user) {
+      if (!user) {
+        // Check for admin bypass
+        if (window.FirebaseHelper && window.FirebaseHelper.checkAdminBypass()) {
+          const userEmailEl = document.getElementById('userEmail');
+          const adminBadge = document.getElementById('adminBadge');
+          if (userEmailEl) userEmailEl.textContent = 'Admin (bypass)';
+          if (adminBadge) adminBadge.style.display = 'inline-block';
+          showUserInfo();
+        }
+        return;
+      }
+      
+      const userEmailEl = document.getElementById('userEmail');
+      const adminBadge = document.getElementById('adminBadge');
+      
+      if (userEmailEl) {
+        userEmailEl.textContent = user.email;
+      }
+      
+      if (adminBadge && window.FirebaseHelper && window.FirebaseHelper.isAdmin(user)) {
+        adminBadge.style.display = 'inline-block';
+      } else if (adminBadge) {
+        adminBadge.style.display = 'none';
+      }
+      
+      showUserInfo();
+    }
+    
+    function showMessage(text, type = '') {
+      const messageEl = document.getElementById('loginMessage');
+      if (!messageEl) return;
+      
+      messageEl.textContent = text;
+      messageEl.className = 'login-message';
+      
+      if (type) {
+        messageEl.classList.add(type);
+      }
+    }
+    
+    // Handle Enter key in email input
+    document.addEventListener('DOMContentLoaded', () => {
+      const emailInput = document.getElementById('loginEmail');
+      if (emailInput) {
+        emailInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            handleSendLoginEmail();
+          }
+        });
+      }
+    });
   </script>
 
   <!-- Reaction test intro page -->
@@ -2436,6 +2837,12 @@
 
     <!-- Collapsible Settings Menu -->
     <div id="operatorMenu" class="operator-menu" style="display:none;">
+      <!-- Session Code Display -->
+      <div id="sessionCodeDisplay" style="background: linear-gradient(90deg, #00dddd, #ff8008); color: #000; padding: 0.8rem; border-radius: 8px; text-align: center; margin-bottom: 0.8rem; font-weight: 800; font-size: 1.1rem; display: none;">
+        📱 Session-kod: <span id="displayedSessionCode" style="letter-spacing: 3px;">------</span>
+        <button onclick="copySessionCode()" style="background: rgba(0,0,0,0.2); border: none; color: #000; padding: 0.3rem 0.6rem; border-radius: 5px; margin-left: 0.5rem; cursor: pointer; font-weight: 700;">Kopiera</button>
+      </div>
+      
       <div class="menu-grid">
         <div class="menu-item">
           <label>Match</label>

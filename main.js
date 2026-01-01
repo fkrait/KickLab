@@ -42,6 +42,11 @@ let totalPenalties = { red: 0, blue: 0 }; // Cumulative penalties across all rou
 let roundEndReason = "";
 let centerMessage = "";
 
+// Firestore live session sync
+let liveSessionCode = null;
+let liveSessionUnsubscribe = null;
+let isOperatorMode = false; // True if this is the operator controlling the session
+
 /* ---------- Centraliserad cleanup-funktion ---------- */
 // Stoppa ALLT - används vid alla sidbyten
 function stopAllTests() {
@@ -586,6 +591,11 @@ async function stopReactionTest() {
   reactionStartTime = null;
 }
 
+// Helper function to calculate average from array
+function calculateAverage(arr) {
+  return arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+}
+
 function saveReactionResult(time) {
   reactionResults.unshift(time);
   if (reactionResults.length > 5) reactionResults.pop();
@@ -594,6 +604,19 @@ function saveReactionResult(time) {
   if (!reactionBestTime || time < reactionBestTime) {
     reactionBestTime = time;
     localStorage.setItem("reactionBestTime", reactionBestTime);
+  }
+  
+  // Calculate average
+  const avgTime = calculateAverage(reactionResults);
+  
+  // Save to Firestore (async, doesn't block)
+  if (window.FirebaseHelper) {
+    window.FirebaseHelper.saveReactionResult(
+      time, 
+      reactionBestTime, 
+      avgTime, 
+      reactionResults.length
+    ).catch(err => console.error('Failed to save reaction result to Firestore:', err));
   }
   
   loadReactionStats();
@@ -1086,6 +1109,20 @@ function saveKickResult(count) {
     localStorage.setItem("bestKickCount", bestKickCount);
     const cheerSound = document.getElementById("cheerSound");
     if (cheerSound) cheerSound.play().catch(() => {});
+  }
+  
+  // Calculate average using helper function
+  const avgCount = calculateAverage(kickRecentResults);
+  
+  // Save to Firestore (async, doesn't block)
+  if (window.FirebaseHelper) {
+    window.FirebaseHelper.saveKickResult(
+      count,
+      kickTestDuration,
+      bestKickCount,
+      avgCount,
+      kickRecentResults.length
+    ).catch(err => console.error('Failed to save kick result to Firestore:', err));
   }
   
   loadKickStats();
@@ -1939,9 +1976,89 @@ function showLiveScorePage() {
   
   matchEnded = false;
   restTimeLeft = 0;
+  isOperatorMode = true; // Set this device as operator
+  
+  // Generate new session code if we don't have one
+  if (!liveSessionCode && window.FirebaseHelper) {
+    liveSessionCode = window.FirebaseHelper.generateSessionCode();
+    console.log('Live session code:', liveSessionCode);
+    
+    // Create the session in Firestore
+    const initialData = {
+      liveScore: { red: 0, blue: 0 },
+      livePenalties: { red: 0, blue: 0 },
+      liveScoreNames: { red: "Röd", blue: "Blå" },
+      matchDurationSeconds: matchDurationSeconds,
+      liveTimeLeft: matchDurationSeconds,
+      liveTimerRunning: false,
+      totalRounds: totalRounds,
+      currentRound: 1,
+      roundWins: { red: 0, blue: 0 },
+      matchEnded: false,
+      restTimeLeft: 0,
+      currentHits: { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } },
+      totalScore: { red: 0, blue: 0 },
+      totalHits: { red: { head: 0, body: 0, punch: 0 }, blue: { head: 0, body: 0, punch: 0 } },
+      totalPenalties: { red: 0, blue: 0 },
+      matchTitle: getMatchTitle(),
+      centerMessage: "",
+    };
+    
+    window.FirebaseHelper.createLiveSession(liveSessionCode, initialData)
+      .then(() => {
+        console.log('Live session created with code:', liveSessionCode);
+        showSessionCodeMessage();
+      })
+      .catch(err => console.error('Failed to create Firestore session:', err));
+  }
+  
   setMatchDuration();
   updateLiveMeta();
   updateLiveScoreDisplay();
+}
+
+// Show session code message in operator view
+function showSessionCodeMessage() {
+  if (!liveSessionCode) return;
+  
+  const statusEl = document.getElementById("liveScoreStatus");
+  if (statusEl) {
+    const currentText = statusEl.textContent;
+    statusEl.textContent = `Session-kod: ${liveSessionCode} | ${currentText}`;
+    
+    // Also show in console for easy copying
+    console.log('═══════════════════════════════════════');
+    console.log('LIVE SESSION KOD:', liveSessionCode);
+    console.log('Dela denna kod med publik för att synka');
+    console.log('═══════════════════════════════════════');
+    
+    // Also display in UI
+    const displayEl = document.getElementById('displayedSessionCode');
+    const containerEl = document.getElementById('sessionCodeDisplay');
+    if (displayEl) displayEl.textContent = liveSessionCode;
+    if (containerEl) containerEl.style.display = 'block';
+  }
+}
+
+// Copy session code to clipboard
+function copySessionCode() {
+  if (!liveSessionCode) return;
+  
+  navigator.clipboard.writeText(liveSessionCode)
+    .then(() => {
+      const statusEl = document.getElementById("liveScoreStatus");
+      if (statusEl) {
+        const oldText = statusEl.textContent;
+        statusEl.textContent = `✓ Session-kod ${liveSessionCode} kopierad!`;
+        setTimeout(() => {
+          statusEl.textContent = oldText;
+        }, 2000);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to copy session code:', err);
+      alert(`Session-kod: ${liveSessionCode}`);
+    });
 }
 
 function updateLiveScoreDisplay() {
@@ -3066,7 +3183,6 @@ function playEndBeep() {
 }
 
 function broadcastLiveData() {
-  if (!broadcastChannel || !("BroadcastChannel" in window)) return;
   const data = {
     liveScore,
     livePenalties,
@@ -3087,7 +3203,17 @@ function broadcastLiveData() {
     matchTitle: getMatchTitle(),
     centerMessage,
   };
-  broadcastChannel.postMessage(data);
+  
+  // Broadcast via BroadcastChannel (local sync)
+  if (broadcastChannel && ("BroadcastChannel" in window)) {
+    broadcastChannel.postMessage(data);
+  }
+  
+  // Also save to Firestore if we're in operator mode with an active session
+  if (isOperatorMode && liveSessionCode && window.FirebaseHelper) {
+    window.FirebaseHelper.updateLiveSession(liveSessionCode, data)
+      .catch(err => console.error('Failed to update Firestore session:', err));
+  }
 }
 
 // Wrapper functions for HTML onclick handlers

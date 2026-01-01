@@ -7,6 +7,11 @@
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="icon-512.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet"/>
+  
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
     * {
       margin: 0;
@@ -368,7 +373,23 @@
 </head>
 <body>
 
-  <div class="audience-container">
+  <!-- Session Code Prompt Overlay -->
+  <div id="sessionPrompt" style="position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+    <div style="background: rgba(0,0,0,0.95); border: 2px solid rgba(0, 220, 220, 0.6); border-radius: 20px; padding: 2.5rem 2rem; max-width: 450px; width: 90%; text-align: center; box-shadow: 0 0 30px rgba(0, 220, 220, 0.3);">
+      <h2 style="font-size: 2rem; font-weight: 800; background: linear-gradient(90deg, #00dddd, #ff8008); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.5rem;">Anslut till Session</h2>
+      <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin-bottom: 2rem;">Ange session-koden från operatören för att se live score:</p>
+      <input type="text" id="sessionCodeInput" placeholder="ABC123" 
+        style="width: 100%; padding: 1rem; border-radius: 10px; border: 2px solid rgba(0, 220, 220, 0.4); background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 1.2rem; margin-bottom: 1.5rem; text-align: center; text-transform: uppercase;" 
+        maxlength="6" />
+      <button onclick="joinSession()" 
+        style="background: linear-gradient(90deg, #ff8008, #ffc837); color: #222; border: none; border-radius: 30px; padding: 1rem 2rem; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s;">
+        Anslut
+      </button>
+      <div id="sessionMessage" style="color: #ff4444; font-size: 0.9rem; margin-top: 1rem; min-height: 1.5rem;"></div>
+    </div>
+  </div>
+
+  <div class="audience-container" style="display: none;" id="audienceDisplay">
     <!-- Blue Panel (Left) -->
     <div class="audience-panel blue">
       <div class="flag-land-container">
@@ -464,8 +485,90 @@
     </div>
   </div>
 
+  <!-- Firebase Configuration -->
+  <script src="firebase-config.js"></script>
+  
   <script>
-    // BroadcastChannel for receiving updates from operator view
+    // Firebase and session management
+    let firestoreUnsubscribe = null;
+    let currentSessionCode = null;
+    
+    // Initialize Firebase on load
+    window.addEventListener('load', () => {
+      if (window.FirebaseHelper) {
+        window.FirebaseHelper.initializeFirebase();
+      }
+    });
+    
+    // Join session function
+    async function joinSession() {
+      const input = document.getElementById('sessionCodeInput');
+      const messageEl = document.getElementById('sessionMessage');
+      const code = input.value.trim().toUpperCase();
+      
+      if (!code || code.length !== 6) {
+        messageEl.textContent = 'Ange en giltig 6-siffrig kod';
+        messageEl.style.color = '#ff4444';
+        return;
+      }
+      
+      messageEl.textContent = 'Ansluter...';
+      messageEl.style.color = '#00dddd';
+      
+      // Check if we have Firebase available
+      if (!window.FirebaseHelper) {
+        messageEl.textContent = 'Firebase inte tillgängligt. Ladda om sidan.';
+        messageEl.style.color = '#ff4444';
+        return;
+      }
+      
+      try {
+        // Validate session code
+        const isValid = await window.FirebaseHelper.validateSessionCode(code);
+        
+        if (!isValid) {
+          messageEl.textContent = 'Ogiltig eller inaktiv session-kod';
+          messageEl.style.color = '#ff4444';
+          return;
+        }
+        
+        currentSessionCode = code;
+        
+        // Subscribe to session updates
+        firestoreUnsubscribe = window.FirebaseHelper.subscribeLiveSession(code, (data) => {
+          updateDisplay(data);
+        });
+        
+        // Hide prompt and show audience display
+        document.getElementById('sessionPrompt').style.display = 'none';
+        document.getElementById('audienceDisplay').style.display = 'grid';
+        
+        console.log('Connected to session:', code);
+      } catch (error) {
+        console.error('Error joining session:', error);
+        messageEl.textContent = 'Kunde inte ansluta till sessionen';
+        messageEl.style.color = '#ff4444';
+      }
+    }
+    
+    // Handle Enter key in session code input
+    document.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('sessionCodeInput');
+      if (input) {
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            joinSession();
+          }
+        });
+        
+        // Auto-format to uppercase
+        input.addEventListener('input', (e) => {
+          e.target.value = e.target.value.toUpperCase();
+        });
+      }
+    });
+    
+    // BroadcastChannel for receiving updates from operator view (fallback)
     let broadcastChannel = null;
 
     if ("BroadcastChannel" in window) {
