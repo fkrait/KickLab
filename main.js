@@ -463,12 +463,18 @@ function resetStats() {
 }
 
 /* ---------- Sparkräknare (Improved with Calibration) ---------- */
+// Audio detection constants
+const KICK_COOLDOWN = 250; // ms between kicks
+const THRESHOLD_PERCENTAGE = 0.7; // 70% of calibration kick
+const MIN_THRESHOLD = 30; // Minimum threshold value
+const CALIBRATION_DURATION = 3000; // 3 seconds calibration period
+const VOLUME_METER_SCALE = 50; // Scale factor for VU meter display
+
 let kickAudioContext, kickAnalyser, kickMicrophone, kickDataArray;
 let kickMediaStream = null; // Store stream for proper cleanup
 let kickCalibrationThreshold = 50;
 let kickCount = 0;
 let kickCanRegisterKick = true;
-const KICK_COOLDOWN = 250; // ms between kicks
 let kickTestActive = false;
 let kickTestDuration = 15;
 let kickTimeRemaining = kickTestDuration;
@@ -579,8 +585,8 @@ function getCurrentKickVolume() {
 function updateKickVolumeMeter(volume, elementId) {
   const fillElement = document.getElementById(elementId);
   if (fillElement) {
-    // Scale volume to percentage (0-100)
-    const percentage = Math.min((volume / kickCalibrationThreshold) * 50, 100);
+    // Scale volume to percentage (0-100) using VOLUME_METER_SCALE
+    const percentage = Math.min((volume / kickCalibrationThreshold) * VOLUME_METER_SCALE, 100);
     fillElement.style.width = percentage + "%";
   }
 }
@@ -611,35 +617,24 @@ async function startCalibration() {
     
     let maxVolume = 0;
     const startTime = Date.now();
+    let calibrationFrameId = null;
     
-    // Listen for 3 seconds to find max volume
-    while (Date.now() - startTime < 3000) {
-      const volume = getCurrentKickVolume();
-      updateKickVolumeMeter(volume, "calibrationVolumeMeter");
-      if (volume > maxVolume) {
-        maxVolume = volume;
+    // Listen for CALIBRATION_DURATION to find max volume using requestAnimationFrame
+    const calibrateVolume = () => {
+      if (Date.now() - startTime < CALIBRATION_DURATION) {
+        const volume = getCurrentKickVolume();
+        updateKickVolumeMeter(volume, "calibrationVolumeMeter");
+        if (volume > maxVolume) {
+          maxVolume = volume;
+        }
+        calibrationFrameId = requestAnimationFrame(calibrateVolume);
+      } else {
+        // Calibration complete
+        finishCalibration(maxVolume, statusEl, thresholdEl);
       }
-      await sleep(50);
-    }
+    };
     
-    // Set threshold to 70% of calibration kick
-    kickCalibrationThreshold = Math.max(maxVolume * 0.7, 30); // Minimum threshold of 30
-    
-    // Show completion
-    if (statusEl) statusEl.textContent = "✓ Kalibrerad!";
-    if (thresholdEl) {
-      thresholdEl.textContent = `Tröskel: ${kickCalibrationThreshold.toFixed(1)}`;
-    }
-    
-    // Clean up audio
-    await cleanupKickAudio();
-    
-    kickCalibrating = false;
-    
-    // Auto-advance to time selection after 1 second
-    setTimeout(() => {
-      showKickTimeSelectionPage();
-    }, 1000);
+    calibrateVolume();
     
   } catch (error) {
     if (statusEl) statusEl.textContent = "Mikrofon behövs för kalibrering.";
@@ -649,6 +644,28 @@ async function startCalibration() {
       calibrateBtn.style.opacity = "1";
     }
   }
+}
+
+// Finish calibration and set threshold
+async function finishCalibration(maxVolume, statusEl, thresholdEl) {
+  // Set threshold to THRESHOLD_PERCENTAGE of calibration kick
+  kickCalibrationThreshold = Math.max(maxVolume * THRESHOLD_PERCENTAGE, MIN_THRESHOLD);
+  
+  // Show completion
+  if (statusEl) statusEl.textContent = "✓ Kalibrerad!";
+  if (thresholdEl) {
+    thresholdEl.textContent = `Tröskel: ${kickCalibrationThreshold.toFixed(1)}`;
+  }
+  
+  // Clean up audio
+  await cleanupKickAudio();
+  
+  kickCalibrating = false;
+  
+  // Auto-advance to time selection after 1 second
+  setTimeout(() => {
+    showKickTimeSelectionPage();
+  }, 1000);
 }
 
 // Select time for kick test
