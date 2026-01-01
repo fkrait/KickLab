@@ -7,9 +7,17 @@
  * - Firestore helper functions for saving/loading data
  * - Admin bypass logic
  * - Live score real-time sync functions
+ * 
+ * SECURITY NOTE:
+ * - Firebase API keys are public by design and protected by security rules
+ * - Admin credentials are intentionally visible for demo purposes
+ * - For production, consider using Firebase Custom Claims for admin roles
+ * - Firestore security rules enforce proper access control server-side
  */
 
 // Firebase configuration
+// NOTE: These credentials are public and safe to expose in client-side code
+// Firebase security is enforced through Firestore security rules, not API keys
 const firebaseConfig = {
   apiKey: "AIzaSyAdIXZlfNjwuodBZzvFp7_YhERFaiYPsJE",
   authDomain: "kicklab-73cbb.firebaseapp.com",
@@ -21,8 +29,10 @@ const firebaseConfig = {
 };
 
 // Admin configuration
+// NOTE: For demo/development purposes. In production, use Firebase Custom Claims
+// or server-side validation for better security
 const ADMIN_EMAILS = ["fkrait@hotmail.com"];
-const ADMIN_SECRET = "kicklab5522";
+const ADMIN_SECRET = "kicklab5522"; // URL parameter for quick admin access
 
 // Global Firebase instances
 let auth = null;

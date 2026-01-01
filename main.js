@@ -591,6 +591,11 @@ async function stopReactionTest() {
   reactionStartTime = null;
 }
 
+// Helper function to calculate average from array
+function calculateAverage(arr) {
+  return arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+}
+
 function saveReactionResult(time) {
   reactionResults.unshift(time);
   if (reactionResults.length > 5) reactionResults.pop();
@@ -602,9 +607,7 @@ function saveReactionResult(time) {
   }
   
   // Calculate average
-  const avgTime = reactionResults.length > 0 
-    ? reactionResults.reduce((a, b) => a + b, 0) / reactionResults.length 
-    : 0;
+  const avgTime = calculateAverage(reactionResults);
   
   // Save to Firestore (async, doesn't block)
   if (window.FirebaseHelper) {
@@ -1108,10 +1111,8 @@ function saveKickResult(count) {
     if (cheerSound) cheerSound.play().catch(() => {});
   }
   
-  // Calculate average
-  const avgCount = kickRecentResults.length > 0 
-    ? kickRecentResults.reduce((a, b) => a + b, 0) / kickRecentResults.length 
-    : 0;
+  // Calculate average using helper function
+  const avgCount = calculateAverage(kickRecentResults);
   
   // Save to Firestore (async, doesn't block)
   if (window.FirebaseHelper) {
