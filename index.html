@@ -1375,6 +1375,10 @@
       gap: 1rem;
       margin: 1.5rem 0;
     }
+    
+    .mode-grid .mode-btn:last-child {
+      grid-column: 1 / -1;
+    }
 
     .mode-btn {
       background: rgba(0, 220, 220, 0.1);
@@ -1889,22 +1893,17 @@
         <div class="mode-btn" onclick="selectTrainingMode('free')" id="mode-free">
           <div class="mode-icon">🎯</div>
           <div class="mode-name">Fri träning</div>
-          <div class="mode-desc">Konstant tempo, slumpmässiga sparkar</div>
+          <div class="mode-desc">Du väljer tempo med slider, slumpmässiga sparkar</div>
         </div>
         <div class="mode-btn" onclick="selectTrainingMode('interval')" id="mode-interval">
           <div class="mode-icon">⏱️</div>
           <div class="mode-name">Intervall</div>
-          <div class="mode-desc">Spark + vila (t.ex. 20s + 10s)</div>
+          <div class="mode-desc">20s spark / 10s vila (justerbart), slumpmässiga sparkar</div>
         </div>
-        <div class="mode-btn" onclick="selectTrainingMode('sequence')" id="mode-sequence">
-          <div class="mode-icon">📋</div>
-          <div class="mode-name">Sekvens</div>
-          <div class="mode-desc">Fast ordning av valda sparkar</div>
-        </div>
-        <div class="mode-btn" onclick="selectTrainingMode('reaction')" id="mode-reaction">
-          <div class="mode-icon">⚡</div>
-          <div class="mode-name">Reaktion</div>
-          <div class="mode-desc">Slumpmässigt tempo, håller dig alert</div>
+        <div class="mode-btn" onclick="selectTrainingMode('challenge')" id="mode-challenge">
+          <div class="mode-icon">🔥</div>
+          <div class="mode-name">Utmaning</div>
+          <div class="mode-desc">Tempot ökar gradvis under träningen! Börjar långsamt, blir snabbare</div>
         </div>
       </div>
       <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
@@ -1918,23 +1917,6 @@
   <div id="trainingSettingsPage" class="page-container" style="display:none;">
     <div class="kick-training-container">
       <h2 class="training-title">INSTÄLLNINGAR</h2>
-      
-      <!-- Language selection -->
-      <div class="language-select">
-        <label>Instruktioner ropas ut på:</label>
-        <label class="language-option">
-          <input type="radio" name="language" value="swedish" checked onchange="setTrainingLanguage('swedish')">
-          <span>Svenska (t.ex. "Framspark!")</span>
-        </label>
-        <label class="language-option">
-          <input type="radio" name="language" value="korean" onchange="setTrainingLanguage('korean')">
-          <span>Koreanska (t.ex. "Ap Chagi!")</span>
-        </label>
-        <label class="language-option">
-          <input type="radio" name="language" value="both" onchange="setTrainingLanguage('both')">
-          <span>Båda (t.ex. "Framspark! Ap Chagi!")</span>
-        </label>
-      </div>
 
       <!-- Tempo slider -->
       <div class="tempo-slider-container">

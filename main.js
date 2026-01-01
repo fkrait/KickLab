@@ -80,9 +80,11 @@ function showStartPage() {
   if (compRound) compRound.style.display = "none";
   if (overlay) overlay.style.display = "none";
 
+  // Stop all tests and training properly
   stopSparringTraining();
   stopKickTraining();
   stopReactionTest();
+  stopKickTest();
   pauseLiveTimer();
   toggleAudienceView(false);
 }
@@ -1806,28 +1808,26 @@ function speak(text) {
 }
 
 /* ---------- Kick Training (Spark träning) ---------- */
-// Technique definitions with Swedish and Korean names
-// Includes both kicks and punches (Slag/Jirugi)
+// Technique definitions - Swedish only
 const kicks = [
-  { swedish: "Framspark", korean: "Ap Chagi" },
-  { swedish: "Sidospark", korean: "Yop Chagi" },
-  { swedish: "Rundspark", korean: "Dollyo Chagi" },
-  { swedish: "Bakspark", korean: "Dwi Chagi" },
-  { swedish: "Snurrspark", korean: "Dwi Huryeo Chagi" },
-  { swedish: "Yxspark", korean: "Naeryo Chagi" },
-  { swedish: "Krokspark", korean: "Huryeo Chagi" },
-  { swedish: "Hoppspark", korean: "Twimyo Chagi" },
-  { swedish: "Flygande sidospark", korean: "Twimyo Yop Chagi" },
-  { swedish: "An Chagi", korean: "An Chagi" },
-  { swedish: "Saxspark", korean: "Kawi Chagi" },
-  { swedish: "Snurrande bakspark", korean: "Dwi Dollyo Chagi" },
-  { swedish: "Slag", korean: "Jirugi" }
+  { name: "Framspark" },
+  { name: "Sidospark" },
+  { name: "Rundspark" },
+  { name: "Bakspark" },
+  { name: "Snurrspark" },
+  { name: "Yxspark" },
+  { name: "Krokspark" },
+  { name: "Hoppspark" },
+  { name: "Flygande sidospark" },
+  { name: "An Chagi" },
+  { name: "Saxspark" },
+  { name: "Snurrande bakspark" },
+  { name: "Slag" }
 ];
 
 // Training state
 let selectedKicks = [];
-let trainingMode = 'free'; // 'free', 'interval', 'sequence', 'reaction'
-let trainingLanguage = 'swedish'; // 'swedish', 'korean', 'both'
+let trainingMode = 'free'; // 'free', 'interval', 'challenge'
 let tempo = 2000; // ms between kicks
 let trainingDuration = 180; // seconds (3 minutes default)
 let intervalWork = 20; // seconds active
@@ -1836,8 +1836,12 @@ let trainingActive = false;
 let trainingTimer = null;
 let trainingTimeRemaining = 0;
 let trainingInterval = null;
-let sequenceIndex = 0;
 let isRestPeriod = false;
+
+// Challenge mode variables
+let challengeTempo = 3000; // Starts at 3 seconds
+const MIN_TEMPO = 800; // Fastest tempo
+const TEMPO_DECREASE = 100; // Decreases by 100ms per kick
 
 // Navigation functions
 function showKickTrainingIntroPage() {
@@ -1913,7 +1917,7 @@ function selectTrainingMode(mode) {
   trainingMode = mode;
   
   // Update button states
-  const modes = ['free', 'interval', 'sequence', 'reaction'];
+  const modes = ['free', 'interval', 'challenge'];
   modes.forEach(m => {
     const btn = document.getElementById(`mode-${m}`);
     if (btn) {
@@ -1926,9 +1930,17 @@ function selectTrainingMode(mode) {
   });
 }
 
-// Language selection
-function setTrainingLanguage(lang) {
-  trainingLanguage = lang;
+// Speech synthesis
+function speakKick(kick) {
+  if (!('speechSynthesis' in window)) return;
+  
+  // Cancel any ongoing speech
+  speechSynthesis.cancel();
+  
+  const utterance = new SpeechSynthesisUtterance(kick.name);
+  utterance.lang = 'sv-SE';
+  utterance.rate = 1.0;
+  speechSynthesis.speak(utterance);
 }
 
 // Tempo slider
@@ -1958,41 +1970,6 @@ function selectTrainingTime(seconds) {
       }
     }
   });
-}
-
-// Speech synthesis
-function speakKick(kick) {
-  if (!('speechSynthesis' in window)) return;
-  
-  // Cancel any ongoing speech
-  speechSynthesis.cancel();
-  
-  if (trainingLanguage === 'swedish') {
-    const utterance = new SpeechSynthesisUtterance(kick.swedish);
-    utterance.lang = 'sv-SE';
-    utterance.rate = 1.0;
-    speechSynthesis.speak(utterance);
-  } else if (trainingLanguage === 'korean') {
-    const utterance = new SpeechSynthesisUtterance(kick.korean);
-    utterance.lang = 'ko-KR';
-    utterance.rate = 0.9;
-    speechSynthesis.speak(utterance);
-  } else if (trainingLanguage === 'both') {
-    // Say Swedish first, then Korean
-    const utterance1 = new SpeechSynthesisUtterance(kick.swedish);
-    utterance1.lang = 'sv-SE';
-    utterance1.rate = 1.0;
-    
-    const utterance2 = new SpeechSynthesisUtterance(kick.korean);
-    utterance2.lang = 'ko-KR';
-    utterance2.rate = 0.9;
-    
-    speechSynthesis.speak(utterance1);
-    // Delay Korean slightly to avoid overlap
-    setTimeout(() => {
-      speechSynthesis.speak(utterance2);
-    }, 500);
-  }
 }
 
 // Countdown before training starts
@@ -2051,8 +2028,8 @@ async function startKickTrainingCountdown() {
 function startKickTrainingSession() {
   trainingActive = true;
   trainingTimeRemaining = trainingDuration;
-  sequenceIndex = 0;
   isRestPeriod = false;
+  challengeTempo = 3000; // Reset challenge tempo
   
   // Update timer display
   updateTrainingTimer();
@@ -2075,11 +2052,8 @@ function startKickTrainingSession() {
     case 'interval':
       startIntervalMode();
       break;
-    case 'sequence':
-      startSequenceMode();
-      break;
-    case 'reaction':
-      startReactionMode();
+    case 'challenge':
+      startChallengeMode();
       break;
   }
 }
@@ -2097,31 +2071,21 @@ function startFreeMode() {
   }, tempo);
 }
 
-function startReactionMode() {
+function startChallengeMode() {
   if (!trainingActive) return;
   
   const randomKick = selectedKicks[Math.floor(Math.random() * selectedKicks.length)];
-  const randomDelay = 1000 + Math.random() * 3000; // 1-4 seconds
-  
   showKickOnScreen(randomKick);
   speakKick(randomKick);
   
-  trainingInterval = setTimeout(() => {
-    if (trainingActive) startReactionMode();
-  }, randomDelay);
-}
-
-function startSequenceMode() {
-  if (!trainingActive) return;
-  
-  const kick = selectedKicks[sequenceIndex % selectedKicks.length];
-  showKickOnScreen(kick);
-  speakKick(kick);
-  sequenceIndex++;
+  // Decrease tempo (make it faster)
+  if (challengeTempo > MIN_TEMPO) {
+    challengeTempo -= TEMPO_DECREASE;
+  }
   
   trainingInterval = setTimeout(() => {
-    if (trainingActive) startSequenceMode();
-  }, tempo);
+    if (trainingActive) startChallengeMode();
+  }, challengeTempo);
 }
 
 function startIntervalMode() {
@@ -2170,7 +2134,7 @@ function showKickOnScreen(kick) {
   const statusDisplay = document.getElementById("trainingStatus");
   
   if (kickDisplay) {
-    kickDisplay.textContent = kick.swedish;
+    kickDisplay.textContent = kick.name;
   }
   
   if (displayBox) {
@@ -2230,6 +2194,9 @@ function stopKickTraining() {
   if (speechSynthesis && speechSynthesis.speaking) {
     speechSynthesis.cancel();
   }
+  
+  // Reset challenge tempo
+  challengeTempo = 3000;
   
   // Update display
   const kickDisplay = document.getElementById("currentKickDisplay");
