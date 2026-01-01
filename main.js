@@ -63,6 +63,10 @@ function showStartPage() {
   if (kickTest) kickTest.style.display = "none";
   
   document.getElementById("sparringPage").style.display = "none";
+  
+  // Hide kick training pages
+  hideAllTrainingPages();
+  
   const liveScorePage = document.getElementById("liveScorePage");
   if (liveScorePage) liveScorePage.style.display = "none";
 
@@ -76,10 +80,8 @@ function showStartPage() {
   if (compRound) compRound.style.display = "none";
   if (overlay) overlay.style.display = "none";
 
-  document.getElementById("sparringCommand").textContent = "";
-  document.getElementById("sparringStatus").textContent = "Klicka 'Starta' för att börja träningen";
-
   stopSparringTraining();
+  stopKickTraining();
   stopReactionTest();
   pauseLiveTimer();
   toggleAudienceView(false);
@@ -1772,6 +1774,7 @@ function updateMatchTitle() {
 }
 
 /* ---------- Sparring träningslogik ---------- */
+// Old sparring training logic - kept for compatibility
 let sparringInterval = null;
 let sparringTimeout = null;
 const sparringCommands = ["Höger rak", "Vänster krok", "Front kick", "Roundhouse", "Blockera", "Kontring", "Låg spark", "Hög spark", "Sidosteg höger", "Sidosteg vänster"];
@@ -1800,6 +1803,453 @@ function speak(text) {
   msg.lang = "sv-SE";
   window.speechSynthesis.speak(msg);
 }
+
+/* ---------- Kick Training (Spark träning) ---------- */
+// Kick definitions with Swedish and Korean names
+const kicks = [
+  { swedish: "Framspark", korean: "Ap Chagi" },
+  { swedish: "Sidospark", korean: "Yop Chagi" },
+  { swedish: "Rundspark", korean: "Dollyo Chagi" },
+  { swedish: "Bakspark", korean: "Dwi Chagi" },
+  { swedish: "Snurrspark", korean: "Dwi Huryeo Chagi" },
+  { swedish: "Yxspark", korean: "Naeryo Chagi" },
+  { swedish: "Krokspark", korean: "Huryeo Chagi" },
+  { swedish: "Hoppspark", korean: "Twimyo Chagi" },
+  { swedish: "Flygande sidospark", korean: "Twimyo Yop Chagi" },
+  { swedish: "An Chagi", korean: "An Chagi" },
+  { swedish: "Saxspark", korean: "Kawi Chagi" },
+  { swedish: "Snurrande bakspark", korean: "Dwi Dollyo Chagi" },
+  { swedish: "Slag", korean: "Jirugi" }
+];
+
+// Training state
+let selectedKicks = [];
+let trainingMode = 'free'; // 'free', 'interval', 'sequence', 'reaction'
+let trainingLanguage = 'swedish'; // 'swedish', 'korean', 'both'
+let tempo = 2000; // ms between kicks
+let trainingDuration = 180; // seconds (3 minutes default)
+let intervalWork = 20; // seconds active
+let intervalRest = 10; // seconds rest
+let trainingActive = false;
+let trainingTimer = null;
+let trainingTimeRemaining = 0;
+let trainingInterval = null;
+let sequenceIndex = 0;
+let isRestPeriod = false;
+
+// Navigation functions
+function showKickTrainingIntroPage() {
+  hideAllTrainingPages();
+  document.getElementById("kickTrainingIntroPage").style.display = "block";
+  document.getElementById("startPage").style.display = "none";
+}
+
+function showKickSelectionPage() {
+  hideAllTrainingPages();
+  document.getElementById("kickSelectionPage").style.display = "block";
+  // Ensure all kicks are checked by default
+  for (let i = 0; i < kicks.length; i++) {
+    const checkbox = document.getElementById(`kick${i}`);
+    if (checkbox && !checkbox.checked) checkbox.checked = true;
+  }
+}
+
+function showTrainingModeSelectionPage() {
+  hideAllTrainingPages();
+  // Get selected kicks
+  selectedKicks = [];
+  for (let i = 0; i < kicks.length; i++) {
+    const checkbox = document.getElementById(`kick${i}`);
+    if (checkbox && checkbox.checked) {
+      selectedKicks.push(kicks[i]);
+    }
+  }
+  
+  if (selectedKicks.length === 0) {
+    alert("Välj minst en spark!");
+    showKickSelectionPage();
+    return;
+  }
+  
+  document.getElementById("trainingModeSelectionPage").style.display = "block";
+  // Highlight default mode (free)
+  selectTrainingMode('free');
+}
+
+function showTrainingSettingsPage() {
+  hideAllTrainingPages();
+  document.getElementById("trainingSettingsPage").style.display = "block";
+  
+  // Show/hide interval settings based on selected mode
+  const intervalSettings = document.getElementById("intervalSettings");
+  if (intervalSettings) {
+    intervalSettings.style.display = trainingMode === 'interval' ? 'block' : 'none';
+  }
+  
+  // Update tempo display
+  updateTempoDisplay();
+}
+
+function showKickTrainingPage() {
+  hideAllTrainingPages();
+  document.getElementById("kickTrainingPage").style.display = "block";
+}
+
+function hideAllTrainingPages() {
+  const pages = [
+    'kickTrainingIntroPage', 'kickSelectionPage', 'trainingModeSelectionPage',
+    'trainingSettingsPage', 'kickTrainingPage'
+  ];
+  pages.forEach(pageId => {
+    const page = document.getElementById(pageId);
+    if (page) page.style.display = "none";
+  });
+}
+
+// Mode selection
+function selectTrainingMode(mode) {
+  trainingMode = mode;
+  
+  // Update button states
+  const modes = ['free', 'interval', 'sequence', 'reaction'];
+  modes.forEach(m => {
+    const btn = document.getElementById(`mode-${m}`);
+    if (btn) {
+      if (m === mode) {
+        btn.classList.add('selected');
+      } else {
+        btn.classList.remove('selected');
+      }
+    }
+  });
+}
+
+// Language selection
+function setTrainingLanguage(lang) {
+  trainingLanguage = lang;
+}
+
+// Tempo slider
+function updateTempoDisplay() {
+  const slider = document.getElementById("tempoSlider");
+  const display = document.getElementById("tempoDisplay");
+  if (slider && display) {
+    tempo = parseInt(slider.value);
+    const seconds = (tempo / 1000).toFixed(1);
+    display.textContent = `${seconds} sekunder mellan sparkar`;
+  }
+}
+
+// Time selection
+function selectTrainingTime(seconds) {
+  trainingDuration = seconds;
+  
+  // Update button states
+  const times = [60, 180, 300, 600];
+  times.forEach(t => {
+    const btn = document.getElementById(`time-${t}`);
+    if (btn) {
+      if (t === seconds) {
+        btn.classList.add('selected');
+      } else {
+        btn.classList.remove('selected');
+      }
+    }
+  });
+}
+
+// Speech synthesis
+function speakKick(kick) {
+  if (!('speechSynthesis' in window)) return;
+  
+  // Cancel any ongoing speech
+  speechSynthesis.cancel();
+  
+  if (trainingLanguage === 'swedish') {
+    const utterance = new SpeechSynthesisUtterance(kick.swedish);
+    utterance.lang = 'sv-SE';
+    utterance.rate = 1.0;
+    speechSynthesis.speak(utterance);
+  } else if (trainingLanguage === 'korean') {
+    const utterance = new SpeechSynthesisUtterance(kick.korean);
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.9;
+    speechSynthesis.speak(utterance);
+  } else if (trainingLanguage === 'both') {
+    // Say Swedish first, then Korean
+    const utterance1 = new SpeechSynthesisUtterance(kick.swedish);
+    utterance1.lang = 'sv-SE';
+    utterance1.rate = 1.0;
+    
+    const utterance2 = new SpeechSynthesisUtterance(kick.korean);
+    utterance2.lang = 'ko-KR';
+    utterance2.rate = 0.9;
+    
+    speechSynthesis.speak(utterance1);
+    // Delay Korean slightly to avoid overlap
+    setTimeout(() => {
+      speechSynthesis.speak(utterance2);
+    }, 500);
+  }
+}
+
+// Countdown before training starts
+async function startKickTrainingCountdown() {
+  // Get interval settings if in interval mode
+  if (trainingMode === 'interval') {
+    const workInput = document.getElementById("intervalWork");
+    const restInput = document.getElementById("intervalRest");
+    if (workInput) intervalWork = parseInt(workInput.value) || 20;
+    if (restInput) intervalRest = parseInt(restInput.value) || 10;
+  }
+  
+  showKickTrainingPage();
+  
+  const displayBox = document.getElementById("kickDisplayBox");
+  const kickDisplay = document.getElementById("currentKickDisplay");
+  const statusDisplay = document.getElementById("trainingStatus");
+  
+  if (!kickDisplay || !statusDisplay) return;
+  
+  // Reset display
+  if (displayBox) {
+    displayBox.classList.remove('active', 'rest');
+  }
+  
+  try {
+    // Countdown: 3... 2... 1... GÅ!
+    kickDisplay.textContent = "3";
+    statusDisplay.textContent = "Gör dig redo...";
+    playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+    await sleep(1000);
+    
+    kickDisplay.textContent = "2";
+    playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+    await sleep(1000);
+    
+    kickDisplay.textContent = "1";
+    playBeep(COUNTDOWN_FREQUENCY, COUNTDOWN_DURATION);
+    await sleep(1000);
+    
+    kickDisplay.textContent = "GÅ!";
+    statusDisplay.textContent = "Träning pågår!";
+    playBeep(GO_FREQUENCY, GO_DURATION);
+    await sleep(500);
+    
+    // Start training
+    startKickTrainingSession();
+    
+  } catch (error) {
+    kickDisplay.textContent = "Fel vid start";
+    statusDisplay.textContent = "Kunde inte starta träningen";
+  }
+}
+
+// Start the actual training session
+function startKickTrainingSession() {
+  trainingActive = true;
+  trainingTimeRemaining = trainingDuration;
+  sequenceIndex = 0;
+  isRestPeriod = false;
+  
+  // Update timer display
+  updateTrainingTimer();
+  
+  // Start countdown timer
+  trainingTimer = setInterval(() => {
+    trainingTimeRemaining--;
+    updateTrainingTimer();
+    
+    if (trainingTimeRemaining <= 0) {
+      stopKickTraining();
+    }
+  }, 1000);
+  
+  // Start training mode
+  switch (trainingMode) {
+    case 'free':
+      startFreeMode();
+      break;
+    case 'interval':
+      startIntervalMode();
+      break;
+    case 'sequence':
+      startSequenceMode();
+      break;
+    case 'reaction':
+      startReactionMode();
+      break;
+  }
+}
+
+// Training modes
+function startFreeMode() {
+  if (!trainingActive) return;
+  
+  const randomKick = selectedKicks[Math.floor(Math.random() * selectedKicks.length)];
+  showKickOnScreen(randomKick);
+  speakKick(randomKick);
+  
+  trainingInterval = setTimeout(() => {
+    if (trainingActive) startFreeMode();
+  }, tempo);
+}
+
+function startReactionMode() {
+  if (!trainingActive) return;
+  
+  const randomKick = selectedKicks[Math.floor(Math.random() * selectedKicks.length)];
+  const randomDelay = 1000 + Math.random() * 3000; // 1-4 seconds
+  
+  showKickOnScreen(randomKick);
+  speakKick(randomKick);
+  
+  trainingInterval = setTimeout(() => {
+    if (trainingActive) startReactionMode();
+  }, randomDelay);
+}
+
+function startSequenceMode() {
+  if (!trainingActive) return;
+  
+  const kick = selectedKicks[sequenceIndex % selectedKicks.length];
+  showKickOnScreen(kick);
+  speakKick(kick);
+  sequenceIndex++;
+  
+  trainingInterval = setTimeout(() => {
+    if (trainingActive) startSequenceMode();
+  }, tempo);
+}
+
+function startIntervalMode() {
+  if (!trainingActive) return;
+  
+  if (isRestPeriod) {
+    // Rest period
+    showRestOnScreen();
+    trainingInterval = setTimeout(() => {
+      isRestPeriod = false;
+      if (trainingActive) startIntervalMode();
+    }, intervalRest * 1000);
+  } else {
+    // Work period - show kicks
+    startIntervalWorkPeriod();
+  }
+}
+
+function startIntervalWorkPeriod() {
+  const workEndTime = Date.now() + (intervalWork * 1000);
+  
+  function showNextKickInWorkPeriod() {
+    if (!trainingActive) return;
+    
+    if (Date.now() >= workEndTime) {
+      // Work period ended, switch to rest
+      isRestPeriod = true;
+      startIntervalMode();
+      return;
+    }
+    
+    const randomKick = selectedKicks[Math.floor(Math.random() * selectedKicks.length)];
+    showKickOnScreen(randomKick);
+    speakKick(randomKick);
+    
+    trainingInterval = setTimeout(showNextKickInWorkPeriod, tempo);
+  }
+  
+  showNextKickInWorkPeriod();
+}
+
+// Display functions
+function showKickOnScreen(kick) {
+  const kickDisplay = document.getElementById("currentKickDisplay");
+  const displayBox = document.getElementById("kickDisplayBox");
+  const statusDisplay = document.getElementById("trainingStatus");
+  
+  if (kickDisplay) {
+    kickDisplay.textContent = kick.swedish;
+  }
+  
+  if (displayBox) {
+    displayBox.classList.remove('rest');
+    displayBox.classList.add('active');
+  }
+  
+  if (statusDisplay) {
+    statusDisplay.textContent = "Utför sparken!";
+  }
+}
+
+function showRestOnScreen() {
+  const kickDisplay = document.getElementById("currentKickDisplay");
+  const displayBox = document.getElementById("kickDisplayBox");
+  const statusDisplay = document.getElementById("trainingStatus");
+  
+  if (kickDisplay) {
+    kickDisplay.textContent = "VILA!";
+  }
+  
+  if (displayBox) {
+    displayBox.classList.remove('active');
+    displayBox.classList.add('rest');
+  }
+  
+  if (statusDisplay) {
+    statusDisplay.textContent = "Ta en paus...";
+  }
+}
+
+function updateTrainingTimer() {
+  const timerDisplay = document.getElementById("trainingTimerDisplay");
+  if (timerDisplay) {
+    const minutes = Math.floor(trainingTimeRemaining / 60);
+    const seconds = trainingTimeRemaining % 60;
+    timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+}
+
+// Stop training
+function stopKickTraining() {
+  trainingActive = false;
+  
+  // Clear timers
+  if (trainingTimer) {
+    clearInterval(trainingTimer);
+    trainingTimer = null;
+  }
+  
+  if (trainingInterval) {
+    clearTimeout(trainingInterval);
+    trainingInterval = null;
+  }
+  
+  // Cancel speech
+  if (speechSynthesis && speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+  }
+  
+  // Update display
+  const kickDisplay = document.getElementById("currentKickDisplay");
+  const displayBox = document.getElementById("kickDisplayBox");
+  const statusDisplay = document.getElementById("trainingStatus");
+  
+  if (kickDisplay) {
+    kickDisplay.textContent = "Träning stoppad";
+  }
+  
+  if (displayBox) {
+    displayBox.classList.remove('active', 'rest');
+  }
+  
+  if (statusDisplay) {
+    statusDisplay.textContent = "Bra jobbat!";
+  }
+  
+  // Play end beep
+  playBeep(GO_FREQUENCY, GO_DURATION);
+}
+
 
 /* ---------- Hjälpfunktioner ---------- */
 function getMatchTitle() {
@@ -1919,8 +2369,9 @@ const isStandaloneAudienceView = urlParams.get('audienceView') === 'true';
 // Page IDs for managing visibility in standalone audience view
 const NON_AUDIENCE_PAGES = ['startPage', 'testPage', 'testIntroPage', 'kickCounterPage', 
                             'kickCounterIntroPage', 'kickCalibrationPage', 'kickTimeSelectionPage', 'kickTestPage',
-                            'sparringPage', 'liveScorePage', 'competitionSetupPage', 'competitionRunPage', 
-                            'competitionRoundPage'];
+                            'sparringPage', 'kickTrainingIntroPage', 'kickSelectionPage', 'trainingModeSelectionPage',
+                            'trainingSettingsPage', 'kickTrainingPage', 'liveScorePage', 'competitionSetupPage', 
+                            'competitionRunPage', 'competitionRoundPage'];
 
 // Initialize BroadcastChannel for live synchronization
 // Only create one instance and set up message listener
