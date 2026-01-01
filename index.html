@@ -1996,6 +1996,51 @@
     </div>
   </div>
 
+  <!-- Reaction test calibration page -->
+  <div id="reactionCalibrationPage" class="page-container" style="display:none;">
+    <div class="reaction-test-container">
+      <h2 class="reaction-title" id="reactionCalibrationTitle">🎤 KALIBRERAR...</h2>
+      
+      <p id="reactionCalibrationStatus" style="font-size: 1.2rem; color: #fff; margin: 1rem 0;">Mäter bakgrundsljud... Var tyst!</p>
+      <p id="reactionCalibrationCountdown" style="font-size: 3rem; font-weight: bold; color: #00dddd; margin: 1rem 0;">3</p>
+      
+      <!-- Ljudmätare -->
+      <div style="margin: 1.5rem 0;">
+        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">Ljudnivå</div>
+        <div class="volume-meter">
+          <div class="volume-meter-fill" id="reactionCalibrationSoundLevel"></div>
+        </div>
+      </div>
+      
+      <!-- Manuell justering (dold under auto-kalibrering) -->
+      <div id="reactionManualCalibration" style="display:none;">
+        <p style="font-size: 1.1rem; margin: 1rem 0;">Bakgrundsnivå: <span id="reactionBackgroundLevel" style="color: #00dddd; font-weight: bold;">-</span></p>
+        
+        <div style="margin: 2rem 0;">
+          <label style="font-size: 1.1rem; font-weight: 600; display: block; margin-bottom: 1rem;">⚙️ JUSTERA KÄNSLIGHET (valfritt)</label>
+          <div style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0;">
+            <span style="font-size: 0.9rem;">Låg 🔇</span>
+            <input type="range" id="reactionSensitivitySlider" min="20" max="80" value="40" style="flex: 1;">
+            <span style="font-size: 0.9rem;">🔊 Hög</span>
+          </div>
+          <p style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">Tröskel: <span id="reactionThresholdDisplay" style="color: #00dddd; font-weight: bold;">40</span></p>
+        </div>
+        
+        <p style="font-size: 1rem; color: rgba(255,255,255,0.8); margin: 1rem 0;">Testa med en spark!</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem;">
+          <button class="reaction-btn" onclick="startReactionTestAfterCalibration()">STARTA →</button>
+          <a class="back-link" onclick="cancelReactionCalibration()">← Tillbaka</a>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button class="reaction-btn" onclick="cancelReactionCalibration()" style="flex: 1;">STOPPA</button>
+        <button class="reaction-btn" onclick="showStartPage()" style="flex: 1;">← TILLBAKA MENY</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Reaction test page -->
   <div id="testPage" class="page-container" style="display:none;">
     <div class="reaction-test-container">
