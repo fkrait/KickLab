@@ -103,6 +103,9 @@ let reactionCooldownTimer = null; // Store cooldown timeout for cleanup
 const REACTION_THRESHOLD = 50; // Adjustable threshold for kick detection
 const REACTION_COOLDOWN = 300; // ms between hits
 const VOLUME_SCALE_FACTOR = 50; // Scale factor for VU meter display
+const VOLUME_MAX_PERCENTAGE = 100; // Maximum percentage for VU meter
+const WAIT_TIME_MIN = 2000; // Minimum wait time before "GO!" signal (ms)
+const WAIT_TIME_MAX = 5000; // Maximum wait time before "GO!" signal (ms)
 let reactionResults = JSON.parse(localStorage.getItem("reactionResults")) || [];
 let reactionBestTime = parseFloat(localStorage.getItem("reactionBestTime")) || null;
 
@@ -148,7 +151,7 @@ async function startReactionTest() {
     document.getElementById("stopBtn").style.opacity = "1";
     
     // Wait random time before signaling GO
-    const waitTime = Math.random() * 3000 + 2000; // 2-5 seconds
+    const waitTime = Math.random() * (WAIT_TIME_MAX - WAIT_TIME_MIN) + WAIT_TIME_MIN;
     setTimeout(() => {
       if (reactionTestActive) {
         document.getElementById("statusText").textContent = "GÅ!";
@@ -213,7 +216,7 @@ function updateReactionVolumeMeter(volume) {
   const fillElement = document.getElementById("volumeMeterFill");
   if (fillElement) {
     // Scale volume to percentage (0-100)
-    const percentage = Math.min((volume / REACTION_THRESHOLD) * VOLUME_SCALE_FACTOR, 100);
+    const percentage = Math.min((volume / REACTION_THRESHOLD) * VOLUME_SCALE_FACTOR, VOLUME_MAX_PERCENTAGE);
     fillElement.style.width = percentage + "%";
   }
 }
@@ -325,9 +328,16 @@ function resetReactionStats() {
   reactionResults = [];
   reactionBestTime = null;
   loadReactionStats();
-  document.getElementById("timeValue").textContent = "0.000";
-  document.getElementById("statusText").textContent = "Statistik nollställd.";
-  document.getElementById("statusText").style.color = "#00dddd";
+  
+  // Update UI with null checks
+  const timeValue = document.getElementById("timeValue");
+  const statusText = document.getElementById("statusText");
+  
+  if (timeValue) timeValue.textContent = "0.000";
+  if (statusText) {
+    statusText.textContent = "Statistik nollställd.";
+    statusText.style.color = "#00dddd";
+  }
 }
 
 // Keep old functions for compatibility but make them call new ones
