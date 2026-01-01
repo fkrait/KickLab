@@ -45,8 +45,11 @@ let centerMessage = "";
 /* ---------- Generella sidväxlingar ---------- */
 function showStartPage() {
   document.getElementById("startPage").style.display = "block";
-  document.getElementById("testIntroPage").style.display = "none";
-  document.getElementById("testPage").style.display = "none";
+  
+  const testIntroPage = document.getElementById("testIntroPage");
+  const testPage = document.getElementById("testPage");
+  if (testIntroPage) testIntroPage.style.display = "none";
+  if (testPage) testPage.style.display = "none";
   
   // Hide old kick counter page (kept for compatibility)
   const oldKickPage = document.getElementById("kickCounterPage");
@@ -62,7 +65,8 @@ function showStartPage() {
   if (kickTime) kickTime.style.display = "none";
   if (kickTest) kickTest.style.display = "none";
   
-  document.getElementById("sparringPage").style.display = "none";
+  const sparringPage = document.getElementById("sparringPage");
+  if (sparringPage) sparringPage.style.display = "none";
   
   // Hide kick training pages
   hideAllTrainingPages();
